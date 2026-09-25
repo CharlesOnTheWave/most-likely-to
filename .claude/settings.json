@@ -20,7 +20,11 @@
       "Bash(curl *)",
       "Bash(wget *)",
       "Bash(git push *)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(npx wrangler deploy)",
+      "Bash(npx wrangler deploy *)",
+      "Bash(npx wrangler secret *)",
+      "Bash(npx supabase db *)"
     ],
     "deny": [
       "Bash(rm -rf *)"
