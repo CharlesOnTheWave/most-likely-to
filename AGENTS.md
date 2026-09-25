@@ -22,9 +22,7 @@ No unit or e2e framework yet. `npm run smoke` (@scripts/smoke.mjs) needs a runni
 
 ## Conventions
 
-- Protect pages by adding paths to `PROTECTED_ROUTES` in @src/middleware.ts.
-- Merge Tailwind classes with `cn()` from `@/lib/utils`, never by string concatenation.
-- Add shadcn/ui components with `npx shadcn@latest add <name>`.
+- Add shadcn/ui components with `npx shadcn@latest add <name>`. Since September 2026 (after your training data) shadcn ships `cn()` as the `cn` npm package and imports it from `"cn"`; `@/lib/utils` only re-exports it. Keep those imports and the `cn` dependency; they are not a bug.
 - No Next.js directives such as `"use client"` in React components.
 - Create Supabase migrations with `npx supabase migration new <name>`; every new table gets RLS with per-operation policies.
 
