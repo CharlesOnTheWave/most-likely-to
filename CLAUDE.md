@@ -1,3 +1,5 @@
+Project rules for all agents: @AGENTS.md
+
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
 ## Zestaw narzędzi AI 10xDevs — Moduł 1, Lekcja 4
