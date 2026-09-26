@@ -131,8 +131,8 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
 ## Etap 7. Domknięcie lekcji
 
 - [x] **Agent:** aktualizuje `context/deployment/deploy-plan.md` (odhaczone kroki, adres gry, co zostało), commituje i robi `git push` (ask). Ten push sam wdroży nową wersję, co jest w porządku.
-- [ ] **Ty:** odbierasz odznakę 1.5 w Mission Log.
-  - → Wpis z adresem na Circle (10xDevs Arena) jest opcjonalny. Lekcja mówi tylko: odbierz odznakę, „a następnie pochwal się swoim osiągnięciem”.
+- [x] **Ty:** odbierasz odznakę 1.5 w Mission Log.
+  - → Wpis z adresem na Circle (10xDevs Arena) jest opcjonalny. Lekcja mówi tylko: odbierz odznakę, „a następnie pochwal się swoim osiągnięciem”. Karol go pominął.
 
 ## Sytuacje brzegowe
 
