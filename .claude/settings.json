@@ -24,6 +24,12 @@
       "Bash(npx wrangler deploy)",
       "Bash(npx wrangler deploy *)",
       "Bash(npx wrangler secret *)",
+      "Bash(npx wrangler rollback)",
+      "Bash(npx wrangler rollback *)",
+      "Bash(npx wrangler versions deploy)",
+      "Bash(npx wrangler versions deploy *)",
+      "Bash(npx wrangler delete)",
+      "Bash(npx wrangler delete *)",
       "Bash(npx supabase db *)"
     ],
     "deny": [
