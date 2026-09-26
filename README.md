@@ -151,7 +151,9 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 
 ## Deployment
 
-This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/).
+This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/). Production: https://most-likely-to.charlesonthewave.workers.dev. Every push to `main` is built and deployed there by Cloudflare Workers Builds.
+
+To deploy manually:
 
 1. Build the project:
 
