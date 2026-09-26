@@ -183,6 +183,7 @@ Funkcjonalne:
 - **Bez generowania pytań przez AI w v1** — nie wykluczone na przyszłość; wcześniej host chce zrobić research, jakie pytania działają najlepiej (Open Questions).
 - **Bez wielu kuratorów bazy i narzędzi moderacji** — jedna osoba (twórca gry) weryfikuje pytania; żadnych ról moderatorów, zgłoszeń, banów.
 - **Bez czatu głosowego i tekstowego w aplikacji** — rozmowa jest na Discordzie; emotka lub gif do pokoju (FR-023) to dodatek, nie czat.
+- **Bez wersji angielskiej w v1** — gra i baza pytań są po polsku; angielski ewentualnie po dopracowaniu gry (decyzja hosta 2026-09-26).
 
 Niefunkcjonalne:
 - **Bez aplikacji mobilnej ze sklepu i bez trybu offline** — tylko przeglądarka, tylko z siecią.
