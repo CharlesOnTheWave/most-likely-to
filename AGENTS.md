@@ -6,7 +6,7 @@
 
 - Never persist, log or return a pairing of voter and voted-for player, in any form. Votes are anonymous by design (PRD Non-Goals).
 - Do not add points, leaderboards or round timers; they are PRD Non-Goals.
-- Ask the user before any command that publishes or changes remote or database state: `git push`, `npx wrangler deploy`, `npx wrangler secret put`, `npx supabase db push`, `npx supabase db reset`.
+- Ask the user before any command that publishes or changes remote or database state: `git push` (a push to `main` deploys to production), `npx wrangler deploy`, `npx wrangler rollback`, `npx wrangler versions deploy`, `npx wrangler delete`, `npx wrangler secret put`, `npx supabase db push`, `npx supabase db reset`.
 - Read `SUPABASE_URL` / `SUPABASE_KEY` only through `astro:env/server` (see @src/lib/supabase.ts); never via `import.meta.env`, never in React components. Never commit `.env` or `.dev.vars`.
 - Never edit `context/archive/`.
 
@@ -15,6 +15,7 @@
 Before handing off a change, `npm run lint`, `npx astro check` and `npm run build` must pass; CI (@.github/workflows/ci.yml) runs the same gate. Other scripts: @README.md.
 
 - `npx astro sync`: regenerate `.astro/` types after a fresh clone or config change; without it, lint reports false `no-unsafe-*` errors.
+- Workers Builds deploys every push to `main` to production, even when CI fails: run the gate before `git push`, then `BASE_URL=<production URL> npm run smoke`. Deploy steps and status: @context/deployment/deploy-plan.md.
 
 ## Testing
 
