@@ -15,11 +15,11 @@
 Before handing off a change, `npm run lint`, `npx astro check` and `npm run build` must pass; CI (@.github/workflows/ci.yml) runs the same gate. Other scripts: @README.md.
 
 - `npx astro sync`: regenerate `.astro/` types after a fresh clone or config change; without it, lint reports false `no-unsafe-*` errors.
-- Workers Builds deploys every push to `main` to production, even when CI fails: run the gate before `git push`, then `BASE_URL=<production URL> npm run smoke`. Deploy steps and status: @context/deployment/deploy-plan.md.
+- Workers Builds deploys every push to `main` to production, even when CI fails: run the gate before `git push`, then `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke`. Deploy steps and status: @context/deployment/deploy-plan.md.
 
 ## Testing
 
-No unit or e2e framework yet. `npm run smoke` (@scripts/smoke.mjs) needs a running server and a reachable Supabase with email confirmation off. Until `SUPABASE_URL` is set in `.dev.vars`, skip it; a smoke failure without it is not a code bug.
+No unit or e2e framework yet. `npm run smoke` (@scripts/smoke.mjs) needs a running server and a reachable Supabase with email confirmation off. The local `.dev.vars` points at the only Supabase project, which production also uses, so every run adds a `smoke-<timestamp>@example.com` user there. Without `.dev.vars` (fresh clone), skip it; a smoke failure then is not a code bug.
 
 ## Conventions
 
@@ -31,4 +31,5 @@ No unit or e2e framework yet. `npm run smoke` (@scripts/smoke.mjs) needs a runni
 
 - Files use LF line endings (@.gitattributes, Prettier). Lint errors `Delete ␍` mean CRLF crept in: run `npm run lint:fix`.
 - The husky pre-commit hook is not installed (no `prepare` script); run `npm run lint` yourself before committing.
+- `npm run dev` (Astro 7) starts the dev server in the background and returns at once; manage it with `npx astro dev status`, `npx astro dev logs` and `npx astro dev stop`. Stop it when you are done.
 - The deploy target is Cloudflare Workers (@wrangler.jsonc), not Pages: never use `wrangler pages` commands.
