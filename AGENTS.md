@@ -8,7 +8,7 @@
 - Do not add points, leaderboards or round timers; they are PRD Non-Goals.
 - Ask the user before any command that publishes or changes remote or database state: `git push` (a push to `main` deploys to production), `npx wrangler deploy`, `npx wrangler rollback`, `npx wrangler versions deploy`, `npx wrangler delete`, `npx wrangler secret put`, `npx supabase db push`, `npx supabase db reset`.
 - Read `SUPABASE_URL` / `SUPABASE_KEY` only through `astro:env/server` (see @src/lib/supabase.ts); never via `import.meta.env`, never in React components. Never commit `.env` or `.dev.vars`.
-- Never edit `context/archive/`.
+- Only `/10x-archive` moves a finished change into `context/archive/`; never edit anything already there.
 
 ## Commands
 
