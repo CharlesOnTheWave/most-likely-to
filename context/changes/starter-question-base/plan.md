@@ -124,6 +124,8 @@ Kryteria automatyczne tej fazy (i 3.1) sprawdza jednorazowy skrypt `node` w scra
 - Karol oznaczył każde pytanie na stronie przeglądu, a każde „do poprawy” wróciło w nowej wersji i zostało zaakceptowane
 - Karol wprost zatwierdza całą bazę
 
+Nota z realizacji (27.09.2026): Karol przejrzał wszystkie 216 pytań i zaakceptował je w czacie, bez oznaczania na stronie przeglądu; żadne nie było do poprawy ani do usunięcia. Zapis i cytat: `question-review.md`, sekcja „Wynik rundy 1”.
+
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
 
 ---
@@ -208,26 +210,26 @@ Gdy pytania trafią do Supabase (S-01 albo S-11), identyfikatory z pliku zostaj�
 
 #### Automated
 
-- [x] 1.1 `npm run lint` przechodzi
-- [x] 1.2 `npx astro check` przechodzi
-- [x] 1.3 `npm run build` przechodzi
-- [x] 1.4 Tymczasowo zdublowany identyfikator pytania wywala `npx astro check` (sprawdzone raz i cofnięte)
+- [x] 1.1 `npm run lint` przechodzi — 18292da
+- [x] 1.2 `npx astro check` przechodzi — 18292da
+- [x] 1.3 `npm run build` przechodzi — 18292da
+- [x] 1.4 Tymczasowo zdublowany identyfikator pytania wywala `npx astro check` (sprawdzone raz i cofnięte) — 18292da
 
 #### Manual
 
-- [x] 1.5 Karol akceptuje nazwy kategorii i ich kolejność
+- [x] 1.5 Karol akceptuje nazwy kategorii i ich kolejność — 18292da
 
 ### Phase 2: Szkic pytań i przegląd Karola
 
 #### Automated
 
-- [ ] 2.1 W każdej kategorii `question-review.md` ma co najmniej 15 zwykłych i co najmniej 5 pytań 18+ ze statusem `fajne`
-- [ ] 2.2 Zatwierdzone pytania nie mają powtórzonych tekstów, a każdy tekst spełnia zasady zapisu (najwyżej 90 znaków, mała litera na początku, bez „?” i kropki na końcu)
+- [x] 2.1 W każdej kategorii `question-review.md` ma co najmniej 15 zwykłych i co najmniej 5 pytań 18+ ze statusem `fajne`
+- [x] 2.2 Zatwierdzone pytania nie mają powtórzonych tekstów, a każdy tekst spełnia zasady zapisu (najwyżej 90 znaków, mała litera na początku, bez „?” i kropki na końcu)
 
 #### Manual
 
-- [ ] 2.3 Karol oznaczył każde pytanie na stronie przeglądu, a każde „do poprawy” wróciło w nowej wersji i zostało zaakceptowane
-- [ ] 2.4 Karol wprost zatwierdza całą bazę
+- [x] 2.3 Karol oznaczył każde pytanie na stronie przeglądu, a każde „do poprawy” wróciło w nowej wersji i zostało zaakceptowane
+- [x] 2.4 Karol wprost zatwierdza całą bazę
 
 ### Phase 3: Baza w kodzie
 
