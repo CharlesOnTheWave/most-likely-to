@@ -91,8 +91,9 @@ Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy
   > Socratic: Counter-argument considered: "21:30, the host is mid-round looking at the question, not at notifications; a latecomer spends five minutes on Discord asking to be let in." Resolution: amended — knock visible to both leaders everywhere; entry from the next round.
 
 ### Pokój i rozgrywka
-- FR-005: Host can create a room, choose question categories for the game, and get a shareable room link. Priority: must-have
+- FR-005: Host can create a room, choose question categories for the game (and, for each chosen category, whether to include its 18+ questions), and get a shareable room link. Priority: must-have
   > Socratic: Counter-argument considered: "host picks two thin categories and the game ends after six questions; no count shown at selection." Resolution: kept as written; the question base will grow over a long time, showing counts is not needed.
+  > Amendment 2026-09-27 (F-02 planning, game creator's decision): every question carries an 18+ flag, and the host decides per chosen category whether its 18+ questions are included.
 - FR-006: Host or co-host can start the game, skip the current round, and end the game; a skipped question discards its votes without points and does not count toward question quality; ending the game requires a confirmation. Priority: must-have
   > Socratic: Counter-arguments considered: "skipping after some have voted wastes their votes and pollutes question data"; "an accidental 'end game' kills the evening." Resolution: both accepted — amended as above.
 - FR-007: All players in the room see the current question at the same time. Priority: must-have

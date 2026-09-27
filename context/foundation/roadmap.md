@@ -43,7 +43,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | ---- | ---------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------- | -------- |
 | F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona w prototypie: 20 graczy, odsłona w ≤ 2 s, w kanale tylko dane zbiorcze | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | ready    |
 | F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                   | —                | FR-005, FR-015, Access Control (twórca gry)               | in-progress |
-| S-01 | room-lobby                   | Host tworzy pokój z kategoriami i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo                   | F-01, F-02       | US-01, FR-002, FR-005                                     | proposed |
+| S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | proposed |
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | proposed |
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                            | S-02             | FR-006, FR-015                                            | proposed |
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                    | S-02             | US-01, FR-011                                             | proposed |
@@ -114,7 +114,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 ### S-01: Pokój i poczekalnia
 
-- **Outcome:** Host tworzy pokój, wybiera kategorie i dostaje link do wklejenia na Discordzie; gość otwiera link na telefonie, wpisuje nick (zajęty nick jest odrzucany) i trafia do pokoju, a host widzi dołączających na żywo.
+- **Outcome:** Host tworzy pokój, wybiera kategorie (przy każdej osobno decyduje, czy dołączyć jej pytania 18+) i dostaje link do wklejenia na Discordzie; gość otwiera link na telefonie, wpisuje nick (zajęty nick jest odrzucany) i trafia do pokoju, a host widzi dołączających na żywo.
 - **Change ID:** room-lobby
 - **PRD refs:** US-01, FR-002, FR-005
 - **Prerequisites:** F-01, F-02
