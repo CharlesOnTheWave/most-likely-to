@@ -71,7 +71,7 @@ Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy
 - **Then** wszyscy widzą to samo pytanie; gdy wszyscy zagłosują (albo host przewinie), wszyscy widzą odsłonę z liczbą głosów na osobę, bez informacji kto na kogo
 
 #### Acceptance Criteria
-- Pytanie pochodzi tylko z wybranych kategorii i nie powtórzyło się w tej sesji
+- Pytanie pochodzi tylko z wybranych kategorii (pytania 18+ tylko z tych, w których host je dołączył) i nie powtórzyło się w tej sesji
 - Gość, który odświeży stronę w trakcie rundy, wraca na swój nick, widzi bieżące pytanie i swój oddany głos
 - Przy 3 graczach odsłona następuje natychmiast po trzecim głosie; nie ma timera
 - W trakcie rundy widać, kto już zagłosował, ale nigdy na kogo
@@ -117,7 +117,7 @@ Model puli: wspólna baza pytań z kategoriami, kuratorowana przez twórcę gry;
   > Socratic: Counter-argument considered: "one guest floods the queue with 12 proposals mid-round and the host clicks approve/reject instead of playing." Resolution: amended — per-guest limit per evening; exact number → Open Questions.
 - FR-014: Host or co-host can approve or reject proposed questions; approved ones enter this game's question list. Priority: must-have
   > Socratic: Counter-argument considered: "an approved proposal lands behind 20 base questions and never gets played in a 12-round evening." Resolution: kept as written; where the approved question lands in the order is a downstream detail.
-- FR-015: Game draws questions from the shared base in the selected categories only, without repeats within a game and without questions played on the host's recent evenings. Priority: must-have
+- FR-015: Game draws questions from the shared base in the selected categories only (18+ questions only from categories where the host included them), without repeats within a game and without questions played on the host's recent evenings. Priority: must-have
   > Socratic: Counter-argument considered: "60 questions in 3 categories, the same crew plays four Fridays in a row and after excluding recent evenings nothing is left to draw." Resolution: kept; host's view: the base is small at first and that is fine, it grows over time. Behaviour when fresh questions run out is not decided → Open Questions (non-blocking).
 - FR-016: App records per-question play data that feeds the quality score, across all hosts' games: vote distribution (how concentrated), skips, post-round reactions, and removals from a game list by a host before start. Priority: must-have
   > Socratic: Counter-argument considered: "with no timer and the crew talking on Discord, 'time to vote' is noise (someone went for a beer), and four measures are four times the work of one." Resolution: amended — time to vote dropped from v1; only what the quality score uses is recorded.

@@ -126,7 +126,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 ### S-02: Pierwsza runda na żywo
 
-- **Outcome:** Host klika „start”; wszyscy w pokoju widzą to samo pytanie z wybranych kategorii, każdy wskazuje jedną osobę z listy nicków (także siebie) albo się wstrzymuje, wszyscy widzą, kto już zagłosował, a po ostatnim głosie lub przewinięciu przez prowadzącego widzą odsłonę: ile głosów dostała każda osoba.
+- **Outcome:** Host klika „start”; wszyscy w pokoju widzą to samo pytanie z wybranych kategorii (18+ tylko z tych, w których host je dołączył), każdy wskazuje jedną osobę z listy nicków (także siebie) albo się wstrzymuje, wszyscy widzą, kto już zagłosował, a po ostatnim głosie lub przewinięciu przez prowadzącego widzą odsłonę: ile głosów dostała każda osoba.
 - **Change ID:** first-live-round
 - **PRD refs:** US-01, FR-006, FR-007, FR-008, FR-009, FR-015
 - **Prerequisites:** S-01, F-01, F-02
