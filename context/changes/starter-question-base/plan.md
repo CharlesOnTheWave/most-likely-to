@@ -223,24 +223,24 @@ Gdy pytania trafią do Supabase (S-01 albo S-11), identyfikatory z pliku zostaj�
 
 #### Automated
 
-- [x] 2.1 W każdej kategorii `question-review.md` ma co najmniej 15 zwykłych i co najmniej 5 pytań 18+ ze statusem `fajne`
-- [x] 2.2 Zatwierdzone pytania nie mają powtórzonych tekstów, a każdy tekst spełnia zasady zapisu (najwyżej 90 znaków, mała litera na początku, bez „?” i kropki na końcu)
+- [x] 2.1 W każdej kategorii `question-review.md` ma co najmniej 15 zwykłych i co najmniej 5 pytań 18+ ze statusem `fajne` — 6069e39
+- [x] 2.2 Zatwierdzone pytania nie mają powtórzonych tekstów, a każdy tekst spełnia zasady zapisu (najwyżej 90 znaków, mała litera na początku, bez „?” i kropki na końcu) — 6069e39
 
 #### Manual
 
-- [x] 2.3 Karol oznaczył każde pytanie na stronie przeglądu, a każde „do poprawy” wróciło w nowej wersji i zostało zaakceptowane
-- [x] 2.4 Karol wprost zatwierdza całą bazę
+- [x] 2.3 Karol oznaczył każde pytanie na stronie przeglądu, a każde „do poprawy” wróciło w nowej wersji i zostało zaakceptowane — 6069e39
+- [x] 2.4 Karol wprost zatwierdza całą bazę — 6069e39
 
 ### Phase 3: Baza w kodzie
 
 #### Automated
 
-- [ ] 3.1 `src/data/questions.ts` zawiera dokładnie zatwierdzone pytania z `question-review.md` (ta sama liczba zwykłych i 18+ w każdej kategorii, identyczne teksty)
-- [ ] 3.2 `npm run lint` przechodzi
-- [ ] 3.3 `npx astro check` przechodzi
-- [ ] 3.4 `npm run build` przechodzi
+- [x] 3.1 `src/data/questions.ts` zawiera dokładnie zatwierdzone pytania z `question-review.md` (ta sama liczba zwykłych i 18+ w każdej kategorii, identyczne teksty)
+- [x] 3.2 `npm run lint` przechodzi
+- [x] 3.3 `npx astro check` przechodzi
+- [x] 3.4 `npm run build` przechodzi
 
 #### Manual
 
-- [ ] 3.5 Karol potwierdza tabelę liczby pytań (zwykłe / 18+) na kategorię
-- [ ] 3.6 Karol akceptuje dopiski o checkboxie 18+ w S-01 (roadmapa) i FR-005 (PRD)
+- [x] 3.5 Karol potwierdza tabelę liczby pytań (zwykłe / 18+) na kategorię
+- [x] 3.6 Karol akceptuje dopiski o checkboxie 18+ w S-01 (roadmapa) i FR-005 (PRD)
