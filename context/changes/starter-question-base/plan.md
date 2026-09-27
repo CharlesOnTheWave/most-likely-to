@@ -235,12 +235,12 @@ Gdy pytania trafią do Supabase (S-01 albo S-11), identyfikatory z pliku zostaj�
 
 #### Automated
 
-- [x] 3.1 `src/data/questions.ts` zawiera dokładnie zatwierdzone pytania z `question-review.md` (ta sama liczba zwykłych i 18+ w każdej kategorii, identyczne teksty)
-- [x] 3.2 `npm run lint` przechodzi
-- [x] 3.3 `npx astro check` przechodzi
-- [x] 3.4 `npm run build` przechodzi
+- [x] 3.1 `src/data/questions.ts` zawiera dokładnie zatwierdzone pytania z `question-review.md` (ta sama liczba zwykłych i 18+ w każdej kategorii, identyczne teksty) — a818518
+- [x] 3.2 `npm run lint` przechodzi — a818518
+- [x] 3.3 `npx astro check` przechodzi — a818518
+- [x] 3.4 `npm run build` przechodzi — a818518
 
 #### Manual
 
-- [x] 3.5 Karol potwierdza tabelę liczby pytań (zwykłe / 18+) na kategorię
-- [x] 3.6 Karol akceptuje dopiski o checkboxie 18+ w S-01 (roadmapa) i FR-005 (PRD)
+- [x] 3.5 Karol potwierdza tabelę liczby pytań (zwykłe / 18+) na kategorię — a818518
+- [x] 3.6 Karol akceptuje dopiski o checkboxie 18+ w S-01 (roadmapa) i FR-005 (PRD) — a818518
