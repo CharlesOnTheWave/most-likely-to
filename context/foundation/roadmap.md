@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-09-27
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -42,7 +42,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | ID   | Change ID                    | Outcome (user can …)                                                                                            | Prerequisites    | PRD refs                                                  | Status   |
 | ---- | ---------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------- | -------- |
 | F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona w prototypie: 20 graczy, odsłona w ≤ 2 s, w kanale tylko dane zbiorcze | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | ready    |
-| F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                   | —                | FR-005, FR-015, Access Control (twórca gry)               | ready    |
+| F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                   | —                | FR-005, FR-015, Access Control (twórca gry)               | in-progress |
 | S-01 | room-lobby                   | Host tworzy pokój z kategoriami i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo                   | F-01, F-02       | US-01, FR-002, FR-005                                     | proposed |
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | proposed |
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                            | S-02             | FR-006, FR-015                                            | proposed |
@@ -108,7 +108,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Ile pytań i jakie kategorie na start? — Owner: Karol. Block: no.
   - Jakie pytania „most likely to” działają najlepiej (Open Roadmap Question 7)? — Owner: Karol. Block: no.
 - **Risk:** Bez pytań nie ma rundy, a słaba baza zepsuje pierwsze wieczory bardziej niż błąd w kodzie; to praca twórcy gry, którą można robić równolegle z F-01.
-- **Status:** ready
+- **Status:** in-progress
 
 ## Slices
 
