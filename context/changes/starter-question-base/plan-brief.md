@@ -12,7 +12,7 @@ W projekcie nie ma żadnych danych gry: ani pliku z danymi, ani tabel w Supabase
 
 ## Desired End State
 
-Plik `src/data/questions.ts` ma 8 kategorii. W każdej jest co najmniej 15 zwykłych pytań i 5 pytań 18+. Każde pytanie ma stały identyfikator, kategorię i znacznik 18+, a Karol zatwierdził je jedno po drugim na stronie przeglądu. Bramka (lint, typy, build) przechodzi, a decyzja o checkboxie 18+ przy każdej kategorii jest zapisana w S-01 i w FR-005.
+Plik `src/data/questions.ts` ma 8 kategorii. W każdej jest co najmniej 15 zwykłych pytań i 5 pytań 18+. Każde pytanie ma stały identyfikator, kategorię i znacznik 18+, a Karol zatwierdził je jedno po drugim na stronie przeglądu (w praktyce akceptacja zbiorcza w czacie, zob. nota w Fazie 2 planu). Bramka (lint, typy, build) przechodzi, a decyzja o checkboxie 18+ przy każdej kategorii jest zapisana w S-01 i w FR-005.
 
 ## Key Decisions Made
 

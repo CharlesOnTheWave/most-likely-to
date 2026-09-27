@@ -15,7 +15,7 @@ Pierwsza wspólna baza pytań „Kto z nas najprawdopodobniej…” po polsku: 8
 ## Desired End State
 
 - `src/data/questions.ts` eksportuje listę 8 kategorii (stały identyfikator + polska nazwa, w ustalonej kolejności) oraz słownik pytań kluczowany identyfikatorem pytania; każde pytanie ma kategorię, tekst i znacznik `adult` (18+).
-- W każdej kategorii jest co najmniej 15 pytań z `adult: false` i co najmniej 5 z `adult: true`; każde z nich Karol zatwierdził na stronie przeglądu, a zapis przeglądu leży w `context/changes/starter-question-base/question-review.md`.
+- W każdej kategorii jest co najmniej 15 pytań z `adult: false` i co najmniej 5 z `adult: true`; każde z nich Karol zatwierdził na stronie przeglądu (w praktyce akceptacja zbiorcza w czacie, zob. nota w Fazie 2), a zapis przeglądu leży w `context/changes/starter-question-base/question-review.md`.
 - Bramka (`npm run lint`, `npx astro check`, `npm run build`) przechodzi; zdublowany identyfikator pytania wywala `astro check`.
 - Decyzja „checkbox 18+ przy każdej kategorii” jest zapisana w S-01 w roadmapie i w FR-005 w PRD.
 
@@ -185,7 +185,7 @@ Zatwierdzone pytania trafiają do `src/data/questions.ts` z identyfikatorami, a 
 ### Manual Testing Steps:
 
 1. Faza 1: Karol czyta listę kategorii i ich kolejność.
-2. Faza 2: Karol oznacza każde pytanie na stronie przeglądu, aż wszystkie kategorie spełnią minimum.
+2. Faza 2: Karol oznacza każde pytanie na stronie przeglądu, aż wszystkie kategorie spełnią minimum. W praktyce akceptacja zbiorcza w czacie, zob. nota w Fazie 2.
 3. Faza 3: Karol porównuje tabelę liczb z zapisem przeglądu i czyta dopiski w roadmapie i PRD.
 
 ## Performance Considerations

@@ -12,6 +12,8 @@ Zapis przeglądu bazy startowej przez twórcę gry (Karola). Do `src/data/questi
 
 Karol przejrzał wszystkie 216 pytań i zaakceptował je w czacie, bez oznaczania na stronie przeglądu: „pytania przejrzane. nie chce mi sie wypelniac formularza, ale doslownie kazde jest w sumie smieszne, podobaja mi sie. wstępnie akceptuje wszystkie”. Wszystkie wiersze mają więc status `fajne`; żadne pytanie nie jest do poprawy ani do usunięcia, więc runda 2 nie jest potrzebna.
 
+Przegląd kodu 27.09.2026 (F3 w `reviews/impl-review.md`): Karol potwierdził, że akceptacja wszystkich 216 pytań jest ostateczna.
+
 ## Na co dzień (`na-co-dzien`)
 
 | # | Pytanie (końcówka) | 18+ | Status | Uwaga Karola | Runda |
@@ -28,7 +30,7 @@ Karol przejrzał wszystkie 216 pytań i zaakceptował je w czacie, bez oznaczani
 | d10 | ustawiłby dziesięć budzików i przespał wszystkie | – | fajne |  | 1 |
 | d11 | gadałby do swoich roślin doniczkowych | – | fajne |  | 1 |
 | d12 | zapomniałby, po co wszedł do pokoju | – | fajne |  | 1 |
-| d13 | oglądałby ten sam serial po raz piąty zamiast zacząć nowy | – | fajne |  | 1 |
+| d13 | oglądałby ten sam serial po raz piąty, zamiast zacząć nowy | – | fajne | przegląd kodu 27.09 (F5): dopisany przecinek przed „zamiast” | 1 |
 | d14 | trzymałby w szafie ubrania z metkami sprzed roku | – | fajne |  | 1 |
 | d15 | przeczytałby cały regulamin, zanim kliknie „akceptuję” | – | fajne |  | 1 |
 | d16 | zrobiłby pranie i zostawił je w pralce na dwa dni | – | fajne |  | 1 |
@@ -41,7 +43,7 @@ Karol przejrzał wszystkie 216 pytań i zaakceptował je w czacie, bez oznaczani
 | d23 | otworzyłby wino w poniedziałek, „bo zasłużył” | 18+ | fajne |  | 1 |
 | d24 | znałby po imieniu ekspedientkę z nocnego | 18+ | fajne |  | 1 |
 | d25 | zasnąłby na randce | 18+ | fajne |  | 1 |
-| d26 | przewijałby Tindera zamiast spać | 18+ | fajne |  | 1 |
+| d26 | przewijałby Tindera, zamiast spać | 18+ | fajne | przegląd kodu 27.09 (F5): dopisany przecinek przed „zamiast” | 1 |
 | d27 | nosiłby w portfelu tę samą prezerwatywę od liceum | 18+ | fajne |  | 1 |
 
 ## Imprezy (`imprezy`)
@@ -90,7 +92,7 @@ Karol przejrzał wszystkie 216 pytań i zaakceptował je w czacie, bez oznaczani
 | d08 | poleciałby w kosmos | – | fajne |  | 1 |
 | d09 | napisałby bestseller | – | fajne |  | 1 |
 | d10 | przeżyłby apokalipsę zombie | – | fajne |  | 1 |
-| d11 | wziąłby ślub w Las Vegas | – | fajne |  | 1 |
+| d11 | wziąłby ślub w Las Vegas | 18+ | fajne | przegląd kodu 27.09 (F7): 18+, tak jak „ślub z kimś poznanym na wakacjach” | 1 |
 | d12 | wróciłby do swojej dawnej szkoły jako nauczyciel | – | fajne |  | 1 |
 | d13 | miałby w domu więcej kotów niż mebli | – | fajne |  | 1 |
 | d14 | dożyłby setki | – | fajne |  | 1 |
@@ -116,7 +118,7 @@ Karol przejrzał wszystkie 216 pytań i zaakceptował je w czacie, bez oznaczani
 | d02 | wysłałby wiadomość o kimś prosto do tej osoby | – | fajne |  | 1 |
 | d03 | wszedłby z impetem w szklane drzwi | – | fajne |  | 1 |
 | d04 | powiedziałby do nauczycielki „mamo” | – | fajne |  | 1 |
-| d05 | zaciąłby się w drzwiach tramwaju | – | fajne |  | 1 |
+| d05 | utknąłby w drzwiach tramwaju | – | fajne | przegląd kodu 27.09 (F5): było „zaciąłby się w drzwiach tramwaju” | 1 |
 | d06 | odpowiedziałby „nawzajem” kelnerowi, który życzy smacznego | – | fajne |  | 1 |
 | d07 | przewróciłby się na prostej drodze | – | fajne |  | 1 |
 | d08 | zaśmiałby się w najmniej odpowiednim momencie | – | fajne |  | 1 |

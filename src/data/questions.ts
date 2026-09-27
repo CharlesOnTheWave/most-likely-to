@@ -5,6 +5,10 @@
  * - Key = question id `<category-id>-<NNN>`, numbered in order within the category. An id never
  *   changes and is never reused, even if the question moves to another category or is retired:
  *   per-question play data (S-11) is stored under it.
+ * - Never delete an entry: a retired question stays in QUESTIONS (S-11/S-12 decide how draws
+ *   skip it). A typo fix keeps the id; a change of meaning is a new question with a new id.
+ * - A new id takes the next number after the highest existing id with the same prefix. Never
+ *   derive the category from the id: a question that moves to another category keeps its id.
  * - Keep QUESTIONS a single object literal. A duplicated key fails `npx astro check` (TS1117);
  *   merging parts with spread would let duplicates through silently.
  * - `text` is the ending after the fixed prefix "Kto z nas najprawdopodobniej"; the screen shows
@@ -69,7 +73,7 @@ export const QUESTIONS = {
   "na-co-dzien-012": { category: "na-co-dzien", text: "zapomniałby, po co wszedł do pokoju", adult: false },
   "na-co-dzien-013": {
     category: "na-co-dzien",
-    text: "oglądałby ten sam serial po raz piąty zamiast zacząć nowy",
+    text: "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy",
     adult: false,
   },
   "na-co-dzien-014": {
@@ -100,7 +104,7 @@ export const QUESTIONS = {
   "na-co-dzien-023": { category: "na-co-dzien", text: "otworzyłby wino w poniedziałek, „bo zasłużył”", adult: true },
   "na-co-dzien-024": { category: "na-co-dzien", text: "znałby po imieniu ekspedientkę z nocnego", adult: true },
   "na-co-dzien-025": { category: "na-co-dzien", text: "zasnąłby na randce", adult: true },
-  "na-co-dzien-026": { category: "na-co-dzien", text: "przewijałby Tindera zamiast spać", adult: true },
+  "na-co-dzien-026": { category: "na-co-dzien", text: "przewijałby Tindera, zamiast spać", adult: true },
   "na-co-dzien-027": {
     category: "na-co-dzien",
     text: "nosiłby w portfelu tę samą prezerwatywę od liceum",
@@ -171,7 +175,7 @@ export const QUESTIONS = {
   "przyszlosc-008": { category: "przyszlosc", text: "poleciałby w kosmos", adult: false },
   "przyszlosc-009": { category: "przyszlosc", text: "napisałby bestseller", adult: false },
   "przyszlosc-010": { category: "przyszlosc", text: "przeżyłby apokalipsę zombie", adult: false },
-  "przyszlosc-011": { category: "przyszlosc", text: "wziąłby ślub w Las Vegas", adult: false },
+  "przyszlosc-011": { category: "przyszlosc", text: "wziąłby ślub w Las Vegas", adult: true },
   "przyszlosc-012": { category: "przyszlosc", text: "wróciłby do swojej dawnej szkoły jako nauczyciel", adult: false },
   "przyszlosc-013": { category: "przyszlosc", text: "miałby w domu więcej kotów niż mebli", adult: false },
   "przyszlosc-014": { category: "przyszlosc", text: "dożyłby setki", adult: false },
@@ -206,7 +210,7 @@ export const QUESTIONS = {
   },
   "wpadki-i-obciach-003": { category: "wpadki-i-obciach", text: "wszedłby z impetem w szklane drzwi", adult: false },
   "wpadki-i-obciach-004": { category: "wpadki-i-obciach", text: "powiedziałby do nauczycielki „mamo”", adult: false },
-  "wpadki-i-obciach-005": { category: "wpadki-i-obciach", text: "zaciąłby się w drzwiach tramwaju", adult: false },
+  "wpadki-i-obciach-005": { category: "wpadki-i-obciach", text: "utknąłby w drzwiach tramwaju", adult: false },
   "wpadki-i-obciach-006": {
     category: "wpadki-i-obciach",
     text: "odpowiedziałby „nawzajem” kelnerowi, który życzy smacznego",
