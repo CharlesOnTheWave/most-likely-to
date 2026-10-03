@@ -47,7 +47,7 @@ Zalogowany (host albo sonda) woła `POST /api/live-sync/ring`. Worker nadaje prz
 
 | Phase | What it delivers | Key risk |
 | --- | --- | --- |
-| 1. Zasady, uprawnienia i zależności | Nowa reguła o kluczach, 5 reguł ask, globale lintu, supabase-js ≥ 2.107 | Brzmienie reguły musi być jednoznaczne dla kolejnych agentów |
+| 1. Zasady, uprawnienia i zależności | Nowa reguła o kluczach, 6 reguł ask, globale lintu, supabase-js ≥ 2.114 | Brzmienie reguły musi być jednoznaczne dla kolejnych agentów |
 | 2. Dzwonek i tablica (serwer) | Moduł `live-sync` i 3 endpointy JSON | `httpSend` w Workerze niesprawdzony w praktyce |
 | 3. Strona demo | `/dev/live-sync` z wyspą (status, powroty, „Zadzwoń”) | Przez nieuwagę wyciek bazy pytań do bundla (sprawdza grep) |
 | 4. Sonda i pomiar lokalny | `npm run live-probe`, wyniki lokalne | Pomiar z Windows może zawyżać czasy |
@@ -61,7 +61,8 @@ Zalogowany (host albo sonda) woła `POST /api/live-sync/ring`. Worker nadaje prz
 - **Decyzja Karola jako laika:** oparta na researchu i recenzji agentów; przyjęte ryzyko „możemy się kiedyś przejechać”, z warunkami powrotu w `external-research.md`.
 - **Limit 100/s liczony jako średnia** wynika z kodu open source, nie z dokumentacji; pomiar 5 × 20 go sprawdzi.
 - **Sonda i demo tworzą konta testowe** w produkcyjnym Supabase (jak smoke) i zużywają trochę limitu wiadomości.
-- **Strona testowa i endpoint dzwonka** zostają na produkcji do czasu S-01; dzwonić może tylko zalogowany.
+- **Strona testowa i endpoint dzwonka** zostają na produkcji do czasu S-01; przez nasz endpoint dzwonić może tylko zalogowany.
+- **Dzwonek może nadać każdy** z kluczem publishable, z pominięciem endpointu (publiczny kanał). Pytanie wyliczane z numeru dzwonka to skrót prototypu; od S-02 stan pochodzi wyłącznie z bazy.
 - **Nadrabianie przegapionego dzwonka** jest niesprawdzone do S-02.
 
 ## Success Criteria (Summary)

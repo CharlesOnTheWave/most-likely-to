@@ -41,7 +41,7 @@ Według `research.md`:
 - Strona `/dev/live-sync` działa lokalnie i na produkcji:
   - gość widzi status połączenia, licznik powrotów i po każdym dzwonku pytanie pobrane z tablicy;
   - zalogowany ma przycisk „Zadzwoń”.
-- `npm run live-probe` mierzy 1 pokój × 20 graczy w 10 próbach i kończy się kodem 0, gdy spełnione jest kryterium F-01 (niżej). Przebieg `--rooms 5` (100 graczy) daje wynik informacyjny.
+- `npm run live-probe` mierzy 1 pokój × 20 graczy w 10 próbach i wydaje werdykt: kod 0, gdy spełnione jest kryterium F-01 (niżej), kod 1, gdy nie, kod 2 przy błędzie technicznym. Przebieg `--rooms 5` (100 graczy) daje wynik informacyjny.
 - `measurements.md` zawiera wyniki lokalne i produkcyjne, test telefonu i werdykt dla B.
 - Reguła o kluczu jest doprecyzowana w AGENTS.md i dokumentach: publishable wolno podać przeglądarce w runtime, secret nigdy.
 - Polecenia sondy i `npx supabase migration up/down/repair` wymagają zgody (ask).
@@ -98,6 +98,10 @@ Faza 5 (produkcja i telefon) rusza dopiero po `/10x-impl-review` i zgodzie Karol
 - Endpointy nie logują treści żądań; `observability` Workera jest włączone.
 - Wyspa React nie importuje `src/data/questions.ts` ani modułu serwerowego. Sprawdza to grep po zbudowanym `dist/client`.
 
+**Dzwonek jest niezaufaną podpowiedzią:**
+- Na publicznym kanale każdy z kluczem publishable może sam nadać `bell` z dowolnym `seq` („any user can subscribe to the channel, send and receive messages”, `external-research.md:65`; przyjęte ryzyko `:153,186`). Zasada „dzwoni tylko zalogowany” pilnuje wyłącznie naszego endpointu `POST /api/live-sync/ring`, nie kanału.
+- Wyliczanie pytania z `seq` z dzwonka (`stateFor(room, seq)`) to skrót tylko na prototyp bez tabel. Od S-02 tablica czyta bieżącą rundę z bazy i nie bierze z dzwonka niczego, co decyduje o treści; fałszywy dzwonek może wtedy wywołać najwyżej zbędne odświeżenie (pre-mortem `infrastructure.md:143`).
+
 **Klient przeglądarki tylko do Realtime:** `createClient` z supabase-js z `auth.persistSession: false`, `autoRefreshToken: false` i `detectSessionInUrl: false`. Nie może ruszać sesji hosta, którą obsługuje serwer przez ciasteczka.
 
 **Publiczne kanały muszą być dozwolone** w ustawieniach Realtime projektu (przełącznik „Allow public access”, według docs domyślnie włączony). Jeśli subskrypcja kończy się `CHANNEL_ERROR`, Karol sprawdza przełącznik w panelu; agent go nie zmienia.
@@ -106,7 +110,7 @@ Faza 5 (produkcja i telefon) rusza dopiero po `/10x-impl-review` i zgodzie Karol
 
 ### Overview
 
-Doprecyzowanie reguły o kluczu, reguły ask, globale lintu i dolna granica wersji supabase-js. Bez kodu aplikacji.
+Doprecyzowanie reguły o kluczu, reguły ask, globale lintu i dolna granica wersji supabase-js (^2.114.0). Bez kodu aplikacji.
 
 ### Changes Required:
 
@@ -131,7 +135,8 @@ Doprecyzowanie reguły o kluczu, reguły ask, globale lintu i dolna granica wers
 
 **Contract**:
 - `README.md:76` („never exposed to the client”) dostaje zdanie zgodne z punktem 1;
-- `infrastructure.md:127,160-162` (opis kluczy i Realtime „prosto z przeglądarki”) mówi: przeglądarka subskrybuje publiczny kanał kluczem publishable, a stan pochodzi z serwera;
+- `infrastructure.md:17` („Runda na żywo idzie przez Supabase Realtime prosto z przeglądarki”) mówi: przeglądarka subskrybuje publiczny kanał kluczem publishable, a stan pochodzi z serwera;
+- `infrastructure.md:127`, `:160-162` i `:191` są zgodne z nową regułą (odczyt przez `astro:env/server`, klucz publishable) i zostają bez zmian;
 - zapis wyniku F-01 dochodzi w fazie 5.
 
 #### 3. Reguły ask
@@ -143,6 +148,7 @@ Doprecyzowanie reguły o kluczu, reguły ask, globale lintu i dolna granica wers
 **Contract**: W `permissions.ask` dochodzą:
 - `Bash(npm run live-probe*)`;
 - `Bash(node scripts/live-sync-probe*)`;
+- `Bash(node ./scripts/live-sync-probe*)`;
 - `Bash(npx supabase migration up*)`;
 - `Bash(npx supabase migration down*)`;
 - `Bash(npx supabase migration repair*)`.
@@ -161,10 +167,10 @@ Plik pozostaje poprawnym JSON-em.
 
 **File**: `package.json`, `package-lock.json`
 
-**Intent**: `httpSend` wymaga supabase-js ≥ 2.107.0, a zakres `^2.99.1` na to pozwala, ale tego nie gwarantuje.
+**Intent**: `httpSend` wymaga supabase-js ≥ 2.107.0, a zakres `^2.99.1` na to pozwala, ale tego nie gwarantuje. `@supabase/ssr` 0.12.7 i tak wymaga już `^2.114.0` (`package-lock.json:3034-3036`), więc dolna granica idzie do tej wartości.
 
 **Contract**:
-- `dependencies["@supabase/supabase-js"]` = `^2.107.0`;
+- `dependencies["@supabase/supabase-js"]` = `^2.114.0`;
 - `npm install` synchronizuje lock, a rozwiązana wersja zostaje 2.116.0 (bez podbijania innych paczek).
 
 ### Success Criteria:
@@ -172,7 +178,7 @@ Plik pozostaje poprawnym JSON-em.
 #### Automated Verification:
 
 - Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- `.claude/settings.json` parsuje się jako JSON i zawiera 5 nowych wpisów ask
+- `.claude/settings.json` parsuje się jako JSON i zawiera 6 nowych wpisów ask
 - W zmianach lockfile zmienia się tylko zakres `@supabase/supabase-js` w pakiecie głównym; zainstalowana wersja to 2.116.0
 
 #### Manual Verification:
@@ -190,6 +196,16 @@ Plik pozostaje poprawnym JSON-em.
 Moduły `live-sync` (wspólny i serwerowy) oraz trzy endpointy JSON: konfiguracja, dzwonek i tablica.
 
 ### Changes Required:
+
+#### 0. Publiczna konfiguracja z serwera
+
+**File**: `src/lib/supabase.ts`
+
+**Intent**: Jedno miejsce, które wydaje URL i klucz publishable do przekazania przeglądarce. Nowa reguła z AGENTS.md wskazuje ten plik. Powstaje w tej fazie, bo korzysta z niego endpoint konfiguracji (#3), a w fazie 3 strona demo.
+
+**Contract**:
+- `getPublicSupabaseConfig(): { supabaseUrl: string; supabaseKey: string } | null`, czytane z `astro:env/server`;
+- zwraca `null`, gdy brak którejś wartości albo gdy klucz nie zaczyna się od `sb_publishable_`. Strażnik mechanicznie pilnuje reguły z fazy 1: pomyłka w konfiguracji (np. klucz secret w `SUPABASE_KEY`) daje komunikat i 503, a nie klucz pod publicznym adresem.
 
 #### 1. Moduł wspólny
 
@@ -211,8 +227,9 @@ Moduły `live-sync` (wspólny i serwerowy) oraz trzy endpointy JSON: konfiguracj
 **Intent**: Nadawanie dzwonka przez REST (`httpSend`) i wyznaczanie stanu tablicy bez przechowywania. Stan jest deterministyczną funkcją `(room, seq)`, bo w małym zakresie nie ma tabel.
 
 **Contract**:
-- `ringRoom(supabase, room, seq)` wysyła na `topicFor(room)` zdarzenie `bell` z payloadem dokładnie `{ seq }`, po czym usuwa kanał z klienta. Zwraca sukces albo błąd ze statusem.
-- `stateFor(room, seq): LiveSyncState` wybiera pytanie spośród wpisów `QUESTIONS` z `adult: false` indeksem `seq` modulo ich liczba. Zwraca tekst w formie „Kto z nas najprawdopodobniej {text}?” (`src/data/questions.ts:14-16`).
+- `ringRoom(supabase, room, seq)` wysyła przez `httpSend` na `topicFor(room)` zdarzenie `bell` z payloadem dokładnie `{ seq }` i opcją `timeout: 5000` (limit „max 5 s” z kryterium F-01; domyślne 10 s zawiesiłoby żądanie hosta). Po wysłaniu usuwa kanał z klienta.
+- Zwraca `{ ok: true }` albo `{ ok: false }`. `httpSend` rozwiązuje się sukcesem tylko przy 202, a każdy inny wynik i timeout rzuca zwykły `Error` bez statusu (`RealtimeChannel.ts:982-1002`), więc `ringRoom` łapie wyjątek i nie udaje statusu, którego nie ma.
+- `stateFor(room, seq): LiveSyncState` wybiera pytanie spośród wpisów `QUESTIONS` z `adult: false` indeksem `seq` modulo ich liczba. Zwraca tekst w formie „Kto z nas najprawdopodobniej {text}?” (`src/data/questions.ts:14-16`). To skrót tylko na prototyp: komentarz w kodzie odsyła do „Dzwonek jest niezaufaną podpowiedzią” w Critical Implementation Details.
 - To jedyne miejsce importu bazy pytań w tej zmianie.
 
 #### 3. Konfiguracja dla sondy
@@ -222,8 +239,8 @@ Moduły `live-sync` (wspólny i serwerowy) oraz trzy endpointy JSON: konfiguracj
 **Intent**: Sonda bierze URL i klucz publishable z aplikacji tak jak przeglądarka, bez czytania `.dev.vars`.
 
 **Contract**:
-- `GET` → `200 { supabaseUrl, supabaseKey }` z `astro:env/server`;
-- `503` z komunikatem, gdy brak konfiguracji;
+- `GET` → `200 { supabaseUrl, supabaseKey }` z `getPublicSupabaseConfig()` (#0);
+- `503` z komunikatem, gdy zwraca `null`;
 - nagłówek `Cache-Control: no-store`.
 
 #### 4. Dzwonek
@@ -270,28 +287,21 @@ Strona `/dev/live-sync` z wyspą React, która słucha kanału pokoju, pokazuje 
 
 ### Changes Required:
 
-#### 1. Publiczna konfiguracja z serwera
-
-**File**: `src/lib/supabase.ts`
-
-**Intent**: Jedno miejsce, które wydaje URL i klucz publishable do przekazania przeglądarce. Nowa reguła z AGENTS.md wskazuje ten plik.
-
-**Contract**: `getPublicSupabaseConfig(): { supabaseUrl: string; supabaseKey: string } | null`, czytane z `astro:env/server`. Endpoint konfiguracji z fazy 2 też z niego korzysta.
-
-#### 2. Strona
+#### 1. Strona
 
 **File**: `src/pages/dev/live-sync.astro`
 
 **Intent**: Strona testowa dostępna dla gości (bez ochrony w middleware). Dane idą do wyspy przez props, jak w `signin.astro:5,14`.
 
 **Contract**:
+- konfiguracja z `getPublicSupabaseConfig()` (faza 2, #0);
 - `?room=` walidowane przez `isValidRoomId`, domyślnie `demo`;
 - props wyspy: `{ supabaseUrl, supabaseKey, room, canRing: Boolean(Astro.locals.user) }`;
 - `client:load`;
 - `Layout` z tytułem „Test dzwonka”;
 - komunikat, gdy brak konfiguracji.
 
-#### 3. Wyspa
+#### 2. Wyspa
 
 **File**: `src/components/live-sync/LiveSyncDemo.tsx`
 
@@ -304,7 +314,7 @@ Strona `/dev/live-sync` z wyspą React, która słucha kanału pokoju, pokazuje 
 - po `bell` pobiera `/api/live-sync/state` i pokazuje numer dzwonka, pytanie (zwykły tekst) i czas pobrania tablicy w ms;
 - przy `canRing` ma przycisk „Zadzwoń”, który wysyła `POST /api/live-sync/ring` z `seq = Date.now()`;
 - sprząta kanał przy odmontowaniu;
-- importuje tylko `live-sync/shared` i `components/ui/button`.
+- z kodu projektu importuje tylko `live-sync/shared` i `components/ui/button` (z paczek: React i `@supabase/supabase-js`).
 
 ### Success Criteria:
 
@@ -345,11 +355,12 @@ Skrypt `scripts/live-sync-probe.mjs` symuluje graczy osobnymi połączeniami, dz
   - subskrypcje rozkłada w czasie, maksymalnie 20 na sekundę, bo darmowy plan ma limit 100 dołączeń do kanału na sekundę („Channel joins per second”, https://supabase.com/docs/guides/realtime/limits);
   - czeka na `SUBSCRIBED` wszystkich (limit 15 s);
   - w każdej próbie dla każdego pokoju bierze `t0` przed `POST /api/live-sync/ring`, a każdy klient po `bell` z tym `seq` pobiera tablicę;
+  - ciasteczka sesji idą tylko z logowaniem (z nagłówkiem `Origin`, jak `scripts/smoke.mjs:29`) i z dzwonkiem; klienci-gracze pobierają tablicę bez ciasteczek, jak goście. Inaczej middleware przy każdym z 20 żądań pytałby Supabase Auth o użytkownika, czego prawdziwi goście nie robią, i pomiar tablicy wyszedłby zawyżony;
   - zapisuje czas dzwonka i czas łączny;
   - brak dostarczenia w 5 s liczy jako zgubiony;
   - każdy status inny niż `SUBSCRIBED` po starcie liczy jako rozłączenie.
 - **Wynik:** p50, p95 i max czasu dzwonka i czasu łącznego, liczba zgubionych i rozłączeń.
-- **Werdykt:** PASS/FAIL według kryterium F-01 tylko przy `--rooms 1`; przy `--rooms > 1` wypisuje „INFO” i kończy się kodem 0, chyba że wystąpił błąd techniczny.
+- **Werdykt i kod wyjścia:** przy `--rooms 1` PASS (kod 0) albo FAIL kryterium F-01 (kod 1); przy `--rooms > 1` „INFO” (kod 0). Błąd techniczny, czyli sonda nie zdołała zmierzyć (logowanie, config, subskrypcje nie doszły do `SUBSCRIBED` w 15 s, wyjątek), daje kod 2 w każdym trybie. FAIL to uczciwy wynik spike'a, a nie błąd do naprawienia: progi, limity czasu i sposób liczenia są ustalone w tym planie i nie zmieniają się pod wynik.
 - **Porządki:** na koniec zamyka kanały i wylogowuje. Nie wypisuje klucza.
 
 #### 2. Polecenie npm
@@ -376,7 +387,7 @@ Skrypt `scripts/live-sync-probe.mjs` symuluje graczy osobnymi połączeniami, dz
 #### Automated Verification:
 
 - `npm run lint` przechodzi
-- Na `npm run dev`: `npm run live-probe` kończy się kodem 0 (kryterium F-01 spełnione lokalnie)
+- Na `npm run dev`: `npm run live-probe` kończy się kodem 0 albo 1 (nie 2), a werdykt PASS/FAIL jest zapisany w `measurements.md`
 - Na `npm run dev`: `npm run live-probe -- --rooms 5` kończy przebieg informacyjny bez błędu technicznego
 - `measurements.md` ma wiersze obu lokalnych przebiegów
 
@@ -384,7 +395,7 @@ Skrypt `scripts/live-sync-probe.mjs` symuluje graczy osobnymi połączeniami, dz
 
 - Claude Code poprosił Karola o zgodę przed pierwszym uruchomieniem sondy (reguła ask działa)
 
-**Implementation Note**: Po automatycznej weryfikacji pauza na potwierdzenie Karola. Potem `/10x-impl-review live-sync-spike` i triage, zanim ruszy faza 5.
+**Implementation Note**: Po automatycznej weryfikacji pauza na potwierdzenie Karola. Przy FAIL (kod 1) agent zapisuje wynik z rozbiciem na dzwonek i tablicę i czeka na decyzję Karola (diagnoza, ponowny pomiar albo plan awaryjny); nie zmienia kodu ani sondy pod wynik. Potem `/10x-impl-review live-sync-spike` i triage, zanim ruszy faza 5.
 
 ---
 
@@ -430,6 +441,7 @@ Przy `CHANNEL_ERROR` Karol sprawdza w panelu przełącznik „Allow public acces
 - **`external-research.md`:** w sekcji „Rekomendacja i decyzja” wynik pomiaru.
 - **`roadmap.md`, F-01 Outcome:**
   - kanał niesie tylko sygnał „coś się zmieniło”;
+  - dzwonek może nadać każdy, więc stan pochodzi wyłącznie z bazy, nigdy z treści dzwonka;
   - w trakcie rundy tylko „kto już zagłosował”, liczby dopiero przy odsłonie;
   - kryterium 95% w 2 s, max 5 s.
 - **`infrastructure.md`:** zapis „runda na żywo: publiczny kanał-dzwonek + stan z serwera, sprawdzone w F-01” z linkiem do `measurements.md`.
@@ -441,7 +453,7 @@ Przy wyniku negatywnym werdykt opisuje, co nie przeszło. Przejście na plan awa
 #### Automated Verification:
 
 - Smoke na produkcji przechodzi 8/8
-- `npm run live-probe -- --base-url https://most-likely-to.charlesonthewave.workers.dev` kończy się kodem 0
+- `npm run live-probe -- --base-url https://most-likely-to.charlesonthewave.workers.dev` kończy się kodem 0 albo 1 (nie 2), a werdykt PASS/FAIL jest zapisany w `measurements.md`
 - Przebieg produkcyjny `--rooms 5` zapisany w `measurements.md`
 
 #### Manual Verification:
@@ -501,7 +513,7 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 #### Automated
 
 - [ ] 1.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [ ] 1.2 `.claude/settings.json` parsuje się jako JSON i zawiera 5 nowych wpisów ask
+- [ ] 1.2 `.claude/settings.json` parsuje się jako JSON i zawiera 6 nowych wpisów ask
 - [ ] 1.3 W zmianach lockfile zmienia się tylko zakres `@supabase/supabase-js` w pakiecie głównym; zainstalowana wersja to 2.116.0
 
 #### Manual
@@ -533,7 +545,7 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 #### Automated
 
 - [ ] 4.1 `npm run lint` przechodzi
-- [ ] 4.2 Na `npm run dev`: `npm run live-probe` kończy się kodem 0
+- [ ] 4.2 Na `npm run dev`: `npm run live-probe` kończy się kodem 0 albo 1, werdykt zapisany
 - [ ] 4.3 Na `npm run dev`: `npm run live-probe -- --rooms 5` kończy przebieg informacyjny bez błędu technicznego
 - [ ] 4.4 `measurements.md` ma wiersze obu lokalnych przebiegów
 
@@ -546,7 +558,7 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 #### Automated
 
 - [ ] 5.1 Smoke na produkcji przechodzi 8/8
-- [ ] 5.2 `npm run live-probe -- --base-url https://most-likely-to.charlesonthewave.workers.dev` kończy się kodem 0
+- [ ] 5.2 `npm run live-probe -- --base-url https://most-likely-to.charlesonthewave.workers.dev` kończy się kodem 0 albo 1, werdykt zapisany
 - [ ] 5.3 Przebieg produkcyjny `--rooms 5` zapisany w `measurements.md`
 
 #### Manual

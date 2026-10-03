@@ -1,9 +1,9 @@
 ---
 change_id: live-sync-spike
 title: Live sync spike
-status: planned
+status: plan_reviewed
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-10-03
 archived_at: null
 ---
 
