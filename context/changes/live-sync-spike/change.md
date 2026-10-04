@@ -1,7 +1,7 @@
 ---
 change_id: live-sync-spike
 title: Live sync spike
-status: impl_reviewed
+status: implemented
 created: 2026-09-27
 updated: 2026-10-04
 archived_at: null
