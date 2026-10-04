@@ -56,6 +56,7 @@ npm run dev
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
 - `npm run smoke` - Smoke test the auth flow against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
+- `npm run live-probe` - Measure live-sync delivery with simulated players (`--base-url`, defaults to `http://localhost:4321`); creates a `probe-…` account in Supabase, so it asks first
 
 ## Project Structure
 
