@@ -73,7 +73,7 @@ npm run dev
 
 ## Supabase Configuration
 
-This project uses [Supabase](https://supabase.com/) for authentication. Environment variables are declared via Astro's `astro:env` schema and are treated as **server-only secrets** — they are never exposed to the client.
+This project uses [Supabase](https://supabase.com/) for authentication. Environment variables are declared via Astro's `astro:env` schema and read only on the server (`astro:env/server`). `SUPABASE_KEY` must be the **publishable** key (`sb_publishable_…`): the server may pass it and `SUPABASE_URL` to the browser at runtime, only for Realtime subscriptions. Never use a secret or `service_role` key here.
 
 ### First-time setup (local, no cloud project needed)
 
@@ -101,7 +101,7 @@ npx supabase start
 
 ```
 SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_KEY=<anon key from CLI output>
+SUPABASE_KEY=<publishable key from CLI output>
 ```
 
 5. To stop the stack when done:
@@ -118,14 +118,14 @@ No database tables or migrations are required — this project uses Supabase Aut
 
 If you prefer to use a hosted Supabase project, add these variables to your `.env` and `.dev.vars` files:
 
-| Variable       | Description                                                |
-| -------------- | ---------------------------------------------------------- |
-| `SUPABASE_URL` | Project URL from Supabase dashboard → Settings → API       |
-| `SUPABASE_KEY` | `anon` public key from Supabase dashboard → Settings → API |
+| Variable       | Description                                                                        |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `SUPABASE_URL` | Project URL from Supabase dashboard → Settings → API                               |
+| `SUPABASE_KEY` | Publishable key (`sb_publishable_…`) from Supabase dashboard → Settings → API Keys |
 
 ```
 SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_KEY=<anon-key>
+SUPABASE_KEY=<publishable-key>
 ```
 
 ### Email confirmation in local development
