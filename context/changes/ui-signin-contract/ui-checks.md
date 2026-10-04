@@ -1,6 +1,6 @@
 # Sprawdzenia UI (fazy 4–5)
 
-> Stan na 2026-10-04: fazy 4 i 5 zakończone. Dalej `/10x-impl-review ui-signin-contract`.
+> Stan na 2026-10-04: fazy 1–5 zakończone, przegląd implementacji APPROVED (`reviews/impl-review.md`), wdrożone na produkcję (sekcja „Produkcja”).
 
 ## Macierz stanów
 
@@ -102,3 +102,12 @@ Test zepsucia: `bg-purple-600` dopisane do `SubmitButton.tsx` daje `npm run lint
 - Skan obejmuje cały katalog `src/components/auth/` (plan: `src/components/auth/*.tsx`), więc łapie też `SignInCard.astro` i `useSubmitPending.ts`. Lista plików jest w jednym miejscu w skrypcie, a reguła w `AGENTS.md` mówi, że kolejny widok przeniesiony na tokeny dopisuje się do tej listy.
 - Reguła `## UI` ma dwa zdania ponad szkic z planu: przykłady klas ról (`bg-primary`, `text-muted-foreground`, `border-input`) i dopisywanie nowych widoków do listy skanu. Treść zatwierdził Karol.
 - `SignInCard.astro`: `focus-visible:ring-[3px]` na `ring-3`, bo skan łapie wartości arbitralne.
+
+## Produkcja (po push, 2026-10-04)
+
+Push `fa73ca1..337df5c` na `main`; Workers Builds wdrożył nową wersję po ok. 50 s, CI (`37224175111`) przeszło.
+
+- `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke`: 8/8 (założyło jedno konto `smoke-…`); zły login daje `?error=invalid_credentials`.
+- `/dev/ui-kitchen-sink`: 404 z pustą treścią.
+- `/auth/signin` i `/auth/signup` z `?error=Twoje konto zostało zablokowane`: komunikat ogólny, obcego tekstu w HTML brak; `?error=invalid_credentials`: „Nieprawidłowy e-mail lub hasło.”; HTML zaczyna się od `<html lang="pl" class="dark">`.
+- `POST` z JSON-em na `/api/auth/signin` (F1 z przeglądu): `302 /auth/signin?error=missing_fields`.
