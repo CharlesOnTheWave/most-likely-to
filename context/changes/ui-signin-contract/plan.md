@@ -558,12 +558,12 @@ Brak danych do migracji. Klasa `dark` na `<html>` zmienia tokeny na wszystkich s
 
 #### Automated
 
-- [x] 5.1 `npm run lint` uruchamia `scripts/ui-literals.mjs` i przechodzi; celowo dodany literał (`bg-purple-600`) w pliku widoku sprawia, że `npm run lint` zawodzi (sprawdzone i cofnięte)
-- [x] 5.2 `AGENTS.md` zawiera sekcję `## UI` z tokenami, komponentami, zakazem literałów i stroną ze stanami
-- [ ] 5.3 `ui-checks.md` zawiera wynik skanu przed (14: 13 na ekranie logowania + 1 w `SignUpForm.tsx`) i po (0)
-- [ ] 5.4 `npm run lint`, `npx astro check` i `npm run build` przechodzą
+- [x] 5.1 `npm run lint` uruchamia `scripts/ui-literals.mjs` i przechodzi; celowo dodany literał (`bg-purple-600`) w pliku widoku sprawia, że `npm run lint` zawodzi (sprawdzone i cofnięte) — 9e713f7
+- [x] 5.2 `AGENTS.md` zawiera sekcję `## UI` z tokenami, komponentami, zakazem literałów i stroną ze stanami — 9e713f7
+- [x] 5.3 `ui-checks.md` zawiera wynik skanu przed (14: 13 na ekranie logowania + 1 w `SignUpForm.tsx`) i po (0)
+- [x] 5.4 `npm run lint`, `npx astro check` i `npm run build` przechodzą
 
 #### Manual
 
-- [x] 5.5 Karol zatwierdził treść sekcji `## UI` w `AGENTS.md`
-- [ ] 5.6 Świeża sesja `claude -p` przy drobnej zmianie w logowaniu użyła tokenów i klocków, a skan jej zmiany daje 0 (wynik w `ui-checks.md`, worktree usunięty)
+- [x] 5.5 Karol zatwierdził treść sekcji `## UI` w `AGENTS.md` — 9e713f7
+- [x] 5.6 Świeża sesja `claude -p` przy drobnej zmianie w logowaniu użyła tokenów i klocków, a skan jej zmiany daje 0 (wynik w `ui-checks.md`, worktree usunięty)

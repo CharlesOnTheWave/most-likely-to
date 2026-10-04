@@ -1,6 +1,6 @@
 # Sprawdzenia UI (fazy 4–5)
 
-> Stan na 2026-10-04: faza 4 zakończona (bramki automatyczne i ręczne zielone). Dalej faza 5.
+> Stan na 2026-10-04: fazy 4 i 5 zakończone. Dalej `/10x-impl-review ui-signin-contract`.
 
 ## Macierz stanów
 
@@ -63,6 +63,29 @@ Na serwerze deweloperskim, w przeglądarce Karola, wpisywał sam. Wynik: „wszy
 - 4.9 Link z obcym `?error=` na logowaniu i rejestracji pokazuje komunikat ogólny. OK.
 - 4.10 Złe hasło: „Logowanie…” i zablokowany przycisk, po „Wstecz” przycisk znów aktywny. OK. Uwaga Karola: logowanie trwało 2–3 s. Pomiar: serwer obsłużył tę próbę w ok. 0,3 s (`POST /api/auth/signin` 190 ms + strona z błędem 105 ms w logu serwera), a czysty Chrome bez rozszerzeń ładuje stronę po błędzie w 0,3–0,4 s nawet w trybie deweloperskim (53 skrypty). Reszta czasu jest po stronie przeglądarki Karola; najbardziej prawdopodobny jest menedżer haseł, który przechwytuje wysyłanie formularza logowania (nie sprawdzone). Stan ładowania zrobił to, do czego służy: pokazał, że coś się dzieje.
 
+## Skan literałów (faza 5)
+
+Wzorzec z sekcji „Skanowanie zakodowanych na stałe wartości” skilla `/10x-ui`, teraz jako `scripts/ui-literals.mjs` w `npm run lint` (więc i w CI).
+
+Pliki skanu: `src/pages/auth/signin.astro`, `src/pages/dev/ui-kitchen-sink.astro` i wszystkie pliki w `src/components/auth/` (`FormField.tsx`, `PasswordToggle.tsx`, `ServerError.tsx`, `SignInCard.astro`, `SignInForm.tsx`, `SignUpForm.tsx`, `SubmitButton.tsx`, `useSubmitPending.ts`): razem 10.
+
+| Kiedy | Wynik |
+|---|---|
+| Przed zmianą (2026-10-04, przed-audyt) | 14: 13 na ekranie logowania (`signin.astro` 4, `FormField.tsx` 5, `SubmitButton.tsx` 2, `ServerError.tsx` 1, `PasswordToggle.tsx` 1, według `change.md`) + 1 w podpowiedzi hasła `SignUpForm.tsx` |
+| Po fazie 2 | 0 |
+| Na starcie fazy 5 | 1: `SignInCard.astro` `focus-visible:ring-[3px]` (dodane przy poprawce R2 po krytyce zrzutów); zamienione na `ring-3` (ta sama szerokość 3 px, sprawdzone w wygenerowanym CSS) |
+| Po fazie 5 | 0 (`ui-literals: 0 literals in 10 view files`) |
+
+Test zepsucia: `bg-purple-600` dopisane do `SubmitButton.tsx` daje `npm run lint` z kodem 1 i trafieniem `src/components/auth/SubmitButton.tsx:14`; plik przywrócony z `git checkout`.
+
+## Sprawdzian świeżą sesją (faza 5)
+
+- **Kiedy i gdzie:** po commicie `9e713f7` (reguła `## UI` i skan), w tymczasowym worktree z tego commita, bez `node_modules`. Worktree usunięty, zmiana agenta nie trafiła do repo.
+- **Polecenie:** `claude -p "Na ekranie logowania (/auth/signin) pod przyciskiem „Zaloguj się” dodaj małą, szarą notkę: „Nie pamiętasz hasła? Napisz do nas na Discordzie.” Zmień tylko to i nic nie uruchamiaj." --permission-mode acceptEdits --disallowedTools "Bash" --max-turns 25`. Słowo „szarą” celowo kusi literałem typu `text-gray-500`; polecenie nie wspomina o tokenach ani regułach.
+- **Wynik:** jedna zmiana w `SignInForm.tsx`: `<FieldDescription className="text-center">` z `src/components/ui/field.tsx` pod przyciskiem. Kolor z tokenu (`text-muted-foreground` w klocku), bez literału. Sesja sama napisała, że trzyma się zasad UI z `AGENTS.md`, i że świadomie pominęła pełny łańcuch `/10x-ui` przy jednym zdaniu.
+- **Skan jej zmiany:** 0 (`node scripts/ui-literals.mjs` w worktree oraz wzorzec na zmienionym pliku).
+- **Koszt:** 8 tur, 27 s, 0,27 USD (`claude-opus-5-5[1m]`).
+
 ## Odstępstwa od planu (faza 4, do opisu w commicie)
 
 - `src/components/auth/SignInCard.astro` (nowy): obudowa karty logowania wspólna dla `/auth/signin` i strony ze stanami, żeby strona ze stanami nie kopiowała klas karty. Tytuł jako `h2` na stronie ze stanami (tam `h1` ma sama strona).
@@ -73,3 +96,9 @@ Na serwerze deweloperskim, w przeglądarce Karola, wpisywał sam. Wynik: „wszy
 - `console.error` w API z `// eslint-disable-next-line no-console`, jak w `src/lib/live-sync/server.ts`.
 - Po krytyce zrzutów (wyżej): zmiany w klockach `alert.tsx` (R1) i `global.css` (R3, K1), `FieldGroup` w obu formularzach (R6, dotyka też rejestracji), nowy opis karty (R7; plan w fazie 2 podawał „Zaloguj się, żeby poprowadzić grę.”).
 - **Na fazę 5:** skan literałów musi objąć też `src/components/auth/SignInCard.astro` (plan wymienia `src/components/auth/*.tsx`), bo tam jest teraz karta logowania.
+
+## Odstępstwa od planu (faza 5)
+
+- Skan obejmuje cały katalog `src/components/auth/` (plan: `src/components/auth/*.tsx`), więc łapie też `SignInCard.astro` i `useSubmitPending.ts`. Lista plików jest w jednym miejscu w skrypcie, a reguła w `AGENTS.md` mówi, że kolejny widok przeniesiony na tokeny dopisuje się do tej listy.
+- Reguła `## UI` ma dwa zdania ponad szkic z planu: przykłady klas ról (`bg-primary`, `text-muted-foreground`, `border-input`) i dopisywanie nowych widoków do listy skanu. Treść zatwierdził Karol.
+- `SignInCard.astro`: `focus-visible:ring-[3px]` na `ring-3`, bo skan łapie wartości arbitralne.
