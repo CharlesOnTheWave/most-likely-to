@@ -1,7 +1,7 @@
 ---
 change_id: ui-signin-contract
 title: Ui signin contract
-status: implemented
+status: impl_reviewed
 created: 2026-10-04
 updated: 2026-10-04
 archived_at: null
@@ -19,3 +19,4 @@ Zmiana wizualna prowadzona przez `/10x-ui` (M2L5). Cel: kontrakt UI (tokeny i ko
 - **Przed-audyt 2026-10-04 (skan literałów z `/10x-ui`):** 13 trafień w plikach widoku (`signin.astro` 4, `FormField.tsx` 5, `SubmitButton.tsx` 2, `ServerError.tsx` 1, `PasswordToggle.tsx` 1), do tego tło `bg-cosmic`. `Layout.astro` 0. `Banner.astro` 9 (hex w `<style>`; baner pokazuje się tylko przy brakującej konfiguracji, poza zakresem). Liczba ma spadać po każdej fazie wizualnej.
 - **Pomysł Karola na później (2026-10-04):** nazwa gry „Most Likely To” na ekranie logowania, jak u innych gier przeglądarkowych. Decyzja: nie w tej zmianie; napis przyjdzie razem z prawdziwym logo (grafika, czcionka, ikonka karty) jako osobna zmiana UI po S-01/S-02, jako wspólny element wszystkich ekranów.
 - **Na S-05 (z krytyki zrzutów, R8 w `ui-checks.md`):** rejestracja jest hybrydą: polski komunikat błędu z mapy `auth-errors.ts` w angielskim formularzu z angielskimi błędami pól, a nieprzezroczysty `Alert` tworzy ciemną łatę na półprzezroczystej karcie `bg-cosmic`. Przy S-05 spolszczyć `SignUpForm.tsx` i przenieść obudowę `signup.astro` na `Card` (jak `SignInCard.astro`).
+- **Na S-05 (z przeglądu implementacji, F3 i F6 w `reviews/impl-review.md`):** rejestracja przy błędzie ma przenosić fokus na pierwsze błędne pole, jak logowanie. Czytnik ekranu ma usłyszeć błąd serwera po przeładowaniu (dziś `Alert` z `role="alert"` jest w HTML od razu i większość czytników go nie ogłasza; np. `aria-describedby` pola e-mail na komunikat albo fokus na nim), a błąd pola tylko raz (dziś `role="alert"` w `FieldError` i fokus na polu, które go wskazuje). Dotyczy formularza, który zostanie po S-05.
