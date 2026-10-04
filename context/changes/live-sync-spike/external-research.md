@@ -187,6 +187,13 @@ Dwóch niezależnych agentów, bez dostępu do mojego toku rozumowania: jeden at
 - wyrzucenie gracza (S-09) albo powrót po odświeżeniu (S-04) będą wymagały czegoś, czego „dzwonek” nie daje;
 - Supabase zmieni limity darmowego planu Realtime albo zasady klucza publishable.
 
+**Wynik pomiaru (2026-10-04):** B przeszło kryterium F-01 na produkcji:
+- 200 z 200 dostarczeń w 2 s, najwolniejsze 247 ms;
+- 100 graczy w 5 pokojach też w 2 s;
+- telefon przetrwał zgaszony ekran.
+
+Sonda nie zobaczyła rozłączeń; logów Realtime w panelu Supabase nie sprawdzaliśmy. Pierwszy powód do powrotu do tematu się więc nie spełnił, a pozostałe trzy obowiązują dalej. Plan awaryjny C nie jest potrzebny. Szczegóły: `measurements.md`.
+
 ## Pytania do researchu wewnętrznego (`/10x-research`)
 
 1. Jak dziś zbudowany jest Worker (`wrangler.jsonc`, wejście adaptera, `astro.config.mjs`) i co trzeba zmienić, żeby wyeksportować klasę Durable Object obok handlera Astro?
