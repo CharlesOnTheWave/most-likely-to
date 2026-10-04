@@ -501,27 +501,27 @@ Brak danych do migracji. Klasa `dark` na `<html>` zmienia tokeny na wszystkich s
 
 #### Automated
 
-- [x] 1.1 `--dry-run` i `git diff --quiet -- src/components/ui/button.tsx src/styles/global.css` po dodaniu potwierdzają, że `button.tsx` i `global.css` są nietknięte
-- [x] 1.2 W `src/components/ui/` istnieją `field.tsx`, `input.tsx`, `input-group.tsx`, `label.tsx`, `card.tsx`, `alert.tsx`, `spinner.tsx`, `separator.tsx`, `textarea.tsx`, a `"use client"` nie występuje w `src/` (grep)
-- [x] 1.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą
-- [x] 1.4 HTML `/auth/signin` z serwera deweloperskiego zaczyna się od `<html lang="pl" class="dark">` (sprawdzone `node` + `fetch`)
+- [x] 1.1 `--dry-run` i `git diff --quiet -- src/components/ui/button.tsx src/styles/global.css` po dodaniu potwierdzają, że `button.tsx` i `global.css` są nietknięte — bb90b7f
+- [x] 1.2 W `src/components/ui/` istnieją `field.tsx`, `input.tsx`, `input-group.tsx`, `label.tsx`, `card.tsx`, `alert.tsx`, `spinner.tsx`, `separator.tsx`, `textarea.tsx`, a `"use client"` nie występuje w `src/` (grep) — bb90b7f
+- [x] 1.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą — bb90b7f
+- [x] 1.4 HTML `/auth/signin` z serwera deweloperskiego zaczyna się od `<html lang="pl" class="dark">` (sprawdzone `node` + `fetch`) — bb90b7f
 
 #### Manual
 
-- [x] 1.5 Zrzuty `/`, `/auth/signin`, `/auth/signup`, `/auth/confirm-email` i `/dev/live-sync`, zrobione przed zmianą `Layout.astro` i po niej, wyglądają tak samo (tło i napisy czytelne); jedyna oczekiwana różnica to jasny przycisk „Zadzwoń” na `/dev/live-sync`
+- [x] 1.5 Zrzuty `/`, `/auth/signin`, `/auth/signup`, `/auth/confirm-email` i `/dev/live-sync`, zrobione przed zmianą `Layout.astro` i po niej, wyglądają tak samo (tło i napisy czytelne); jedyna oczekiwana różnica to jasny przycisk „Zadzwoń” na `/dev/live-sync` — bb90b7f
 
 ### Phase 2: Logowanie na tokenach i klockach
 
 #### Automated
 
-- [ ] 2.1 Skan `/10x-ui` na `src/pages/auth/signin.astro` i `src/components/auth/*.tsx` daje 0 trafień (przed zmianą 14: 13 na ekranie logowania i 1 w podpowiedzi hasła `SignUpForm.tsx`)
-- [ ] 2.2 `signin.astro` nie zawiera `bg-cosmic`, a pliki widoku nie importują już własnego `input`/`p` z kolorami (grep)
-- [ ] 2.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą
+- [x] 2.1 Skan `/10x-ui` na `src/pages/auth/signin.astro` i `src/components/auth/*.tsx` daje 0 trafień (przed zmianą 14: 13 na ekranie logowania i 1 w podpowiedzi hasła `SignUpForm.tsx`)
+- [x] 2.2 `signin.astro` nie zawiera `bg-cosmic`, a pliki widoku nie importują już własnego `input`/`p` z kolorami (grep)
+- [x] 2.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą
 
 #### Manual
 
-- [ ] 2.4 Zrzut logowania (komputer i 390 px): karta z tokenów, polskie napisy, wpisany tekst nie wchodzi pod ikonę oka
-- [ ] 2.5 Rejestracja renderuje nowe pola i da się wysłać formularz (zrzut), napisy angielskie zgodnie z decyzją
+- [x] 2.4 Zrzut logowania (komputer i 390 px): karta z tokenów, polskie napisy, wpisany tekst nie wchodzi pod ikonę oka
+- [x] 2.5 Rejestracja renderuje nowe pola i da się wysłać formularz (zrzut), napisy angielskie zgodnie z decyzją
 
 ### Phase 3: Paleta gry
 

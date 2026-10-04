@@ -1,23 +1,29 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import SignInForm from "@/components/auth/SignInForm";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const error = Astro.url.searchParams.get("error");
 ---
 
-<Layout title="Sign in">
-  <div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
-    <div class="w-full max-w-sm rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
-      <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-center text-2xl font-bold text-transparent">
-        Sign in
-      </h1>
-      <SignInForm serverError={error} client:load />
-      <p class="mt-4 text-center text-sm text-blue-100/60">
-        Don't have an account?{" "}
-        <a href="/auth/signup" class="text-purple-300 hover:underline">
-          Sign up
+<Layout title="Zaloguj się">
+  <main class="bg-background flex min-h-screen items-center justify-center p-4">
+    <Card className="w-full max-w-sm">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl">
+          <h1>Zaloguj się</h1>
+        </CardTitle>
+        <CardDescription>Zaloguj się, żeby poprowadzić grę.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <SignInForm serverError={error} client:load />
+      </CardContent>
+      <CardFooter className="text-muted-foreground justify-center gap-1 text-sm">
+        Nie masz konta?
+        <a href="/auth/signup" class="text-primary underline-offset-4 hover:underline">
+          Załóż je
         </a>
-      </p>
-    </div>
-  </div>
+      </CardFooter>
+    </Card>
+  </main>
 </Layout>
