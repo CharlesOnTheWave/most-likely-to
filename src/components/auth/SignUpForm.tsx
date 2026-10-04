@@ -54,13 +54,11 @@ export default function SignUpForm({ serverError }: Props) {
     }
   }
 
+  const missingChars = MIN_PASSWORD_LENGTH - password.length;
   const passwordHint =
-    !errors.password && password.length > 0 && password.length < MIN_PASSWORD_LENGTH ? (
-      <p className="mt-1 text-xs text-blue-100/50">
-        {MIN_PASSWORD_LENGTH - password.length} more character
-        {MIN_PASSWORD_LENGTH - password.length !== 1 ? "s" : ""} needed
-      </p>
-    ) : undefined;
+    !errors.password && password.length > 0 && missingChars > 0
+      ? `${missingChars} more character${missingChars !== 1 ? "s" : ""} needed`
+      : undefined;
 
   return (
     <form method="POST" action="/api/auth/signup" className="space-y-4" onSubmit={handleSubmit} noValidate>
