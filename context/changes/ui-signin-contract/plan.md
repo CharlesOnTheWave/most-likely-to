@@ -514,27 +514,27 @@ Brak danych do migracji. Klasa `dark` na `<html>` zmienia tokeny na wszystkich s
 
 #### Automated
 
-- [x] 2.1 Skan `/10x-ui` na `src/pages/auth/signin.astro` i `src/components/auth/*.tsx` daje 0 trafień (przed zmianą 14: 13 na ekranie logowania i 1 w podpowiedzi hasła `SignUpForm.tsx`)
-- [x] 2.2 `signin.astro` nie zawiera `bg-cosmic`, a pliki widoku nie importują już własnego `input`/`p` z kolorami (grep)
-- [x] 2.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą
+- [x] 2.1 Skan `/10x-ui` na `src/pages/auth/signin.astro` i `src/components/auth/*.tsx` daje 0 trafień (przed zmianą 14: 13 na ekranie logowania i 1 w podpowiedzi hasła `SignUpForm.tsx`) — 77c380f
+- [x] 2.2 `signin.astro` nie zawiera `bg-cosmic`, a pliki widoku nie importują już własnego `input`/`p` z kolorami (grep) — 77c380f
+- [x] 2.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą — 77c380f
 
 #### Manual
 
-- [x] 2.4 Zrzut logowania (komputer i 390 px): karta z tokenów, polskie napisy, wpisany tekst nie wchodzi pod ikonę oka
-- [x] 2.5 Rejestracja renderuje nowe pola i da się wysłać formularz (zrzut), napisy angielskie zgodnie z decyzją
+- [x] 2.4 Zrzut logowania (komputer i 390 px): karta z tokenów, polskie napisy, wpisany tekst nie wchodzi pod ikonę oka — 77c380f
+- [x] 2.5 Rejestracja renderuje nowe pola i da się wysłać formularz (zrzut), napisy angielskie zgodnie z decyzją — 77c380f
 
 ### Phase 3: Paleta gry
 
 #### Automated
 
-- [ ] 3.1 `theme.md` istnieje i zawiera źródło, surowe wartości i tabelę kontrastów; tekst ma co najmniej 4,5:1, a ramka fokusu (50%) na karcie co najmniej 3:1 (wyliczone jednorazowym skryptem)
-- [ ] 3.2 `global.css` ma linię ze źródłem palety; skan `/10x-ui` na plikach widoku nadal daje 0
-- [ ] 3.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą
+- [x] 3.1 `theme.md` istnieje i zawiera źródło, surowe wartości i tabelę kontrastów; tekst ma co najmniej 4,5:1, a ramka fokusu (50%) na karcie co najmniej 3:1 (wyliczone jednorazowym skryptem)
+- [x] 3.2 `global.css` ma linię ze źródłem palety; skan `/10x-ui` na plikach widoku nadal daje 0
+- [x] 3.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą
 
 #### Manual
 
-- [ ] 3.4 Karol wybrał jednego z 3 kandydatów na zrzutach logowania (wybór zapisany w `theme.md`)
-- [ ] 3.5 Zrzut logowania w wybranej palecie (komputer i 390 px) wygląda dobrze według Karola
+- [x] 3.4 Karol wybrał jednego z 3 kandydatów na zrzutach logowania (wybór zapisany w `theme.md`)
+- [x] 3.5 Zrzut logowania w wybranej palecie (komputer i 390 px) wygląda dobrze według Karola
 
 ### Phase 4: Stany i błędy
 
