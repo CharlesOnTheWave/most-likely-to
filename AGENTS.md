@@ -28,6 +28,13 @@ No unit or e2e framework yet. `npm run smoke` (@scripts/smoke.mjs) needs a runni
 - No Next.js directives such as `"use client"` in React components.
 - Create Supabase migrations with `npx supabase migration new <name>`; every new table gets RLS with per-operation policies.
 
+## UI
+
+- Tokens live in `src/styles/global.css` (`:root`, `.dark`, published in `@theme inline`); the app always runs dark (`class="dark"` on `<html>`). Use role classes (`bg-primary`, `text-muted-foreground`, `border-input`). A new colour is a new token, never a literal: no palette classes (`bg-purple-600`), hex/rgb/oklch or arbitrary values (`p-[13px]`) in views.
+- Components live in `src/components/ui` (shadcn). Check that directory before writing a component; add missing ones with `npx shadcn@latest add <name>`. Auth screens compose them in `src/components/auth`.
+- Sign-in states (default, hover, focus, disabled, error, empty, loading) are shown at `/dev/ui-kitchen-sink` (dev only).
+- `npm run lint` runs `scripts/ui-literals.mjs` on the views already on tokens; when a new view is moved onto tokens, add its files to the list in that script.
+
 ## Tooling Gotchas
 
 - Files use LF line endings (@.gitattributes, Prettier). Lint errors `Delete ␍` mean CRLF crept in: run `npm run lint:fix`.

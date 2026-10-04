@@ -540,30 +540,30 @@ Brak danych do migracji. Klasa `dark` na `<html>` zmienia tokeny na wszystkich s
 
 #### Automated
 
-- [x] 4.1 Jednorazowy skrypt `node` sprawdza `authErrorMessage`: każdy kod z tabeli daje swój komunikat, nieznany kod daje komunikat ogólny, `null` daje `null`
-- [x] 4.2 `POST` na `/api/auth/signin` z pustymi polami daje 302 na `/auth/signin?error=missing_fields`, a złe hasło daje `?error=invalid_credentials` (`node` + `fetch` na serwerze deweloperskim)
-- [x] 4.3 `useFormStatus` nie występuje w `src/` (grep)
-- [x] 4.4 `/dev/ui-kitchen-sink` daje 200 na serwerze deweloperskim i 404 w `npm run preview` (build produkcyjny)
-- [x] 4.5 `npm run lint`, `npx astro check` i `npm run build` przechodzą
-- [x] 4.6 `npm run smoke` na serwerze lokalnym przechodzi 8/8
+- [x] 4.1 Jednorazowy skrypt `node` sprawdza `authErrorMessage`: każdy kod z tabeli daje swój komunikat, nieznany kod daje komunikat ogólny, `null` daje `null` — 559c72f
+- [x] 4.2 `POST` na `/api/auth/signin` z pustymi polami daje 302 na `/auth/signin?error=missing_fields`, a złe hasło daje `?error=invalid_credentials` (`node` + `fetch` na serwerze deweloperskim) — 559c72f
+- [x] 4.3 `useFormStatus` nie występuje w `src/` (grep) — 559c72f
+- [x] 4.4 `/dev/ui-kitchen-sink` daje 200 na serwerze deweloperskim i 404 w `npm run preview` (build produkcyjny) — 559c72f
+- [x] 4.5 `npm run lint`, `npx astro check` i `npm run build` przechodzą — 559c72f
+- [x] 4.6 `npm run smoke` na serwerze lokalnym przechodzi 8/8 — 559c72f
 
 #### Manual
 
-- [x] 4.7 Strona ze stanami pokazuje każdy z 7 stanów albo „nie dotyczy” z powodem; zrzuty komputer i 390 px są w `screens/`, a każda uwaga z „Krytyki zrzutów” w `ui-checks.md` jest poprawiona albo odłożona z powodem
-- [x] 4.8 Tab przechodzi przez wszystkie kontrolki z widocznym fokusem, a hover zmienia przycisk, link i oko (zrzut fokusu)
-- [x] 4.9 Link z dowolnym `?error=` pokazuje komunikat ogólny zamiast tekstu z adresu (logowanie i rejestracja)
-- [x] 4.10 Po kliknięciu „Zaloguj się” przycisk pokazuje „Logowanie…” i jest zablokowany do przeładowania, a po „Wstecz” znów jest aktywny
+- [x] 4.7 Strona ze stanami pokazuje każdy z 7 stanów albo „nie dotyczy” z powodem; zrzuty komputer i 390 px są w `screens/`, a każda uwaga z „Krytyki zrzutów” w `ui-checks.md` jest poprawiona albo odłożona z powodem — 559c72f
+- [x] 4.8 Tab przechodzi przez wszystkie kontrolki z widocznym fokusem, a hover zmienia przycisk, link i oko (zrzut fokusu) — 559c72f
+- [x] 4.9 Link z dowolnym `?error=` pokazuje komunikat ogólny zamiast tekstu z adresu (logowanie i rejestracja) — 559c72f
+- [x] 4.10 Po kliknięciu „Zaloguj się” przycisk pokazuje „Logowanie…” i jest zablokowany do przeładowania, a po „Wstecz” znów jest aktywny — 559c72f
 
 ### Phase 5: Zabezpieczenie
 
 #### Automated
 
-- [ ] 5.1 `npm run lint` uruchamia `scripts/ui-literals.mjs` i przechodzi; celowo dodany literał (`bg-purple-600`) w pliku widoku sprawia, że `npm run lint` zawodzi (sprawdzone i cofnięte)
-- [ ] 5.2 `AGENTS.md` zawiera sekcję `## UI` z tokenami, komponentami, zakazem literałów i stroną ze stanami
+- [x] 5.1 `npm run lint` uruchamia `scripts/ui-literals.mjs` i przechodzi; celowo dodany literał (`bg-purple-600`) w pliku widoku sprawia, że `npm run lint` zawodzi (sprawdzone i cofnięte)
+- [x] 5.2 `AGENTS.md` zawiera sekcję `## UI` z tokenami, komponentami, zakazem literałów i stroną ze stanami
 - [ ] 5.3 `ui-checks.md` zawiera wynik skanu przed (14: 13 na ekranie logowania + 1 w `SignUpForm.tsx`) i po (0)
 - [ ] 5.4 `npm run lint`, `npx astro check` i `npm run build` przechodzą
 
 #### Manual
 
-- [ ] 5.5 Karol zatwierdził treść sekcji `## UI` w `AGENTS.md`
+- [x] 5.5 Karol zatwierdził treść sekcji `## UI` w `AGENTS.md`
 - [ ] 5.6 Świeża sesja `claude -p` przy drobnej zmianie w logowaniu użyła tokenów i klocków, a skan jej zmiany daje 0 (wynik w `ui-checks.md`, worktree usunięty)
