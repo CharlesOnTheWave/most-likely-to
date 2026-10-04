@@ -359,9 +359,10 @@ Skrypt `scripts/live-sync-probe.mjs` symuluje graczy osobnymi połączeniami, dz
   - zapisuje czas dzwonka i czas łączny;
   - brak dostarczenia w 5 s liczy jako zgubiony;
   - każdy status inny niż `SUBSCRIBED` po starcie liczy jako rozłączenie.
-- **Wynik:** p50, p95 i max czasu dzwonka i czasu łącznego, liczba zgubionych i rozłączeń.
+- **Wynik:** p50, p95 i max czasu dzwonka i czasu łącznego, liczba zgubionych i rozłączeń. Po `/10x-impl-review` (F1) także odsetek dostarczeń w 2 s ze wszystkich oczekiwanych, czas łączny po wszystkich oczekiwanych (zgubione jako „> 5000 ms”), przyczyny zgubionych i linia na każdą próbę; progi, limity i werdykt bez zmian.
 - **Werdykt i kod wyjścia:** przy `--rooms 1` PASS (kod 0) albo FAIL kryterium F-01 (kod 1); przy `--rooms > 1` „INFO” (kod 0). Błąd techniczny, czyli sonda nie zdołała zmierzyć (logowanie, config, subskrypcje nie doszły do `SUBSCRIBED` w 15 s, wyjątek), daje kod 2 w każdym trybie. FAIL to uczciwy wynik spike'a, a nie błąd do naprawienia: progi, limity czasu i sposób liczenia są ustalone w tym planie i nie zmieniają się pod wynik.
 - **Porządki:** na koniec zamyka kanały i wylogowuje. Nie wypisuje klucza.
+- **Nazwy kanału:** prefiks tematu i nazwę zdarzenia sonda kopiuje z `shared.ts` (komentarz „Mirrors”), zamiast go importować. To świadome odstępstwo od „jednego źródła” (`/10x-impl-review`, F6): skrypt `.mjs` nie importuje TypeScriptu z `src/`. Przy zmianie nazw w `shared.ts` trzeba poprawić też sondę; inaczej przestanie słyszeć dzwonek i pokaże FAIL.
 
 #### 2. Polecenie npm
 
@@ -544,14 +545,14 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 
 #### Automated
 
-- [x] 4.1 `npm run lint` przechodzi
-- [x] 4.2 Na `npm run dev`: `npm run live-probe` kończy się kodem 0 albo 1, werdykt zapisany
-- [x] 4.3 Na `npm run dev`: `npm run live-probe -- --rooms 5` kończy przebieg informacyjny bez błędu technicznego
-- [x] 4.4 `measurements.md` ma wiersze obu lokalnych przebiegów
+- [x] 4.1 `npm run lint` przechodzi — 3a8ad3f
+- [x] 4.2 Na `npm run dev`: `npm run live-probe` kończy się kodem 0 albo 1, werdykt zapisany — 3a8ad3f
+- [x] 4.3 Na `npm run dev`: `npm run live-probe -- --rooms 5` kończy przebieg informacyjny bez błędu technicznego — 3a8ad3f
+- [x] 4.4 `measurements.md` ma wiersze obu lokalnych przebiegów — 3a8ad3f
 
 #### Manual
 
-- [x] 4.5 Claude Code poprosił Karola o zgodę przed pierwszym uruchomieniem sondy
+- [x] 4.5 Claude Code poprosił Karola o zgodę przed pierwszym uruchomieniem sondy — 3a8ad3f
 
 ### Phase 5: Produkcja i telefon
 

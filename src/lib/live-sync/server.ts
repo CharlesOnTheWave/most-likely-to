@@ -14,8 +14,11 @@ export async function ringRoom(supabase: SupabaseClient, room: string, seq: numb
     // 202 means "accepted", not "delivered"; delivery time is measured on the receivers.
     const result = await channel.httpSend(BELL_EVENT, { seq }, { timeout: RING_TIMEOUT_MS });
     return { ok: result.success };
-  } catch {
-    // Any status other than 202, and a timeout, throw a plain Error without the status.
+  } catch (error) {
+    // Any status other than 202, and a timeout, throw a plain Error without the status. Only the reason is logged:
+    // httpSend messages carry no key and no request data.
+    // eslint-disable-next-line no-console
+    console.error("live-sync ring failed:", error instanceof Error ? `${error.name}: ${error.message}` : String(error));
     return { ok: false };
   } finally {
     await supabase.removeChannel(channel);
