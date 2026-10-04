@@ -4,9 +4,10 @@ import { authErrorCode } from "@/lib/auth-errors";
 
 // Only an error code goes into the URL; /auth/signin turns it into a Polish message (src/lib/auth-errors.ts).
 export const POST: APIRoute = async (context) => {
-  const form = await context.request.formData();
-  const email = form.get("email");
-  const password = form.get("password");
+  // A body that is not a form (JSON, no Content-Type) counts as empty fields, not a 500.
+  const form = await context.request.formData().catch(() => null);
+  const email = form?.get("email");
+  const password = form?.get("password");
 
   // The form validates in the browser, but a post without JS or before hydration lands here as is.
   if (typeof email !== "string" || !email.trim() || typeof password !== "string" || !password) {
