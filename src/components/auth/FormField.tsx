@@ -39,6 +39,7 @@ export function FormField({
       <InputGroup>
         <InputGroupAddon>{icon}</InputGroupAddon>
         <InputGroupInput
+          className="text-foreground"
           id={id}
           name={name ?? id}
           type={type}

@@ -527,32 +527,32 @@ Brak danych do migracji. Klasa `dark` na `<html>` zmienia tokeny na wszystkich s
 
 #### Automated
 
-- [x] 3.1 `theme.md` istnieje i zawiera źródło, surowe wartości i tabelę kontrastów; tekst ma co najmniej 4,5:1, a ramka fokusu (50%) na karcie co najmniej 3:1 (wyliczone jednorazowym skryptem)
-- [x] 3.2 `global.css` ma linię ze źródłem palety; skan `/10x-ui` na plikach widoku nadal daje 0
-- [x] 3.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą
+- [x] 3.1 `theme.md` istnieje i zawiera źródło, surowe wartości i tabelę kontrastów; tekst ma co najmniej 4,5:1, a ramka fokusu (50%) na karcie co najmniej 3:1 (wyliczone jednorazowym skryptem) — 123f775
+- [x] 3.2 `global.css` ma linię ze źródłem palety; skan `/10x-ui` na plikach widoku nadal daje 0 — 123f775
+- [x] 3.3 `npm run lint`, `npx astro check` i `npm run build` przechodzą — 123f775
 
 #### Manual
 
-- [x] 3.4 Karol wybrał jednego z 3 kandydatów na zrzutach logowania (wybór zapisany w `theme.md`)
-- [x] 3.5 Zrzut logowania w wybranej palecie (komputer i 390 px) wygląda dobrze według Karola
+- [x] 3.4 Karol wybrał jednego z 3 kandydatów na zrzutach logowania (wybór zapisany w `theme.md`) — 123f775
+- [x] 3.5 Zrzut logowania w wybranej palecie (komputer i 390 px) wygląda dobrze według Karola — 123f775
 
 ### Phase 4: Stany i błędy
 
 #### Automated
 
-- [ ] 4.1 Jednorazowy skrypt `node` sprawdza `authErrorMessage`: każdy kod z tabeli daje swój komunikat, nieznany kod daje komunikat ogólny, `null` daje `null`
-- [ ] 4.2 `POST` na `/api/auth/signin` z pustymi polami daje 302 na `/auth/signin?error=missing_fields`, a złe hasło daje `?error=invalid_credentials` (`node` + `fetch` na serwerze deweloperskim)
-- [ ] 4.3 `useFormStatus` nie występuje w `src/` (grep)
-- [ ] 4.4 `/dev/ui-kitchen-sink` daje 200 na serwerze deweloperskim i 404 w `npm run preview` (build produkcyjny)
-- [ ] 4.5 `npm run lint`, `npx astro check` i `npm run build` przechodzą
-- [ ] 4.6 `npm run smoke` na serwerze lokalnym przechodzi 8/8
+- [x] 4.1 Jednorazowy skrypt `node` sprawdza `authErrorMessage`: każdy kod z tabeli daje swój komunikat, nieznany kod daje komunikat ogólny, `null` daje `null`
+- [x] 4.2 `POST` na `/api/auth/signin` z pustymi polami daje 302 na `/auth/signin?error=missing_fields`, a złe hasło daje `?error=invalid_credentials` (`node` + `fetch` na serwerze deweloperskim)
+- [x] 4.3 `useFormStatus` nie występuje w `src/` (grep)
+- [x] 4.4 `/dev/ui-kitchen-sink` daje 200 na serwerze deweloperskim i 404 w `npm run preview` (build produkcyjny)
+- [x] 4.5 `npm run lint`, `npx astro check` i `npm run build` przechodzą
+- [x] 4.6 `npm run smoke` na serwerze lokalnym przechodzi 8/8
 
 #### Manual
 
-- [ ] 4.7 Strona ze stanami pokazuje każdy z 7 stanów albo „nie dotyczy” z powodem; zrzuty komputer i 390 px są w `screens/`, a każda uwaga z „Krytyki zrzutów” w `ui-checks.md` jest poprawiona albo odłożona z powodem
-- [ ] 4.8 Tab przechodzi przez wszystkie kontrolki z widocznym fokusem, a hover zmienia przycisk, link i oko (zrzut fokusu)
-- [ ] 4.9 Link z dowolnym `?error=` pokazuje komunikat ogólny zamiast tekstu z adresu (logowanie i rejestracja)
-- [ ] 4.10 Po kliknięciu „Zaloguj się” przycisk pokazuje „Logowanie…” i jest zablokowany do przeładowania, a po „Wstecz” znów jest aktywny
+- [x] 4.7 Strona ze stanami pokazuje każdy z 7 stanów albo „nie dotyczy” z powodem; zrzuty komputer i 390 px są w `screens/`, a każda uwaga z „Krytyki zrzutów” w `ui-checks.md` jest poprawiona albo odłożona z powodem
+- [x] 4.8 Tab przechodzi przez wszystkie kontrolki z widocznym fokusem, a hover zmienia przycisk, link i oko (zrzut fokusu)
+- [x] 4.9 Link z dowolnym `?error=` pokazuje komunikat ogólny zamiast tekstu z adresu (logowanie i rejestracja)
+- [x] 4.10 Po kliknięciu „Zaloguj się” przycisk pokazuje „Logowanie…” i jest zablokowany do przeładowania, a po „Wstecz” znów jest aktywny
 
 ### Phase 5: Zabezpieczenie
 

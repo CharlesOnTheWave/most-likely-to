@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Mail, Lock, UserPlus } from "lucide-react";
 import { FormField } from "@/components/auth/FormField";
+import { FieldGroup } from "@/components/ui/field";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
+import { useSubmitPending } from "@/components/auth/useSubmitPending";
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -18,6 +20,7 @@ export default function SignUpForm({ serverError }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [pending, setPending] = useSubmitPending();
 
   function validate() {
     const next: typeof errors = {};
@@ -51,7 +54,9 @@ export default function SignUpForm({ serverError }: Props) {
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     if (!validate()) {
       e.preventDefault();
+      return;
     }
+    setPending(true);
   }
 
   const missingChars = MIN_PASSWORD_LENGTH - password.length;
@@ -61,72 +66,74 @@ export default function SignUpForm({ serverError }: Props) {
       : undefined;
 
   return (
-    <form method="POST" action="/api/auth/signup" className="space-y-4" onSubmit={handleSubmit} noValidate>
-      <FormField
-        id="email"
-        type="email"
-        label="Email"
-        value={email}
-        onChange={(v) => {
-          setEmail(v);
-          clearError("email");
-        }}
-        placeholder="you@example.com"
-        error={errors.email}
-        icon={<Mail className="size-4" />}
-      />
+    <form method="POST" action="/api/auth/signup" onSubmit={handleSubmit} noValidate>
+      <FieldGroup>
+        <FormField
+          id="email"
+          type="email"
+          label="Email"
+          value={email}
+          onChange={(v) => {
+            setEmail(v);
+            clearError("email");
+          }}
+          placeholder="you@example.com"
+          error={errors.email}
+          icon={<Mail className="size-4" />}
+        />
 
-      <FormField
-        id="password"
-        label="Password"
-        type={showPassword ? "text" : "password"}
-        value={password}
-        onChange={(v) => {
-          setPassword(v);
-          clearError("password");
-        }}
-        placeholder="Min. 6 characters"
-        error={errors.password}
-        hint={passwordHint}
-        icon={<Lock className="size-4" />}
-        endContent={
-          <PasswordToggle
-            visible={showPassword}
-            onToggle={() => {
-              setShowPassword(!showPassword);
-            }}
-          />
-        }
-      />
+        <FormField
+          id="password"
+          label="Password"
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(v) => {
+            setPassword(v);
+            clearError("password");
+          }}
+          placeholder="Min. 6 characters"
+          error={errors.password}
+          hint={passwordHint}
+          icon={<Lock className="size-4" />}
+          endContent={
+            <PasswordToggle
+              visible={showPassword}
+              onToggle={() => {
+                setShowPassword(!showPassword);
+              }}
+            />
+          }
+        />
 
-      <FormField
-        id="confirmPassword"
-        name="confirmPassword"
-        label="Confirm password"
-        type={showConfirmPassword ? "text" : "password"}
-        value={confirmPassword}
-        onChange={(v) => {
-          setConfirmPassword(v);
-          clearError("confirmPassword");
-        }}
-        placeholder="Re-enter your password"
-        error={errors.confirmPassword}
-        icon={<Lock className="size-4" />}
-        endContent={
-          <PasswordToggle
-            visible={showConfirmPassword}
-            onToggle={() => {
-              setShowConfirmPassword(!showConfirmPassword);
-            }}
-          />
-        }
-      />
+        <FormField
+          id="confirmPassword"
+          name="confirmPassword"
+          label="Confirm password"
+          type={showConfirmPassword ? "text" : "password"}
+          value={confirmPassword}
+          onChange={(v) => {
+            setConfirmPassword(v);
+            clearError("confirmPassword");
+          }}
+          placeholder="Re-enter your password"
+          error={errors.confirmPassword}
+          icon={<Lock className="size-4" />}
+          endContent={
+            <PasswordToggle
+              visible={showConfirmPassword}
+              onToggle={() => {
+                setShowConfirmPassword(!showConfirmPassword);
+              }}
+            />
+          }
+        />
 
-      <ServerError message={serverError} />
+        <ServerError message={serverError} />
 
-      <SubmitButton pendingText="Creating account..." icon={<UserPlus className="size-4" />}>
-        Create account
-      </SubmitButton>
+        <SubmitButton pending={pending} pendingText="Creating account..." icon={<UserPlus className="size-4" />}>
+          Create account
+        </SubmitButton>
+      </FieldGroup>
     </form>
   );
 }
