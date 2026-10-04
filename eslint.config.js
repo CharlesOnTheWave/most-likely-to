@@ -83,6 +83,7 @@ const scriptsConfig = defineConfig({
       performance: true,
       setTimeout: true,
       clearTimeout: true,
+      AbortSignal: true,
     },
   },
   rules: { "no-console": "off" },
