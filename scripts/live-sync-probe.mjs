@@ -135,7 +135,8 @@ function onBell(player, payload) {
   }
   expectation.bellMs = performance.now() - expectation.t0;
   fetch(`${baseUrl}/api/live-sync/state?room=${player.room}&seq=${expectation.seq}`, {
-    signal: AbortSignal.timeout(Math.max(1, expectation.t0 + DELIVERY_TIMEOUT_MS - performance.now())),
+    // AbortSignal.timeout takes whole milliseconds; rounding up keeps the full window, and late is still totalMs > 5000.
+    signal: AbortSignal.timeout(Math.max(1, Math.ceil(expectation.t0 + DELIVERY_TIMEOUT_MS - performance.now()))),
   })
     .then(async (response) => {
       const board = await response.json();

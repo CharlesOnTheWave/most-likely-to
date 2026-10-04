@@ -558,11 +558,11 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 
 #### Automated
 
-- [ ] 5.1 Smoke na produkcji przechodzi 8/8
-- [ ] 5.2 `npm run live-probe -- --base-url https://most-likely-to.charlesonthewave.workers.dev` kończy się kodem 0 albo 1, werdykt zapisany
-- [ ] 5.3 Przebieg produkcyjny `--rooms 5` zapisany w `measurements.md`
+- [x] 5.1 Smoke na produkcji przechodzi 8/8 — 3746df6
+- [x] 5.2 `npm run live-probe -- --base-url https://most-likely-to.charlesonthewave.workers.dev` kończy się kodem 0 albo 1, werdykt zapisany
+- [x] 5.3 Przebieg produkcyjny `--rooms 5` zapisany w `measurements.md`
 
 #### Manual
 
-- [ ] 5.4 Test telefonu przechodzi: 3 dzwonki, powrót w mniej niż 10 s po zgaszonym ekranie, kolejny dzwonek złapany
-- [ ] 5.5 Karol akceptuje werdykt i aktualizacje roadmapy oraz `infrastructure.md`
+- [x] 5.4 Test telefonu przechodzi: 3 dzwonki, powrót w mniej niż 10 s po zgaszonym ekranie, kolejny dzwonek złapany
+- [x] 5.5 Karol akceptuje werdykt i aktualizacje roadmapy oraz `infrastructure.md`
