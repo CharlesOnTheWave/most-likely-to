@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-09-27
+updated: 2026-10-04
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -41,7 +41,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 
 | ID   | Change ID                    | Outcome (user can …)                                                                                            | Prerequisites    | PRD refs                                                  | Status   |
 | ---- | ---------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------- | -------- |
-| F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona w prototypie: 20 graczy, odsłona w ≤ 2 s, w kanale tylko dane zbiorcze | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | planning |
+| F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona w prototypie: 20 graczy, odsłona w ≤ 2 s, w kanale tylko dane zbiorcze | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | in-progress |
 | F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                   | —                | FR-005, FR-015, Access Control (twórca gry)               | done     |
 | S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | proposed |
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | proposed |
@@ -93,7 +93,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Jak gość bez konta odbiera zdarzenia pokoju, żeby kanał nie był otwarty dla obcych? Odpowiada na to sam prototyp. — Owner: Karol. Block: no.
 - **Risk:** To pierwsze zetknięcie z techniką, której w projekcie nikt jeszcze nie budował (główne ryzyko: umiejętności); lepiej, żeby jej problemy wyszły w krótkim teście niż w środku rundy.
-- **Status:** planning
+- **Status:** in-progress
 
 ### F-02: Baza startowa pytań
 

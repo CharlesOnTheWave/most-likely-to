@@ -512,13 +512,13 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 
 #### Automated
 
-- [ ] 1.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [ ] 1.2 `.claude/settings.json` parsuje się jako JSON i zawiera 6 nowych wpisów ask
-- [ ] 1.3 W zmianach lockfile zmienia się tylko zakres `@supabase/supabase-js` w pakiecie głównym; zainstalowana wersja to 2.116.0
+- [x] 1.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
+- [x] 1.2 `.claude/settings.json` parsuje się jako JSON i zawiera 6 nowych wpisów ask
+- [x] 1.3 W zmianach lockfile zmienia się tylko zakres `@supabase/supabase-js` w pakiecie głównym; zainstalowana wersja to 2.116.0
 
 #### Manual
 
-- [ ] 1.4 Karol akceptuje nowe brzmienie reguły o kluczach w AGENTS.md
+- [x] 1.4 Karol akceptuje nowe brzmienie reguły o kluczach w AGENTS.md
 
 ### Phase 2: Dzwonek i tablica (serwer)
 

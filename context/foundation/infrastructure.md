@@ -14,7 +14,7 @@ tech_stack:
 
 **Deploy on Cloudflare Workers.**
 
-Workers to jedyna z sześciu badanych platform z oceną Pass we wszystkich pięciu kryteriach. Darmowy plan (100 000 żądań dziennie, zimny start rzędu milisekund, bez usypiania) pokrywa grę dla około 100 osób, a w wywiadzie priorytetem był najniższy koszt. Projekt jest już skonfigurowany pod Workers (`@astrojs/cloudflare` 14.3.1, `wrangler.jsonc`), więc nie trzeba wymieniać adaptera. Test anti-bias sprawdził, czy wygrana nie wynika tylko z tej wygody: bez niej Workers i tak prowadzą. Runda na żywo idzie przez Supabase Realtime prosto z przeglądarki, więc platforma nie musi trzymać połączeń. Durable Objects zostają planem B.
+Workers to jedyna z sześciu badanych platform z oceną Pass we wszystkich pięciu kryteriach. Darmowy plan (100 000 żądań dziennie, zimny start rzędu milisekund, bez usypiania) pokrywa grę dla około 100 osób, a w wywiadzie priorytetem był najniższy koszt. Projekt jest już skonfigurowany pod Workers (`@astrojs/cloudflare` 14.3.1, `wrangler.jsonc`), więc nie trzeba wymieniać adaptera. Test anti-bias sprawdził, czy wygrana nie wynika tylko z tej wygody: bez niej Workers i tak prowadzą. Runda na żywo idzie przez Supabase Realtime: przeglądarka subskrybuje publiczny kanał kluczem publishable, a stan pobiera z naszego serwera, więc platforma nie musi trzymać połączeń. Durable Objects zostają planem B.
 
 Odpowiedzi z wywiadu (2026-09-26):
 - połączenia na żywo po stronie serwera: nie wiem;
