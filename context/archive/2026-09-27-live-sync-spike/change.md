@@ -1,10 +1,10 @@
 ---
 change_id: live-sync-spike
 title: Live sync spike
-status: implemented
+status: archived
 created: 2026-09-27
 updated: 2026-10-04
-archived_at: null
+archived_at: 2026-10-04T10:00:02Z
 ---
 
 ## Notes
