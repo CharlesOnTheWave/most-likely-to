@@ -1,17 +1,15 @@
 import type { ReactNode } from "react";
-import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
 interface SubmitButtonProps {
+  pending: boolean;
   pendingText: string;
   icon: ReactNode;
   children: ReactNode;
 }
 
-export function SubmitButton({ pendingText, icon, children }: SubmitButtonProps) {
-  const { pending } = useFormStatus();
-
+export function SubmitButton({ pending, pendingText, icon, children }: SubmitButtonProps) {
   return (
     <Button type="submit" disabled={pending} className="w-full">
       {pending ? (

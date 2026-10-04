@@ -1,29 +1,16 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import SignInCard from "@/components/auth/SignInCard.astro";
 import SignInForm from "@/components/auth/SignInForm";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { authErrorMessage } from "@/lib/auth-errors";
 
-const error = Astro.url.searchParams.get("error");
+const error = authErrorMessage(Astro.url.searchParams.get("error"));
 ---
 
 <Layout title="Zaloguj się">
   <main class="bg-background flex min-h-screen items-center justify-center p-4">
-    <Card className="w-full max-w-sm">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">
-          <h1>Zaloguj się</h1>
-        </CardTitle>
-        <CardDescription>Zaloguj się, żeby poprowadzić grę.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <SignInForm serverError={error} client:load />
-      </CardContent>
-      <CardFooter className="text-muted-foreground justify-center gap-1 text-sm">
-        Nie masz konta?
-        <a href="/auth/signup" class="text-primary underline-offset-4 hover:underline">
-          Załóż je
-        </a>
-      </CardFooter>
-    </Card>
+    <SignInCard>
+      <SignInForm serverError={error} client:load />
+    </SignInCard>
   </main>
 </Layout>

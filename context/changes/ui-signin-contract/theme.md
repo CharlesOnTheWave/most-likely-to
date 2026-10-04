@@ -75,7 +75,10 @@ Policzone jednorazowym skryptem z wartości zapisanych w `global.css` (OKLCH →
 | `primary` / `card` (link „Załóż je”) | 6,23 | 4,5 | OK |
 | `muted-foreground` / `card` | 4,56 | 4,5 | OK |
 | `destructive` / `card` (błędy) | 4,86 | 4,5 | OK |
+| `destructive` / `card` w opisie `Alert` (błąd serwera) | 4,86 (było 4,18) | 4,5 | OK po poprawce |
 | `ring` przy 50% / `card` (fokus) | 3,02 | 3 | OK |
+
+Wiersz z `Alert` doszedł po krytyce zrzutów w fazie 4 (R1 w `ui-checks.md`). Fabryczny `alert.tsx` ściemniał opis do `text-destructive/90`, co dawało 4,18:1, a tabela liczyła tylko pełny kolor. Klocek ma teraz pełny `text-destructive`. Wniosek na przyszłość: przy liczeniu kontrastu sprawdzać też przezroczystości ukryte w klasach klocków (`/90`, `/80`), nie tylko same tokeny.
 
 `:root` nie jest używany (aplikacja ma zawsze `class="dark"`). Wszystkie pary tekstu przechodzą, ale ramka fokusu ma tam 2,12:1. Gdyby kiedyś doszedł jasny motyw, `--ring` w `:root` trzeba przyciemnić.
 
