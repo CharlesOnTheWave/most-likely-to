@@ -532,26 +532,26 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 
 #### Automated
 
-- [x] 3.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [x] 3.2 `dist/client` nie zawiera tekstu pytań
-- [x] 3.3 Na `npm run dev`: `GET /dev/live-sync` zwraca 200
+- [x] 3.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build` — af8e69c
+- [x] 3.2 `dist/client` nie zawiera tekstu pytań — af8e69c
+- [x] 3.3 Na `npm run dev`: `GET /dev/live-sync` zwraca 200 — af8e69c
 
 #### Manual
 
-- [x] 3.4 Lokalnie dwa okna: „Zadzwoń” w oknie zalogowanym odświeża niezalogowane okno, które nie ma przycisku
+- [x] 3.4 Lokalnie dwa okna: „Zadzwoń” w oknie zalogowanym odświeża niezalogowane okno, które nie ma przycisku — af8e69c
 
 ### Phase 4: Sonda i pomiar lokalny
 
 #### Automated
 
-- [ ] 4.1 `npm run lint` przechodzi
-- [ ] 4.2 Na `npm run dev`: `npm run live-probe` kończy się kodem 0 albo 1, werdykt zapisany
-- [ ] 4.3 Na `npm run dev`: `npm run live-probe -- --rooms 5` kończy przebieg informacyjny bez błędu technicznego
-- [ ] 4.4 `measurements.md` ma wiersze obu lokalnych przebiegów
+- [x] 4.1 `npm run lint` przechodzi
+- [x] 4.2 Na `npm run dev`: `npm run live-probe` kończy się kodem 0 albo 1, werdykt zapisany
+- [x] 4.3 Na `npm run dev`: `npm run live-probe -- --rooms 5` kończy przebieg informacyjny bez błędu technicznego
+- [x] 4.4 `measurements.md` ma wiersze obu lokalnych przebiegów
 
 #### Manual
 
-- [ ] 4.5 Claude Code poprosił Karola o zgodę przed pierwszym uruchomieniem sondy
+- [x] 4.5 Claude Code poprosił Karola o zgodę przed pierwszym uruchomieniem sondy
 
 ### Phase 5: Produkcja i telefon
 
