@@ -512,21 +512,21 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 
 #### Automated
 
-- [x] 1.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [x] 1.2 `.claude/settings.json` parsuje się jako JSON i zawiera 6 nowych wpisów ask
-- [x] 1.3 W zmianach lockfile zmienia się tylko zakres `@supabase/supabase-js` w pakiecie głównym; zainstalowana wersja to 2.116.0
+- [x] 1.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build` — 7bcb4ea
+- [x] 1.2 `.claude/settings.json` parsuje się jako JSON i zawiera 6 nowych wpisów ask — 7bcb4ea
+- [x] 1.3 W zmianach lockfile zmienia się tylko zakres `@supabase/supabase-js` w pakiecie głównym; zainstalowana wersja to 2.116.0 — 7bcb4ea
 
 #### Manual
 
-- [x] 1.4 Karol akceptuje nowe brzmienie reguły o kluczach w AGENTS.md
+- [x] 1.4 Karol akceptuje nowe brzmienie reguły o kluczach w AGENTS.md — 7bcb4ea
 
 ### Phase 2: Dzwonek i tablica (serwer)
 
 #### Automated
 
-- [ ] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [ ] 2.2 Na `npm run dev`: `GET /api/live-sync/state?room=demo&seq=1` zwraca 200 i JSON z niepustym `question`, a `POST /api/live-sync/ring` bez logowania zwraca 401
-- [ ] 2.3 Import `@/data/questions` występuje w `src/` tylko w `src/lib/live-sync/server.ts`
+- [x] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
+- [x] 2.2 Na `npm run dev`: `GET /api/live-sync/state?room=demo&seq=1` zwraca 200 i JSON z niepustym `question`, a `POST /api/live-sync/ring` bez logowania zwraca 401
+- [x] 2.3 Import `@/data/questions` występuje w `src/` tylko w `src/lib/live-sync/server.ts`
 
 ### Phase 3: Strona demo (przeglądarka)
 
