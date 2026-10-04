@@ -41,7 +41,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 
 | ID   | Change ID                    | Outcome (user can …)                                                                                            | Prerequisites    | PRD refs                                                  | Status   |
 | ---- | ---------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------- | -------- |
-| F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona: kanał-dzwonek + stan z serwera, 20 graczy, 95% w ≤ 2 s, max 5 s      | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | in-progress |
+| F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona: kanał-dzwonek + stan z serwera, 20 graczy, 95% w ≤ 2 s, max 5 s      | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | done     |
 | F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                   | —                | FR-005, FR-015, Access Control (twórca gry)               | done     |
 | S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | proposed |
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | proposed |
@@ -93,7 +93,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Jak gość bez konta odbiera zdarzenia pokoju, żeby kanał nie był otwarty dla obcych? Rozstrzygnięte w F-01 (2026-10-04): kanał jest publiczny, ale niesie tylko dzwonek, a stan gość pobiera z serwera. — Owner: Karol. Block: no.
 - **Risk:** To pierwsze zetknięcie z techniką, której w projekcie nikt jeszcze nie budował (główne ryzyko: umiejętności); lepiej, żeby jej problemy wyszły w krótkim teście niż w środku rundy.
-- **Status:** in-progress
+- **Status:** done
 
 ### F-02: Baza startowa pytań
 
@@ -333,3 +333,4 @@ _Brak: to pierwszy kamień milowy._
 ## Done
 
 - **F-02: (foundation) Pierwsza wspólna baza pytań po polsku, w kilku kategoriach, jest spisana, zatwierdzona przez twórcę gry i gotowa do wczytania.** — Archived 2026-09-27 → `context/archive/2026-09-27-starter-question-base/`. Lesson: `context/foundation/lessons.md` → „Pytania gry tylko po stronie serwera”.
+- **F-01: (foundation) Technika na żywo jest sprawdzona w prototypie: publiczny kanał Supabase Realtime niesie tylko sygnał „coś się zmieniło” (dzwonek), a stan przeglądarka pobiera z serwera. Dzwonek może nadać każdy, kto zna nazwę kanału, więc stan pochodzi wyłącznie z bazy, nigdy z treści dzwonka. W trakcie rundy stan pokazuje tylko, kto już zagłosował; liczby głosów dopiero przy odsłonie, nigdy „kto na kogo”. Kryterium: 95% dostarczeń do 20 graczy w ≤ 2 s, żadne powyżej 5 s; spełnione na produkcji 2026-10-04 (100% w 2 s, max 247 ms; `context/archive/2026-09-27-live-sync-spike/measurements.md`).** — Archived 2026-10-04 → `context/archive/2026-09-27-live-sync-spike/`. Lesson: —.
