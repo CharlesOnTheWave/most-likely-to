@@ -19,3 +19,12 @@ export function createClient(requestHeaders: Headers, cookies: AstroCookies) {
     },
   });
 }
+
+// URL and key for the browser, only for Realtime subscriptions (AGENTS.md). Anything but a publishable key gives null,
+// so a misconfigured secret key is never served.
+export function getPublicSupabaseConfig(): { supabaseUrl: string; supabaseKey: string } | null {
+  if (!SUPABASE_URL || !SUPABASE_KEY?.startsWith("sb_publishable_")) {
+    return null;
+  }
+  return { supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY };
+}
