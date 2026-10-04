@@ -524,21 +524,21 @@ Nie dotyczy: brak zmian w bazie. Nowe endpointy i strona są addytywne; wycofani
 
 #### Automated
 
-- [x] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [x] 2.2 Na `npm run dev`: `GET /api/live-sync/state?room=demo&seq=1` zwraca 200 i JSON z niepustym `question`, a `POST /api/live-sync/ring` bez logowania zwraca 401
-- [x] 2.3 Import `@/data/questions` występuje w `src/` tylko w `src/lib/live-sync/server.ts`
+- [x] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build` — e3a0555
+- [x] 2.2 Na `npm run dev`: `GET /api/live-sync/state?room=demo&seq=1` zwraca 200 i JSON z niepustym `question`, a `POST /api/live-sync/ring` bez logowania zwraca 401 — e3a0555
+- [x] 2.3 Import `@/data/questions` występuje w `src/` tylko w `src/lib/live-sync/server.ts` — e3a0555
 
 ### Phase 3: Strona demo (przeglądarka)
 
 #### Automated
 
-- [ ] 3.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [ ] 3.2 `dist/client` nie zawiera tekstu pytań
-- [ ] 3.3 Na `npm run dev`: `GET /dev/live-sync` zwraca 200
+- [x] 3.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
+- [x] 3.2 `dist/client` nie zawiera tekstu pytań
+- [x] 3.3 Na `npm run dev`: `GET /dev/live-sync` zwraca 200
 
 #### Manual
 
-- [ ] 3.4 Lokalnie dwa okna: „Zadzwoń” w oknie zalogowanym odświeża niezalogowane okno, które nie ma przycisku
+- [x] 3.4 Lokalnie dwa okna: „Zadzwoń” w oknie zalogowanym odświeża niezalogowane okno, które nie ma przycisku
 
 ### Phase 4: Sonda i pomiar lokalny
 
