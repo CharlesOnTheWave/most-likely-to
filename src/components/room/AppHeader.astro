@@ -1,0 +1,29 @@
+---
+import { Button } from "@/components/ui/button";
+
+// Top bar of the game screens. A signed-in host also sees their e-mail and "Wyloguj"; for a guest the game name is
+// plain text, so it does not lead out of the lobby to the sign-in invitation.
+const { user } = Astro.locals;
+---
+
+<header class="border-b">
+  <div class="mx-auto flex w-full max-w-lg items-center justify-between gap-4 px-4 py-3">
+    {user ? (
+      <a href="/" class="focus-visible:ring-ring/50 rounded-sm font-semibold outline-hidden focus-visible:ring-3">
+        Most Likely To
+      </a>
+    ) : (
+      <span class="font-semibold">Most Likely To</span>
+    )}
+    {user && (
+      <div class="flex min-w-0 items-center gap-2 text-sm">
+        <span class="text-muted-foreground truncate">{user.email}</span>
+        <form method="POST" action="/api/auth/signout">
+          <Button type="submit" variant="ghost" size="sm">
+            Wyloguj
+          </Button>
+        </form>
+      </div>
+    )}
+  </div>
+</header>

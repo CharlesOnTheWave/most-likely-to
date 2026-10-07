@@ -39,11 +39,13 @@ jobs:
       - name: Start local Supabase
         run: |
           supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,realtime,storage-api,postgres-meta,supavisor
-          supabase status -o env | grep -E '^(API_URL|ANON_KEY)=' > supabase.env
+          supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
+      # The publishable key (sb_publishable_…), as in production; the legacy anon key would make
+      # getPublicSupabaseConfig return null.
       - name: Configure secrets for build and preview
         run: |
           source supabase.env
-          printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$ANON_KEY" > .env
+          printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" > .env
           cp .env .dev.vars
       # Local Supabase keeps "Confirm email" off (supabase/config.toml), so a plain sign-up creates the smoke test account.
       - name: Create smoke test account
@@ -52,7 +54,7 @@ jobs:
           SMOKE_EMAIL=smoke-host@example.com
           SMOKE_PASSWORD=$(openssl rand -hex 16)
           curl -sf -o /dev/null -X POST "$API_URL/auth/v1/signup" \
-            -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
+            -H "apikey: $PUBLISHABLE_KEY" -H "Content-Type: application/json" \
             -d "{\"email\":\"$SMOKE_EMAIL\",\"password\":\"$SMOKE_PASSWORD\"}"
           printf 'SMOKE_EMAIL=%s\nSMOKE_PASSWORD=%s\n' "$SMOKE_EMAIL" "$SMOKE_PASSWORD" >> .dev.vars
       - run: npm run build

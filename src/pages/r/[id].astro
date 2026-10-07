@@ -1,0 +1,63 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AppHeader from "@/components/room/AppHeader.astro";
+import RoomLobby from "@/components/room/RoomLobby";
+import { roomErrorMessage } from "@/lib/rooms/errors";
+import { hostLinkToken, roomLobby } from "@/lib/rooms/server";
+import type { LobbyState } from "@/lib/rooms/shared";
+import { playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
+import { createClient } from "@/lib/supabase";
+
+// The room for its host (session) or a player (the cookie from joining). Anyone else, a malformed id and a room that
+// does not exist get the same 404, so the page does not tell which rooms exist.
+type Page =
+  | { kind: "lobby"; roomId: string; lobby: LobbyState; linkUrl: string | null }
+  | { kind: "outside" }
+  | { kind: "error"; reason: string };
+
+async function loadPage(roomId: string): Promise<Page> {
+  if (!UUID_PATTERN.test(roomId)) return { kind: "outside" };
+  const supabase = createClient(Astro.request.headers, Astro.cookies);
+  if (!supabase) return { kind: "error", reason: "service_unavailable" };
+
+  const result = await roomLobby(supabase, roomId, Astro.cookies.get(playerCookieName(roomId))?.value);
+  if (!result.ok) return { kind: "error", reason: result.reason };
+  if (!result.lobby) return { kind: "outside" };
+
+  // Only the host reads the link code (RLS on rooms), and only while the room is open.
+  let linkUrl: string | null = null;
+  if (result.lobby.role === "host" && result.lobby.status === "lobby") {
+    const link = await hostLinkToken(supabase, roomId);
+    if (link.ok && link.linkToken) linkUrl = `${Astro.url.origin}/j/${link.linkToken}`;
+  }
+  return { kind: "lobby", roomId, lobby: result.lobby, linkUrl };
+}
+
+const page = await loadPage(Astro.params.id ?? "");
+if (page.kind === "outside") {
+  Astro.response.status = 404;
+} else if (page.kind === "error") {
+  Astro.response.status = page.reason === "service_unavailable" ? 503 : 500;
+}
+---
+
+<Layout title={page.kind === "outside" ? "Nie jesteś w tym pokoju" : "Pokój"}>
+  <AppHeader />
+  <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
+    {page.kind === "lobby" && (
+      <RoomLobby roomId={page.roomId} initial={page.lobby} linkUrl={page.linkUrl} client:load />
+    )}
+    {page.kind === "outside" && (
+      <section class="flex flex-col items-center gap-4 py-12 text-center">
+        <h1 class="text-2xl font-semibold text-balance">Nie jesteś w tym pokoju.</h1>
+        <p class="text-muted-foreground">Poproś hosta o link.</p>
+      </section>
+    )}
+    {page.kind === "error" && (
+      <section class="flex flex-col items-center gap-4 py-12 text-center">
+        <h1 class="text-2xl font-semibold text-balance">Nie udało się otworzyć pokoju.</h1>
+        <p class="text-muted-foreground">{roomErrorMessage(page.reason)}</p>
+      </section>
+    )}
+  </main>
+</Layout>
