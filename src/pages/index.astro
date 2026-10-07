@@ -1,8 +1,68 @@
 ---
-import Welcome from "@/components/Welcome.astro";
 import Layout from "@/layouts/Layout.astro";
+import AppHeader from "@/components/room/AppHeader.astro";
+import Landing from "@/components/room/Landing.astro";
+import NewGameForm from "@/components/room/NewGameForm";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+// Server only (lessons.md): the island gets just the id and name of each category.
+import { CATEGORIES } from "@/data/questions";
+import { roomErrorMessage } from "@/lib/rooms/errors";
+import { hostOpenRoomId, roomLobby } from "@/lib/rooms/server";
+import { playerCountLabel } from "@/lib/rooms/shared";
+import { createClient } from "@/lib/supabase";
+
+const { user } = Astro.locals;
+const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
+const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
+
+// The host's open room, for "Wróć do pokoju" and for the question before "Nowa gra" closes it. If the database does not
+// answer, the form still shows and creating the game reports the error.
+async function findOpenRoom() {
+  const supabase = createClient(Astro.request.headers, Astro.cookies);
+  if (!supabase) return null;
+  const open = await hostOpenRoomId(supabase);
+  if (!open.ok || !open.roomId) return null;
+  const result = await roomLobby(supabase, open.roomId);
+  if (!result.ok || !result.lobby) return null;
+  const { players } = result.lobby;
+  return { id: open.roomId, players: players.length, hasGuests: players.some((player) => !player.host) };
+}
+
+const openRoom = user ? await findOpenRoom() : null;
+const roomToClose = openRoom?.hasGuests ? { players: openRoom.players } : null;
 ---
 
-<Layout>
-  <Welcome />
+<Layout title={user ? "Nowa gra" : undefined}>
+  <AppHeader />
+  <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
+    {user ? (
+      <>
+        {openRoom && (
+          <div class="bg-card flex items-center justify-between gap-4 rounded-xl border p-4">
+            <div class="flex min-w-0 flex-col gap-1">
+              <p class="font-medium">Masz otwarty pokój</p>
+              <p class="text-muted-foreground text-sm">{playerCountLabel(openRoom.players)} w poczekalni</p>
+            </div>
+            <a href={`/r/${openRoom.id}`} class:list={buttonVariants({ variant: "secondary" })}>
+              Wróć do pokoju
+            </a>
+          </div>
+        )}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              <h1>Nowa gra</h1>
+            </CardTitle>
+            <CardDescription>Wpisz swój nick i wybierz kategorie. Link dla graczy dostaniesz od razu.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <NewGameForm categories={categories} roomToClose={roomToClose} serverError={serverError} client:load />
+          </CardContent>
+        </Card>
+      </>
+    ) : (
+      <Landing />
+    )}
+  </main>
 </Layout>

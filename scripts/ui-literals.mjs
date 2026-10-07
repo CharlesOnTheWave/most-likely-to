@@ -4,10 +4,14 @@
 import { readFileSync, readdirSync } from "node:fs";
 
 const AUTH_DIR = "src/components/auth";
+const ROOM_DIR = "src/components/room";
 const VIEWS = [
   "src/pages/auth/signin.astro",
   "src/pages/dev/ui-kitchen-sink.astro",
   ...readdirSync(AUTH_DIR).map((name) => `${AUTH_DIR}/${name}`),
+  "src/pages/index.astro",
+  "src/pages/r/[id].astro",
+  ...readdirSync(ROOM_DIR).map((name) => `${ROOM_DIR}/${name}`),
 ];
 
 // Same pattern as the hard-coded values scan in .claude/skills/10x-ui/SKILL.md.

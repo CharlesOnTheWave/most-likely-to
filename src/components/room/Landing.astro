@@ -1,0 +1,16 @@
+---
+import { buttonVariants } from "@/components/ui/button";
+
+// / for someone who is not signed in: only the host has an account, a guest comes in through the host's link.
+---
+
+<section class="flex flex-col items-center gap-6 py-12 text-center">
+  <h1 class="text-3xl font-semibold text-balance">Kto z nas najprawdopodobniej…?</h1>
+  <p class="text-muted-foreground max-w-md text-balance">
+    Wszyscy widzą to samo pytanie, każdy oddaje jeden anonimowy głos, a wynik pojawia się po ostatnim głosie.
+  </p>
+  <a href="/auth/signin" class:list={buttonVariants({ size: "lg" })}>
+    Zaloguj się, żeby założyć grę
+  </a>
+  <p class="text-muted-foreground text-sm">Masz link od hosta? Otwórz go, żeby dołączyć.</p>
+</section>

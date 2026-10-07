@@ -634,17 +634,17 @@ Dokumentacja, PR, scalenie za zgodą Karola (wdrożenie), smoke na produkcji i t
 
 #### Automated
 
-- [ ] 2.1 Bramka przechodzi z `ui-literals: 0 literals`
-- [ ] 2.2 Smoke lokalny na porcie 4322 przechodzi z krokami hosta
-- [ ] 2.3 CI używa `PUBLISHABLE_KEY` zamiast `ANON_KEY`
+- [x] 2.1 Bramka przechodzi z `ui-literals: 0 literals`
+- [x] 2.2 Smoke lokalny na porcie 4322 przechodzi z krokami hosta
+- [x] 2.3 CI używa `PUBLISHABLE_KEY` zamiast `ANON_KEY`
 
 #### Manual
 
-- [ ] 2.4 Formularz „Nowa gra” z 8 kategoriami i wyłączonym 18+ prowadzi na ekran pokoju z linkiem i hostem na liście
-- [ ] 2.5 „Kopiuj” kopiuje pełny link `/j/<kod>`
-- [ ] 2.6 Druga „Nowa gra” przy pustym pokoju działa bez pytania, a `/` pokazuje „Wróć do pokoju”
-- [ ] 2.7 Zalogowany na `/auth/signin` trafia na `/`, a z `?error=access_denied` widzi komunikat
-- [ ] 2.8 Niezalogowany na `/` widzi zaproszenie do logowania
+- [x] 2.4 Formularz „Nowa gra” z 8 kategoriami i wyłączonym 18+ prowadzi na ekran pokoju z linkiem i hostem na liście
+- [x] 2.5 „Kopiuj” kopiuje pełny link `/j/<kod>`
+- [x] 2.6 Druga „Nowa gra” przy pustym pokoju działa bez pytania, a `/` pokazuje „Wróć do pokoju”
+- [x] 2.7 Zalogowany na `/auth/signin` trafia na `/`, a z `?error=access_denied` widzi komunikat
+- [x] 2.8 Niezalogowany na `/` widzi zaproszenie do logowania
 
 ### Phase 3: Gość i lista na żywo
 
