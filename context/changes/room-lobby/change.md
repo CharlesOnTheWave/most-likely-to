@@ -1,7 +1,7 @@
 ---
 change_id: room-lobby
 title: Room lobby
-status: plan_reviewed
+status: implementing
 created: 2026-10-07
 updated: 2026-10-07
 archived_at: null

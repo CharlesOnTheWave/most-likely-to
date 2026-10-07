@@ -623,7 +623,7 @@ Dokumentacja, PR, scalenie za zgodą Karola (wdrożenie), smoke na produkcji i t
 - [ ] 1.2 Po `npx supabase db push` (ask, za zgodą Karola) `npx supabase migration list` pokazuje `room_lobby` lokalnie i zdalnie
 - [ ] 1.3 Zapytania REST z kluczem publishable do `rooms`, `players`, `player_secrets` kończą się błędem uprawnień
 - [ ] 1.4 Wywołania RPC z kluczem publishable: `room_link` → `unknown`, `join_room` → `room_unknown`, `create_room` jako `anon` → błąd uprawnień
-- [ ] 1.5 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
+- [x] 1.5 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
 
 #### Manual
 

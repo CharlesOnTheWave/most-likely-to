@@ -13,6 +13,15 @@
 - **Wersje:** `c1c7a3b4` (ręczne wdrożenie), `4e3d91b8` (pierwsze z Workers Builds, commit `800c10d`). Próba cofnięcia `4e3d91b8 → c1c7a3b4 → 4e3d91b8` przeszła w kilka sekund.
 - **Cofnięcie przy awarii:** `npx wrangler rollback` (ask) wraca do poprzedniej wersji. Nie cofa danych (KV, Supabase), a następny push do `main` znów wdroży najnowszy kod.
 
+## Migracje Supabase (od 07.10.2026, S-01)
+
+- **Połączenie CLI:** Karol raz uruchamia `npx supabase login` i `npx supabase link --project-ref xadljhxjgmckjlmsgmmj` (hasło do bazy wpisuje w podpowiedź, nie w czat). Stan połączenia leży w `supabase/.temp/` (poza gitem) katalogu, w którym je zrobiono, więc każdy worktree i nowy klon łączy się osobno.
+- **Nowa migracja:** `npx supabase migration new <nazwa>`. Zasady dla tabel i funkcji są w `AGENTS.md` (Conventions).
+- **Próba przed jedyną bazą:** bez Dockera lokalnie nie ma Postgresa. CI na PR do `main` (`supabase start`) wgrywa migracje na czystą bazę z `auto_expose_new_tables = false` i uruchamia smoke. Push gałęzi nie wdraża produkcji, choć Workers Builds wgrywa z niej wersję podglądową (`wrangler versions upload`).
+- **Wgranie (ask, za zgodą Karola):** `npx supabase db push --dry-run` (lista plików do wgrania), `npx supabase db push`, potem `npx supabase migration list` (kolumny Local i Remote).
+- **Nigdy SQL w panelu:** omija historię migracji i psuje następne `db push`. Wgranej migracji nie edytujemy; poprawka i wycofanie to nowa migracja.
+- **Zmiana uprawnień w Supabase:** nowe tabele w `public` przestają dostawać uprawnienia dla `anon` i `authenticated` (istniejące projekty od 30.10.2026 według supabase/discussions#45329). Nasze migracje odbierają i nadają uprawnienia jawnie, więc działają przed zmianą i po niej.
+
 ## Context
 
 Lekcja M1L5 kończy moduł 1: gra ma działać pod publicznym adresem.
