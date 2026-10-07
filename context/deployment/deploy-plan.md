@@ -8,7 +8,8 @@
 - **Worker `most-likely-to`** na koncie Cloudflare (plan Free), subdomena `charlesonthewave.workers.dev`:
   - sekrety `SUPABASE_URL` i `SUPABASE_KEY` (typ `secret_text`, klucz publishable), wgrane raz przez `npx wrangler deploy --secrets-file .dev.vars`; kolejne wdrożenia ich nie ruszają;
   - powiązania: `ASSETS` (pliki z `dist/client`), `IMAGES`, `SESSION` → KV `most-likely-to-session`. KV utworzył wrangler przy pierwszym wdrożeniu (sesje Astro), a Workers Builds używa tego samego.
-- **Supabase:** projekt `most-likely-to` (Frankfurt), jedyny, więc wspólny dla rozwoju i produkcji. Confirm email wyłączone.
+- **Supabase:** projekt `most-likely-to` (Frankfurt), jedyny, więc wspólny dla rozwoju i produkcji.
+  - → Od 07.10.2026 (S-05, faza 1): Confirm email **włączone** i ma takie zostać (wyłączone pozwala przejąć konto hosta przez logowanie dostawcą). Site URL `https://most-likely-to.charlesonthewave.workers.dev/auth/signin`, Redirect URLs `http://localhost:4321/**` i `http://localhost:4322/**`. W Authentication → Users są tylko 2 konta: Karola i testowe dla smoke (`SMOKE_EMAIL` w `.dev.vars`).
 - **Wersje:** `c1c7a3b4` (ręczne wdrożenie), `4e3d91b8` (pierwsze z Workers Builds, commit `800c10d`). Próba cofnięcia `4e3d91b8 → c1c7a3b4 → 4e3d91b8` przeszła w kilka sekund.
 - **Cofnięcie przy awarii:** `npx wrangler rollback` (ask) wraca do poprzedniej wersji. Nie cofa danych (KV, Supabase), a następny push do `main` znów wdroży najnowszy kod.
 
@@ -81,9 +82,10 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
 ## Etap 3. Supabase: przygotowanie produkcji
 
 - [x] **Ty:** Authentication → Sign In / Providers → Email → wyłącz **Confirm email**.
-  - Darmowy serwer pocztowy Supabase wysyła maile tylko do członków zespołu projektu (do 30 na godzinę), więc obcy host nigdy nie dostałby potwierdzenia.
+  - Darmowy serwer pocztowy Supabase wysyła maile tylko do członków zespołu projektu (2 na godzinę, https://supabase.com/docs/guides/auth/auth-smtp), więc obcy host nigdy nie dostałby potwierdzenia.
   - Smoke też wymaga logowania od razu po rejestracji.
   - → Przełącznik jest w sekcji „User Signups” na stronie Sign In / Providers.
+  - → 07.10.2026 (S-05): Confirm email z powrotem **włączone**, a smoke loguje się stałym kontem testowym, więc nie potrzebuje już logowania od razu po rejestracji.
 - [x] **Agent:** tworzy `.dev.vars` z pustymi liniami `SUPABASE_URL=` i `SUPABASE_KEY=`. Plik jest w `.gitignore`.
 - [x] **Ty:** wklejasz do `.dev.vars` dwie wartości, nie do czatu:
   - Project URL;
@@ -144,11 +146,13 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
 - **Logowanie na produkcji nie działa:**
   - czy projekt Supabase nie jest uśpiony (panel pokazuje „Paused”);
   - czy `SUPABASE_KEY` to klucz publishable/anon;
-  - czy Confirm email jest wyłączone;
+  - czy konto ma potwierdzony e-mail. Confirm email jest **włączone** od 07.10.2026 (S-05) i ma takie zostać; konto testowe zakłada się z „Auto Confirm User”;
   - podgląd w `npx wrangler tail`.
 - **Push odrzucony z komunikatem o `workflow` scope:** `gh auth refresh -h github.com -s workflow` w zwykłym oknie PowerShell.
 - **Maile do hostów (linki, potwierdzenia):** wymagają własnego SMTP (np. Resend) oraz ustawienia Site URL i Redirect URLs w Supabase na adres produkcyjny i `http://localhost:4321/**`. To nie jest częścią tego wdrożenia.
+  - → 07.10.2026 (S-05): Site URL i Redirect URLs ustawione (wartości w „Stan po wdrożeniu”). Własny SMTP nadal poza planem.
 - **Konta testowe:** smoke tworzy konta `smoke-…@example.com` w jedynym projekcie Supabase, który na razie służy i do rozwoju, i do produkcji. To świadomy kompromis na MVP. Konta można usuwać w Authentication → Users.
+  - → Od 07.10.2026 (S-05) smoke i sonda F-01 logują się stałym kontem testowym z `.dev.vars` (`SMOKE_EMAIL`, `SMOKE_PASSWORD`) i nie zakładają kont. Stare konta `smoke-…` i `probe-…` usunięte. W nowym worktree trzeba skopiować `.dev.vars`.
 - **Paczki kursu w publicznym repo:** `.claude/skills/10x-*` trafiły do publicznego repo. Nie znalazłem w nich zastrzeżeń licencyjnych, a kurs zachęca do publicznego repo.
 
 ## Poza tym planem (decyzje na później)
@@ -158,6 +162,7 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
 - Minimalne uprawnienia: `wrangler login` dał token OAuth z dostępem do całego konta. Docelowo token API ograniczony do Workers tego projektu.
 - Wtyczka Cloudflare dla Claude Code (zainstalowana lokalnie, tylko w tym projekcie): po `/reload-plugins` dopisać regułę ask dla serwerów MCP, które mogą zmieniać konto.
 - Konta testowe smoke w Supabase (na 26.09: 3) usuwać co jakiś czas.
+  - → Nieaktualne od 07.10.2026: smoke nie zakłada już kont (S-05).
 - KV na darmowym planie ma niski dzienny limit zapisów. Sprawdzić przed trzymaniem stanu gry w sesjach Astro.
 - Ostrzeżenia w GitHub Actions: akcje na Node 20 (`checkout@v4`, `setup-node@v4`, `supabase/setup-cli@v1`) są uruchamiane na Node 24, a `ubuntu-latest` przechodzi na Ubuntu 26 od 19.10.2026. Podbić wersje akcji, gdy wyjdą nowe.
 - Ostrzeżenie builda: `@astrojs/sitemap` potrzebuje opcji `site` w `astro.config` (adres produkcji).

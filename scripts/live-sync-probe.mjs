@@ -1,6 +1,7 @@
 // Live-sync probe (F-01): players on separate Realtime connections, timing "bell + board" for each of them.
-// Signs up a probe-<timestamp>@example.com account in the Supabase project behind --base-url (production included)
-// and rings through the app, so its commands are under an "ask" rule in .claude/settings.json (lessons.md).
+// Signs in with the fixed test account SMOKE_EMAIL / SMOKE_PASSWORD (npm run live-probe reads them from .dev.vars)
+// in the Supabase project behind --base-url (production included) and rings through the app, so its commands are
+// under an "ask" rule in .claude/settings.json (lessons.md). It creates no accounts: the project has "Confirm email" on.
 // Usage: npm run live-probe -- [--base-url http://localhost:4321] [--rooms 1] [--players 20] [--trials 10] [--pause-ms 3000]
 // Exit codes: 0 PASS (INFO with --rooms > 1), 1 FAIL of the F-01 criterion, 2 technical error (nothing measured).
 // FAIL is an honest spike result: thresholds, timeouts and counting are fixed by the plan, not tuned to the outcome.
@@ -73,6 +74,14 @@ function parseArgs(argv) {
   return options;
 }
 
+function testAccount() {
+  const missing = ["SMOKE_EMAIL", "SMOKE_PASSWORD"].filter((name) => !process.env[name]);
+  if (missing.length > 0) {
+    throw new TechnicalError(`Missing ${missing.join(", ")}: add the test account to .dev.vars (AGENTS.md, Testing)`);
+  }
+  return { email: process.env.SMOKE_EMAIL, password: process.env.SMOKE_PASSWORD };
+}
+
 function cookieHeader() {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
 }
@@ -105,11 +114,6 @@ async function hostRequest(path, { form, json } = {}) {
 }
 
 async function signIn(email, password) {
-  const signup = await hostRequest("/api/auth/signup", { form: { email, password } });
-  const signupLocation = signup.headers.get("location") ?? "";
-  if (signup.status !== 302 || !signupLocation.startsWith("/auth/confirm-email")) {
-    throw new TechnicalError(`Sign-up failed: ${signup.status} ${signupLocation}`);
-  }
   const signin = await hostRequest("/api/auth/signin", { form: { email, password } });
   const signinLocation = signin.headers.get("location") ?? "";
   if (signin.status !== 302 || signinLocation !== "/") {
@@ -261,18 +265,18 @@ function formatStats(label, values) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
+  const account = testAccount();
   baseUrl = options.baseUrl;
   const stamp = Date.now();
-  const email = `probe-${stamp}@example.com`;
   console.log(
     `Live-sync probe: ${baseUrl}, ${options.rooms} room(s) × ${options.players} players × ${options.trials} trials` +
       ` (${new Date().toISOString()})`,
   );
 
-  // Config first: a misconfigured server ends the run before an account is created.
+  // Config first: a misconfigured server ends the run before the sign-in.
   const config = await fetchConfig();
-  await signIn(email, "Probe-Test-Passw0rd!");
-  console.log(`Signed in as ${email}`);
+  await signIn(account.email, account.password);
+  console.log(`Signed in as ${account.email}`);
 
   const rooms = Array.from({ length: options.rooms }, (_, r) => `probe-${stamp}-${r}`);
   await subscribeAll(config, rooms, options.players);
