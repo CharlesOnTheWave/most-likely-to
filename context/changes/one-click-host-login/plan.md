@@ -593,16 +593,16 @@ Brak nowych kosztów na żądanie. Callback dokłada jedno wywołanie Supabase p
 
 #### Automated
 
-- [x] 3.1 Bramka przechodzi: `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm run build`
-- [x] 3.2 Smoke lokalny kończy się „All smoke steps passed”, z krokiem `/auth/signup` → `/auth/signin`
-- [x] 3.3 `git grep` rejestracji zwraca tylko linki w plikach S-01 i krok smoke
-- [x] 3.4 `/dev/ui-kitchen-sink` daje 200 na dev i 404 w `npm run preview`
-- [x] 3.7 Po załadowaniu z `?error=` fokus jest na komunikacie serwera, a `FieldError` nie ma `role="alert"`
+- [x] 3.1 Bramka przechodzi: `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm run build` — 1bcdb9d
+- [x] 3.2 Smoke lokalny kończy się „All smoke steps passed”, z krokiem `/auth/signup` → `/auth/signin` — 1bcdb9d
+- [x] 3.3 `git grep` rejestracji zwraca tylko linki w plikach S-01 i krok smoke — 1bcdb9d
+- [x] 3.4 `/dev/ui-kitchen-sink` daje 200 na dev i 404 w `npm run preview` — 1bcdb9d
+- [x] 3.7 Po załadowaniu z `?error=` fokus jest na komunikacie serwera, a `FieldError` nie ma `role="alert"` — 1bcdb9d
 
 #### Manual
 
-- [x] 3.5 Karol ocenia zrzuty desktop i 390 px
-- [x] 3.6 Karol klika lokalnie oba przyciski: „Przekierowuję…” i odblokowanie po „Wstecz”
+- [x] 3.5 Karol ocenia zrzuty desktop i 390 px — 1bcdb9d
+- [x] 3.6 Karol klika lokalnie oba przyciski: „Przekierowuję…” i odblokowanie po „Wstecz” — 1bcdb9d
 
 ### Phase 4: Produkcja i test na telefonach
 
