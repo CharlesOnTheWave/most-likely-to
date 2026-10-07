@@ -200,6 +200,15 @@ Historycznych checkboxów nie przepisujemy. Dopisujemy notę z datą.
 
 Aplikacje u dostawców, dostawcy w Supabase, endpoint startu logowania, callback, polskie komunikaty błędów i smoke dla nowych tras. Bez zmian w wyglądzie ekranu: przyciski dochodzą w fazie 3. Wymaga Gmaila gry.
 
+**Adaptacja 07.10 (wieczór): grupa Google zamiast Gmaila gry.** Google odrzuciło zakładanie Gmaila gry, więc wszędzie, gdzie ta faza mówi o Gmailu gry, obowiązuje:
+
+- Projekt Google jest na prywatnym koncie Karola. Gracze go nie widzą.
+- „User support email” na ekranie zgody to grupa Google założona na tym samym koncie (np. `most-likely-to@googlegroups.com`), nazwana „Most Likely To”, z listą członków widoczną tylko dla właściciela. Gracz po kliknięciu nazwy aplikacji widzi tylko nazwę gry i adres grupy.
+- Adres w „Contact information” widzi tylko Google, więc może to być prywatny Gmail.
+- Test 2.7 robimy na prywatnym Gmailu Karola: konto z tym adresem przez Add user (Auto Confirm User) przed pierwszym logowaniem Google'em.
+- Dokumenty (pkt 9) nie zawierają prywatnego adresu Karola ani adresu grupy (repo jest publiczne).
+- Zasady trybu Testing sprawdzone 07.10: przy samych zakresach `openid`, `userinfo.email` i `userinfo.profile` logować się może każdy, bez listy testerów i bez wygasania zgody po 7 dniach (https://support.google.com/cloud/answer/15549945).
+
 ### Changes Required:
 
 #### 1. Panele dostawców i Supabase (Karol, agent prowadzi krok po kroku)
@@ -327,7 +336,7 @@ Do logów trafiają tylko `name`, `status`, `code` oraz `error` i `error_code` d
 
 - Karol loguje się lokalnie Discordem i Google na `http://localhost:4321`, `http://127.0.0.1:4321` i na drugim serwerze na porcie 4322, i trafia na `/` zalogowany (`/dashboard` pokazuje e-mail). Start z tymczasowych przycisków w `/dev/ui-kitchen-sink`.
 - Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem na ekranie logowania
-- Logowanie dostawcą na adres konta Karola dołącza tożsamość do tego samego konta (to samo `user_id` w Authentication → Users). Inny adres u dostawcy daje nowe konto, co jest przyjętym ryzykiem; zapisujemy, jak było. Nota 07.10: Discord i Google Karola są na innych adresach niż jego konto z hasłem, więc ten test robimy na Gmailu gry. Karol dodaje konto z tym adresem w Authentication → Users (Add user, Auto Confirm User), potem loguje się Google'em na ten sam Gmail i sprawdza, że na liście jest jedno konto z dwiema tożsamościami, a nie dwa konta.
+- Logowanie dostawcą na adres konta Karola dołącza tożsamość do tego samego konta (to samo `user_id` w Authentication → Users). Inny adres u dostawcy daje nowe konto, co jest przyjętym ryzykiem; zapisujemy, jak było. Nota 07.10: Discord i Google Karola są na innych adresach niż jego konto z hasłem, więc ten test robimy na Gmailu gry. Karol dodaje konto z tym adresem w Authentication → Users (Add user, Auto Confirm User), potem loguje się Google'em na ten sam Gmail i sprawdza, że na liście jest jedno konto z dwiema tożsamościami, a nie dwa konta. → Adaptacja 07.10 wieczór: zamiast Gmaila gry prywatny Gmail Karola (Overview fazy 2).
 - Wylogowanie w jednej przeglądarce nie wylogowuje drugiej
 
 **Implementation Note**: Logowanie u dostawców przeprowadza Karol, nie agent (ekrany logowania obcych serwisów). Przed fazą 3 pauza na potwierdzenie Karola.
@@ -566,17 +575,17 @@ Brak nowych kosztów na żądanie. Callback dokłada jedno wywołanie Supabase p
 
 #### Automated
 
-- [ ] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [ ] 2.2 Smoke lokalny kończy się „All smoke steps passed”, z nowymi krokami OAuth
-- [ ] 2.3 Smoke lokalny z `SMOKE_OAUTH=1` dochodzi do discord.com i accounts.google.com
-- [ ] 2.4 `git grep -niE "GOCSPX|client.?secret" -- src scripts` nic nie zwraca
+- [x] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
+- [x] 2.2 Smoke lokalny kończy się „All smoke steps passed”, z nowymi krokami OAuth
+- [x] 2.3 Smoke lokalny z `SMOKE_OAUTH=1` dochodzi do discord.com i accounts.google.com
+- [x] 2.4 `git grep -niE "GOCSPX|client.?secret" -- src scripts` nic nie zwraca
 
 #### Manual
 
-- [ ] 2.5 Karol loguje się lokalnie Discordem i Google na trzech adresach deweloperskich i trafia na `/` zalogowany
-- [ ] 2.6 Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem
-- [ ] 2.7 Logowanie dostawcą na adres konta Karola daje to samo `user_id`
-- [ ] 2.8 Wylogowanie w jednej przeglądarce nie wylogowuje drugiej
+- [x] 2.5 Karol loguje się lokalnie Discordem i Google na trzech adresach deweloperskich i trafia na `/` zalogowany
+- [x] 2.6 Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem
+- [x] 2.7 Logowanie dostawcą na adres konta Karola daje to samo `user_id`
+- [x] 2.8 Wylogowanie w jednej przeglądarce nie wylogowuje drugiej
 
 ### Phase 3: Ekran logowania i porządki
 
