@@ -4,32 +4,41 @@ import LiveSyncDemo from "@/components/live-sync/LiveSyncDemo";
 import { isValidRoomId } from "@/lib/live-sync/shared";
 import { getPublicSupabaseConfig } from "@/lib/supabase";
 
-// F-01 test page, open to guests: the publishable key reaches the island as props at runtime (AGENTS.md).
+// F-01 test page: the publishable key reaches the island as props at runtime (AGENTS.md). Local only since S-01 (F-01
+// kept it in production "until S-01"); a production build answers an empty 404. The probe needs only /api/live-sync/*,
+// which stays. (Status instead of an early `return`, which crashes typescript-eslint's no-misused-promises in .astro
+// files.)
+const isDev = import.meta.env.DEV;
+if (!isDev) {
+  Astro.response.status = 404;
+}
 const config = getPublicSupabaseConfig();
 const roomParam = Astro.url.searchParams.get("room");
 const room = isValidRoomId(roomParam) ? roomParam : "demo";
 const canRing = Boolean(Astro.locals.user);
 ---
 
-<Layout title="Test dzwonka">
-  <div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
-    <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
-      <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-center text-2xl font-bold text-transparent">
-        Test dzwonka
-      </h1>
-      {config ? (
-        <LiveSyncDemo
-          supabaseUrl={config.supabaseUrl}
-          supabaseKey={config.supabaseKey}
-          room={room}
-          canRing={canRing}
-          client:load
-        />
-      ) : (
-        <p class="text-center text-sm text-red-200">
-          Brak konfiguracji Supabase (adres albo klucz publishable), więc test nie ruszy.
-        </p>
-      )}
+{isDev && (
+  <Layout title="Test dzwonka">
+    <div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
+      <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
+        <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-center text-2xl font-bold text-transparent">
+          Test dzwonka
+        </h1>
+        {config ? (
+          <LiveSyncDemo
+            supabaseUrl={config.supabaseUrl}
+            supabaseKey={config.supabaseKey}
+            room={room}
+            canRing={canRing}
+            client:load
+          />
+        ) : (
+          <p class="text-center text-sm text-red-200">
+            Brak konfiguracji Supabase (adres albo klucz publishable), więc test nie ruszy.
+          </p>
+        )}
+      </div>
     </div>
-  </div>
-</Layout>
+  </Layout>
+)}

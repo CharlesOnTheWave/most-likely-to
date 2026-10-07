@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { createClient, REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
 import { Check, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BELL_EVENT, topicFor } from "@/lib/live-sync/shared";
 import type { LobbyState } from "@/lib/rooms/shared";
 
 // Starting state for /dev/room-states, which renders several lobbies on one page; the real page never sets it.
@@ -18,18 +20,87 @@ interface Props {
   initial: LobbyState;
   // Only the host gets the link to share.
   linkUrl?: string | null;
+  // URL and publishable key, only for the room's Realtime channel. Without them (CI runs without Realtime) the list
+  // only polls.
+  realtime?: { supabaseUrl: string; supabaseKey: string } | null;
   preview?: Preview;
 }
 
 const COPIED_MS = 2000;
+// The bell is the fast path; polling catches a missed bell, a dropped connection and a phone that slept.
+const POLL_MS = 15000;
 
-export default function RoomLobby({ initial, linkUrl, preview }: Props) {
-  const lobby = initial;
+export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview }: Props) {
+  const [lobby, setLobby] = useState(initial);
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const [copied, setCopied] = useState(preview?.copied ?? false);
   const linkRef = useRef<HTMLInputElement>(null);
   const isPreview = Boolean(preview);
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
   const isHost = lobby.role === "host";
+  const isOpen = lobby.status === "lobby";
+  const supabaseUrl = realtime?.supabaseUrl;
+  const supabaseKey = realtime?.supabaseKey;
+
+  // The live list. The database (room_lobby through /api/rooms/<id>/lobby) is the only source of truth; a bell on the
+  // room's channel only says "check", and so does every (re)subscription, because bells sent while the connection was
+  // down are lost. A closed room never opens again, so its screen stops listening.
+  useEffect(() => {
+    if (isPreview || !isOpen) return;
+    let sent = 0;
+    let shown = 0;
+    let active = true;
+
+    async function refresh() {
+      const request = ++sent;
+      try {
+        const res = await fetch(`/api/rooms/${roomId}/lobby`, { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const next = (await res.json()) as LobbyState;
+        // A slower answer to an older request must not overwrite a newer list.
+        if (!active || request < shown) return;
+        shown = request;
+        setLobby(next);
+        setRefreshFailed(false);
+      } catch {
+        // The list stays as it was; only a quiet note says it may be out of date.
+        if (!active || request < shown) return;
+        setRefreshFailed(true);
+      }
+    }
+
+    function refreshIfVisible() {
+      if (document.visibilityState === "visible") void refresh();
+    }
+
+    const timer = window.setInterval(refreshIfVisible, POLL_MS);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+
+    // Realtime only: this client never signs in, the host's session lives in server-side cookies.
+    const supabase =
+      supabaseUrl && supabaseKey
+        ? createClient(supabaseUrl, supabaseKey, {
+            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+          })
+        : null;
+    const channel = supabase
+      ?.channel(topicFor(roomId))
+      .on("broadcast", { event: BELL_EVENT }, () => {
+        void refresh();
+      })
+      .subscribe((state) => {
+        if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) void refresh();
+      });
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      if (supabase && channel) void supabase.removeChannel(channel);
+    };
+  }, [isPreview, isOpen, roomId, supabaseUrl, supabaseKey]);
 
   useEffect(() => {
     if (!copied || isPreview) return;
@@ -110,9 +181,14 @@ export default function RoomLobby({ initial, linkUrl, preview }: Props) {
         ))}
 
       <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
-        <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
-          Gracze ({lobby.players.length})
-        </h2>
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
+            Gracze ({lobby.players.length})
+          </h2>
+          <p aria-live="polite" className="text-muted-foreground text-xs">
+            {refreshFailed ? "Nie udało się odświeżyć listy" : ""}
+          </p>
+        </div>
         <ul className="divide-y rounded-md border">
           {lobby.players.map((player) => (
             <li key={player.nick} className="flex items-center justify-between gap-3 px-3 py-2.5">

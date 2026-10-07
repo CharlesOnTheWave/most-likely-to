@@ -181,6 +181,13 @@ It signs in with a fixed test account and creates no accounts. `npm run smoke` r
 
 > **Note:** this script exists primarily to guard the development of the starter itself — it is a fast sanity check that dependency upgrades did not break the build, the Cloudflare adapter or the Supabase auth flow. It is **not** a substitute for a real test suite. Once you build your own product on top of this starter, add proper tests (unit, integration, end-to-end) suited to your application.
 
+## Live-sync test page and probe
+
+The live-sync spike (F-01) proved the technique the room screens use: the server rings a public Realtime channel (`live-sync:<room>`) and every screen then fetches the state from the server.
+
+- `/dev/live-sync` is the F-01 test page: open it in two windows, sign in in one of them and press "Zadzwoń" (`?room=<name>` picks the channel). Local only (`npm run dev`); a production build answers 404.
+- `npm run live-probe` measures bell delivery with simulated players. It needs only `/api/live-sync/config`, `/api/live-sync/state` and `/api/live-sync/ring`, which stay in production, so it still runs there (`--base-url`). It signs in with the smoke test account and asks first.
+
 ## CI
 
 GitHub Actions runs two jobs on every push and PR to `main`:
