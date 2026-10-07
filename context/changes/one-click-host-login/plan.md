@@ -378,6 +378,8 @@ Przyciski dostawców na górze karty, kreska, formularz z hasłem, nowa stopka i
 - Czytnik ekranu słyszy błąd serwera po przeładowaniu (nota F3 z przeglądu M2L5, archiwum `ui-signin-contract/change.md:22`). `role="alert"` obecny w HTML od załadowania strony większość czytników pomija, więc komunikat dostaje `tabindex="-1"` i znacznik `data-server-error`. Mały `<script>` w `SignInCard.astro` przenosi fokus na pierwszy taki element po załadowaniu strony. Ramka fokusu na komunikacie nie jest potrzebna, bo to nie element do klikania.
 - Błąd pola słychać raz: `FormField` przekazuje do `FieldError` `role={undefined}` (props są rozwijane po `role="alert"`, `field.tsx:203-205`), bo fokus trafia na pole, które wskazuje błąd przez `aria-describedby`. `field.tsx` się nie zmienia.
 
+**Adaptacja 07.10 (ocena zrzutów, Karol):** komunikat serwera jest pod przyciskami dostawców, a nie nad nimi. Kolejność renderu: `ProviderButtons`, `ServerError`, kreska, formularz. Karol chciał też formularz z hasłem nad przyciskami. Wybrał jednak przyciski na górze, bo po fazie 4 żaden prawdziwy host nie ma hasła i formularz zostaje tylko dla konta testowego smoke.
+
 #### 3. Usunięcie rejestracji
 
 **File**: usunąć `src/pages/api/auth/signup.ts`, `src/components/auth/SignUpForm.tsx`, `src/pages/auth/confirm-email.astro`, `src/pages/auth/signup.astro`; nowy `src/pages/auth/signup.ts`; `src/lib/auth-errors.ts`; `README.md`
@@ -575,32 +577,32 @@ Brak nowych kosztów na żądanie. Callback dokłada jedno wywołanie Supabase p
 
 #### Automated
 
-- [x] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [x] 2.2 Smoke lokalny kończy się „All smoke steps passed”, z nowymi krokami OAuth
-- [x] 2.3 Smoke lokalny z `SMOKE_OAUTH=1` dochodzi do discord.com i accounts.google.com
-- [x] 2.4 `git grep -niE "GOCSPX|client.?secret" -- src scripts` nic nie zwraca
+- [x] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build` — 71d2d9b
+- [x] 2.2 Smoke lokalny kończy się „All smoke steps passed”, z nowymi krokami OAuth — 71d2d9b
+- [x] 2.3 Smoke lokalny z `SMOKE_OAUTH=1` dochodzi do discord.com i accounts.google.com — 71d2d9b
+- [x] 2.4 `git grep -niE "GOCSPX|client.?secret" -- src scripts` nic nie zwraca — 71d2d9b
 
 #### Manual
 
-- [x] 2.5 Karol loguje się lokalnie Discordem i Google na trzech adresach deweloperskich i trafia na `/` zalogowany
-- [x] 2.6 Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem
-- [x] 2.7 Logowanie dostawcą na adres konta Karola daje to samo `user_id`
-- [x] 2.8 Wylogowanie w jednej przeglądarce nie wylogowuje drugiej
+- [x] 2.5 Karol loguje się lokalnie Discordem i Google na trzech adresach deweloperskich i trafia na `/` zalogowany — 71d2d9b
+- [x] 2.6 Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem — 71d2d9b
+- [x] 2.7 Logowanie dostawcą na adres konta Karola daje to samo `user_id` — 71d2d9b
+- [x] 2.8 Wylogowanie w jednej przeglądarce nie wylogowuje drugiej — 71d2d9b
 
 ### Phase 3: Ekran logowania i porządki
 
 #### Automated
 
-- [ ] 3.1 Bramka przechodzi: `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm run build`
-- [ ] 3.2 Smoke lokalny kończy się „All smoke steps passed”, z krokiem `/auth/signup` → `/auth/signin`
-- [ ] 3.3 `git grep` rejestracji zwraca tylko linki w plikach S-01 i krok smoke
-- [ ] 3.4 `/dev/ui-kitchen-sink` daje 200 na dev i 404 w `npm run preview`
-- [ ] 3.7 Po załadowaniu z `?error=` fokus jest na komunikacie serwera, a `FieldError` nie ma `role="alert"`
+- [x] 3.1 Bramka przechodzi: `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm run build`
+- [x] 3.2 Smoke lokalny kończy się „All smoke steps passed”, z krokiem `/auth/signup` → `/auth/signin`
+- [x] 3.3 `git grep` rejestracji zwraca tylko linki w plikach S-01 i krok smoke
+- [x] 3.4 `/dev/ui-kitchen-sink` daje 200 na dev i 404 w `npm run preview`
+- [x] 3.7 Po załadowaniu z `?error=` fokus jest na komunikacie serwera, a `FieldError` nie ma `role="alert"`
 
 #### Manual
 
-- [ ] 3.5 Karol ocenia zrzuty desktop i 390 px
-- [ ] 3.6 Karol klika lokalnie oba przyciski: „Przekierowuję…” i odblokowanie po „Wstecz”
+- [x] 3.5 Karol ocenia zrzuty desktop i 390 px
+- [x] 3.6 Karol klika lokalnie oba przyciski: „Przekierowuję…” i odblokowanie po „Wstecz”
 
 ### Phase 4: Produkcja i test na telefonach
 
