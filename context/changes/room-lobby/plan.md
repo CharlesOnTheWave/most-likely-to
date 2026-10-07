@@ -618,17 +618,17 @@ Dokumentacja, PR, scalenie za zgodą Karola (wdrożenie), smoke na produkcji i t
 
 #### Automated
 
-- [ ] 1.8 CI na szkicu PR zielone z migracją `room_lobby` przy `auto_expose_new_tables = false` (przed `db push`)
-- [ ] 1.1 `npx supabase db push --dry-run` (ask) pokazuje tylko migrację `room_lobby`
-- [ ] 1.2 Po `npx supabase db push` (ask, za zgodą Karola) `npx supabase migration list` pokazuje `room_lobby` lokalnie i zdalnie
-- [ ] 1.3 Zapytania REST z kluczem publishable do `rooms`, `players`, `player_secrets` kończą się błędem uprawnień
-- [ ] 1.4 Wywołania RPC z kluczem publishable: `room_link` → `unknown`, `join_room` → `room_unknown`, `create_room` jako `anon` → błąd uprawnień
-- [x] 1.5 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
+- [x] 1.8 CI na szkicu PR zielone z migracją `room_lobby` przy `auto_expose_new_tables = false` (przed `db push`) — 6dbfedd
+- [x] 1.1 `npx supabase db push --dry-run` (ask) pokazuje tylko migrację `room_lobby` — 6dbfedd
+- [x] 1.2 Po `npx supabase db push` (ask, za zgodą Karola) `npx supabase migration list` pokazuje `room_lobby` lokalnie i zdalnie — 6dbfedd
+- [x] 1.3 Zapytania REST z kluczem publishable do `rooms`, `players`, `player_secrets` kończą się błędem uprawnień — 6dbfedd
+- [x] 1.4 Wywołania RPC z kluczem publishable: `room_link` → `unknown`, `join_room` → `room_unknown`, `create_room` jako `anon` → błąd uprawnień — 6dbfedd
+- [x] 1.5 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build` — 6dbfedd
 
 #### Manual
 
-- [ ] 1.6 Advisors → Security: brak błędów RLS, nowe ostrzeżenia tylko 0028/0029 dla trzech funkcji gościa
-- [ ] 1.7 Table Editor: trzy tabele z włączonym RLS
+- [x] 1.6 Advisors → Security: brak błędów RLS, nowe ostrzeżenia tylko 0028/0029 dla trzech funkcji gościa — 6dbfedd
+- [x] 1.7 Table Editor: trzy tabele z włączonym RLS — 6dbfedd
 
 ### Phase 2: Host — nowa gra i pokój z linkiem
 
