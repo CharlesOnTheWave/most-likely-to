@@ -75,6 +75,8 @@ async function followToProvider(provider) {
 const steps = [
   ["home renders", () => request("/"), { status: 200 }],
   ["dashboard redirects anonymous user", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
+  // Sign-up is gone; old links to it must land on the sign-in page, not on a 404.
+  ["signup redirects to signin", () => request("/auth/signup"), { status: 302, exact: "/auth/signin" }],
   [
     "signin rejects wrong password",
     () => request("/api/auth/signin", { method: "POST", form: { email, password: "wrong" } }),
@@ -83,10 +85,10 @@ const steps = [
   [
     "signin accepts correct password",
     () => request("/api/auth/signin", { method: "POST", form: { email, password } }),
-    { status: 302, location: "/" },
+    { status: 302, exact: "/" },
   ],
   ["dashboard renders for signed-in user", () => request("/dashboard"), { status: 200 }],
-  ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, location: "/" }],
+  ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, exact: "/" }],
   ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
   // OAuth steps run signed out, after the password steps, so they cannot disturb them.
   [
@@ -137,17 +139,19 @@ const steps = [
 let failed = 0;
 for (const [name, run, expected] of steps) {
   const actual = await run();
-  // location: Location starts with it; contains: Location has every part; cookie: a cookie this step set ends with it.
+  // location: Location starts with it; exact: Location is exactly it (a bare "/" as a prefix matches any path);
+  // contains: Location has every part; cookie: a cookie this step set ends with it.
   const contains = expected.contains ?? [];
   const ok =
     actual.status === expected.status &&
     (expected.location === undefined || actual.location.startsWith(expected.location)) &&
+    (expected.exact === undefined || actual.location === expected.exact) &&
     contains.every((part) => actual.location.includes(part)) &&
     (expected.cookie === undefined || actual.cookies.some((cookie) => cookie.endsWith(expected.cookie)));
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}  -> ${actual.status} ${actual.location}`);
   if (!ok) {
     failed++;
-    console.log(`      expected ${expected.status} ${expected.location ?? ""}`);
+    console.log(`      expected ${expected.status} ${expected.exact ?? expected.location ?? ""}`);
     if (contains.length > 0) console.log(`      expected Location to contain ${contains.join(" and ")}`);
     if (expected.cookie !== undefined) {
       console.log(`      expected a cookie ending in ${expected.cookie}, set: ${actual.cookies.join(", ") || "none"}`);

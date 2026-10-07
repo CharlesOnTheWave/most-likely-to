@@ -1,6 +1,6 @@
 import { isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js";
 
-// Sign-in, sign-up and OAuth errors travel in the URL only as codes; the page shows the Polish text from this map,
+// Sign-in errors (password and OAuth) travel in the URL only as codes; the page shows the Polish text from this map,
 // so text typed into `?error=` never reaches the screen. OAuth codes come from /api/auth/oauth, /api/auth/callback
 // and from Supabase itself, which sends OAuth state errors straight to the Site URL (/auth/signin) as `error_code`.
 const MESSAGES: Record<string, string> = {
@@ -11,9 +11,6 @@ const MESSAGES: Record<string, string> = {
   over_email_send_rate_limit: "Za dużo prób. Odczekaj chwilę i spróbuj ponownie.",
   validation_failed: "Sprawdź adres e-mail i hasło.",
   email_address_invalid: "Sprawdź adres e-mail i hasło.",
-  user_already_exists: "Konto z tym adresem już istnieje. Zaloguj się.",
-  email_exists: "Konto z tym adresem już istnieje. Zaloguj się.",
-  weak_password: "Hasło jest za słabe. Użyj co najmniej 6 znaków.",
   signup_disabled: "Zakładanie kont jest wyłączone.",
   config_missing: "Serwer jest chwilowo niedostępny. Spróbuj za kilka minut.",
   service_unavailable: "Serwer jest chwilowo niedostępny. Spróbuj za kilka minut.",
