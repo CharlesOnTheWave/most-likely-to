@@ -16,11 +16,15 @@
 ## Migracje Supabase (od 07.10.2026, S-01)
 
 - **Połączenie CLI:** Karol raz uruchamia `npx supabase login` i `npx supabase link --project-ref xadljhxjgmckjlmsgmmj` (hasło do bazy wpisuje w podpowiedź, nie w czat). Stan połączenia leży w `supabase/.temp/` (poza gitem) katalogu, w którym je zrobiono, więc każdy worktree i nowy klon łączy się osobno.
+  - → 07.10.2026: połączone w worktree S-01 (`C:\Users\karol\10xdevs-room-lobby`). Hasło do bazy nie było potrzebne: CLI 2.117 przy `link`, `db push` i `migration list` tworzy tymczasową rolę logowania przez konto z `supabase login`. Główny katalog `C:\Users\karol\10xdevs` nie jest połączony.
 - **Nowa migracja:** `npx supabase migration new <nazwa>`. Zasady dla tabel i funkcji są w `AGENTS.md` (Conventions).
 - **Próba przed jedyną bazą:** bez Dockera lokalnie nie ma Postgresa. CI na PR do `main` (`supabase start`) wgrywa migracje na czystą bazę z `auto_expose_new_tables = false` i uruchamia smoke. Push gałęzi nie wdraża produkcji, choć Workers Builds wgrywa z niej wersję podglądową (`wrangler versions upload`).
 - **Wgranie (ask, za zgodą Karola):** `npx supabase db push --dry-run` (lista plików do wgrania), `npx supabase db push`, potem `npx supabase migration list` (kolumny Local i Remote).
 - **Nigdy SQL w panelu:** omija historię migracji i psuje następne `db push`. Wgranej migracji nie edytujemy; poprawka i wycofanie to nowa migracja.
 - **Zmiana uprawnień w Supabase:** nowe tabele w `public` przestają dostawać uprawnienia dla `anon` i `authenticated` (istniejące projekty od 30.10.2026 według supabase/discussions#45329). Nasze migracje odbierają i nadają uprawnienia jawnie, więc działają przed zmianą i po niej.
+- **Wgrane migracje:**
+  - `20261007122858_room_lobby` (S-01, 07.10.2026): tabele `rooms`, `players`, `player_secrets` i funkcje `create_room`, `join_room`, `room_link`, `room_lobby`. Przed wgraniem zielone CI na PR #1. Po wgraniu z kluczem publishable: tabele dają 401 `permission denied`, `create_room` jako `anon` też, a funkcje gościa odpowiadają.
+    - Advisors → Security po wgraniu: 0 błędów. Ostrzeżenia 0028/0029 dla `join_room`, `room_link` i `room_lobby` są zamierzone (wejście gościa). To samo ostrzeżenie dotyczy `public.rls_auto_enable()`, funkcji Supabase od automatycznego RLS, której nie ma w naszych migracjach. Info „RLS Enabled No Policy” dla `player_secrets` też jest zamierzone. „Leaked Password Protection Disabled” było już wcześniej (ustawienie Auth).
 
 ## Context
 
