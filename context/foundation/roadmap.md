@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-04
+updated: 2026-10-07
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -47,7 +47,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | proposed |
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                            | S-02             | FR-006, FR-015                                            | proposed |
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                    | S-02             | US-01, FR-011                                             | proposed |
-| S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                       | —                | FR-001                                                    | blocked  |
+| S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                       | —                | FR-001                                                    | in-progress |
 | S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                             | S-02             | FR-012                                                    | proposed |
 | S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                    | S-03             | FR-003, FR-006                                            | proposed |
 | S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                              | S-07             | FR-020                                                    | proposed |
@@ -170,9 +170,9 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** każdy inny element (nie dzieli z nimi zależności)
 - **Blockers:** —
 - **Unknowns:**
-  - Którzy dostawcy logowania i jaka droga zapasowa (drugi dostawca czy e-mail)? PRD odkłada tę listę na później, a logowanie linkiem z e-maila wymaga własnej skrzynki nadawczej. — Owner: Karol. Block: yes.
+  - Którzy dostawcy logowania i jaka droga zapasowa (drugi dostawca czy e-mail)? Rozstrzygnięte 2026-10-06: Discord (główny) + Google (zapasowy), „Confirm email” włączone; logowanie hasłem zostaje dla istniejących kont, rejestracja z hasłem w Parked (`context/changes/one-click-host-login/research.md`, sekcja „Decyzja”). — Owner: Karol. Block: no.
 - **Risk:** Do tego czasu host loguje się e-mailem i hasłem ze startera, co wystarcza do gry z własną ekipą; przed zaproszeniem obcych hostów ten element musi być gotowy.
-- **Status:** blocked
+- **Status:** in-progress
 
 ### S-06: Przegląd listy pytań przed startem
 
@@ -324,6 +324,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **FR-023: emotki i gify do pokoju** — Why parked: dodatek; rozmowa i tak toczy się na Discordzie.
 - **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
 - **Nick zapamiętany w przeglądarce** — Why parked: PRD przesuwa go do v2 (Access Control: „Poza MVP”).
+- **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
 - **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy.
 
 ## Milestone History

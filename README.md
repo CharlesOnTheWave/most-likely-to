@@ -41,6 +41,8 @@ npm install
 cp .env.example .dev.vars
 ```
 
+`SMOKE_EMAIL` and `SMOKE_PASSWORD` are the smoke test account — see [Smoke test](#smoke-test).
+
 5. Run the development server:
 
 ```bash
@@ -56,7 +58,7 @@ npm run dev
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
 - `npm run smoke` - Smoke test the auth flow against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
-- `npm run live-probe` - Measure live-sync delivery with simulated players (`--base-url`, defaults to `http://localhost:4321`); creates a `probe-…` account in Supabase, so it asks first
+- `npm run live-probe` - Measure live-sync delivery with simulated players (`--base-url`, defaults to `http://localhost:4321`); signs in with the smoke test account from `.dev.vars` and rings through the app, so it asks first
 
 ## Project Structure
 
@@ -129,15 +131,11 @@ SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_KEY=<publishable-key>
 ```
 
-### Email confirmation in local development
+### Email confirmation
 
-By default Supabase requires email confirmation before a user can sign in. To skip this during local development:
+The hosted project has **Confirm email** turned **on**, and it stays on. With it off, Supabase links a Discord or Google sign-in to an existing account by an unverified email, so anyone who registered someone else's address could take over that host's account. Never turn it off to make sign-up, the smoke test or the probe pass.
 
-1. Open the Supabase dashboard for your project
-2. Go to **Authentication → Email → Confirm email**
-3. Toggle it **off**
-
-Users can then sign in immediately after sign-up without clicking a confirmation link.
+The local stack (`supabase/config.toml`) keeps confirmations off only so CI can create the smoke test account with a plain sign-up.
 
 ### Auth routes
 
@@ -172,14 +170,14 @@ Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or
 
 ## Smoke test
 
-`scripts/smoke.mjs` is a dependency-free Node script that walks the whole auth flow (sign-up, sign-in, protected page, sign-out) over HTTP. Run it against the dev server or the production preview after dependency upgrades:
+`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (wrong and correct password, protected page, sign-out) over HTTP. Run it against the dev server or the production preview after dependency upgrades:
 
 ```bash
 npm run dev            # or: npm run build && npm run preview
 BASE_URL=http://localhost:4321 npm run smoke
 ```
 
-It needs a reachable Supabase instance (local or cloud) with email confirmation disabled.
+It signs in with a fixed test account and creates no accounts. `npm run smoke` reads `SMOKE_EMAIL` and `SMOKE_PASSWORD` from `.dev.vars` (environment variables win). The account must exist in the Supabase project behind the server: create it once in **Authentication → Users → Add user** with **Auto Confirm User** on.
 
 > **Note:** this script exists primarily to guard the development of the starter itself — it is a fast sanity check that dependency upgrades did not break the build, the Cloudflare adapter or the Supabase auth flow. It is **not** a substitute for a real test suite. Once you build your own product on top of this starter, add proper tests (unit, integration, end-to-end) suited to your application.
 
@@ -188,7 +186,7 @@ It needs a reachable Supabase instance (local or cloud) with email confirmation 
 GitHub Actions runs two jobs on every push and PR to `main`:
 
 - **ci** — lint, `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
-- **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
+- **smoke** — starts a local Supabase via the Supabase CLI, creates the smoke test account there with a plain sign-up, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
 
 ## License
 
