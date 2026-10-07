@@ -634,33 +634,33 @@ Dokumentacja, PR, scalenie za zgodą Karola (wdrożenie), smoke na produkcji i t
 
 #### Automated
 
-- [x] 2.1 Bramka przechodzi z `ui-literals: 0 literals`
-- [x] 2.2 Smoke lokalny na porcie 4322 przechodzi z krokami hosta
-- [x] 2.3 CI używa `PUBLISHABLE_KEY` zamiast `ANON_KEY`
+- [x] 2.1 Bramka przechodzi z `ui-literals: 0 literals` — 77860b8
+- [x] 2.2 Smoke lokalny na porcie 4322 przechodzi z krokami hosta — 77860b8
+- [x] 2.3 CI używa `PUBLISHABLE_KEY` zamiast `ANON_KEY` — 77860b8
 
 #### Manual
 
-- [x] 2.4 Formularz „Nowa gra” z 8 kategoriami i wyłączonym 18+ prowadzi na ekran pokoju z linkiem i hostem na liście
-- [x] 2.5 „Kopiuj” kopiuje pełny link `/j/<kod>`
-- [x] 2.6 Druga „Nowa gra” przy pustym pokoju działa bez pytania, a `/` pokazuje „Wróć do pokoju”
-- [x] 2.7 Zalogowany na `/auth/signin` trafia na `/`, a z `?error=access_denied` widzi komunikat
-- [x] 2.8 Niezalogowany na `/` widzi zaproszenie do logowania
+- [x] 2.4 Formularz „Nowa gra” z 8 kategoriami i wyłączonym 18+ prowadzi na ekran pokoju z linkiem i hostem na liście — 77860b8
+- [x] 2.5 „Kopiuj” kopiuje pełny link `/j/<kod>` — 77860b8
+- [x] 2.6 Druga „Nowa gra” przy pustym pokoju działa bez pytania, a `/` pokazuje „Wróć do pokoju” — 77860b8
+- [x] 2.7 Zalogowany na `/auth/signin` trafia na `/`, a z `?error=access_denied` widzi komunikat — 77860b8
+- [x] 2.8 Niezalogowany na `/` widzi zaproszenie do logowania — 77860b8
 
 ### Phase 3: Gość i lista na żywo
 
 #### Automated
 
-- [ ] 3.1 Bramka przechodzi z `ui-literals: 0 literals`
-- [ ] 3.2 Smoke lokalny na porcie 4322 przechodzi z krokami gościa
-- [ ] 3.3 Build produkcyjny odpowiada 404 na `/dev/live-sync`
+- [x] 3.1 Bramka przechodzi z `ui-literals: 0 literals`
+- [x] 3.2 Smoke lokalny na porcie 4322 przechodzi z krokami gościa
+- [x] 3.3 Build produkcyjny odpowiada 404 na `/dev/live-sync`
 
 #### Manual
 
-- [ ] 3.4 Gość dołącza linkiem, a lista hosta pokazuje go bez odświeżania w około 2 s
-- [ ] 3.5 Po powrocie do karty hosta z tła lista jest aktualna
-- [ ] 3.6 Gość po odświeżeniu zostaje w poczekalni pod swoim nickiem
-- [ ] 3.7 Host otwierający swój link trafia na swój ekran pokoju bez drugiego wpisu
-- [ ] 3.8 Po „Nowej grze” z potwierdzeniem gość widzi „Ta gra jest zamknięta” bez odświeżania
+- [x] 3.4 Gość dołącza linkiem, a lista hosta pokazuje go bez odświeżania w około 2 s
+- [x] 3.5 Po powrocie do karty hosta z tła lista jest aktualna
+- [x] 3.6 Gość po odświeżeniu zostaje w poczekalni pod swoim nickiem
+- [x] 3.7 Host otwierający swój link trafia na swój ekran pokoju bez drugiego wpisu
+- [x] 3.8 Po „Nowej grze” z potwierdzeniem gość widzi „Ta gra jest zamknięta” bez odświeżania
 
 ### Phase 4: Ekrany — stany do oceny Karola
 
