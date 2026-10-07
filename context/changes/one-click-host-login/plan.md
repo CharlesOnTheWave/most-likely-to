@@ -327,7 +327,7 @@ Do logów trafiają tylko `name`, `status`, `code` oraz `error` i `error_code` d
 
 - Karol loguje się lokalnie Discordem i Google na `http://localhost:4321`, `http://127.0.0.1:4321` i na drugim serwerze na porcie 4322, i trafia na `/` zalogowany (`/dashboard` pokazuje e-mail). Start z tymczasowych przycisków w `/dev/ui-kitchen-sink`.
 - Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem na ekranie logowania
-- Logowanie dostawcą na adres konta Karola dołącza tożsamość do tego samego konta (to samo `user_id` w Authentication → Users). Inny adres u dostawcy daje nowe konto, co jest przyjętym ryzykiem; zapisujemy, jak było.
+- Logowanie dostawcą na adres konta Karola dołącza tożsamość do tego samego konta (to samo `user_id` w Authentication → Users). Inny adres u dostawcy daje nowe konto, co jest przyjętym ryzykiem; zapisujemy, jak było. Nota 07.10: Discord i Google Karola są na innych adresach niż jego konto z hasłem, więc ten test robimy na Gmailu gry. Karol dodaje konto z tym adresem w Authentication → Users (Add user, Auto Confirm User), potem loguje się Google'em na ten sam Gmail i sprawdza, że na liście jest jedno konto z dwiema tożsamościami, a nie dwa konta.
 - Wylogowanie w jednej przeglądarce nie wylogowuje drugiej
 
 **Implementation Note**: Logowanie u dostawców przeprowadza Karol, nie agent (ekrany logowania obcych serwisów). Przed fazą 3 pauza na potwierdzenie Karola.
@@ -498,6 +498,8 @@ Przy każdej próbie: wynik, czas i zrzut przy błędzie. Gdy telefonu z iOS nie
 - Logowanie dłuższe niż 300 s kończy się polskim komunikatem na ekranie logowania
 - Podpowiedź o Chrome i Safari wdrożona i sprawdzona na telefonie, albo w `phone-test.md` zapisane „nie dotyczy”
 
+**Implementation Note**: Od fazy 2 Karol gra jako host przez Discorda (decyzja 07.10). Jego konto z hasłem jest na adresie z pracy, który pasek u góry pokazałby ekipie na telewizorze. Po teście na telefonach Karol sprawdza, że loguje się Discordem, i usuwa to konto w Authentication → Users.
+
 ---
 
 ## Testing Strategy
@@ -546,19 +548,19 @@ Brak nowych kosztów na żądanie. Callback dokłada jedno wywołanie Supabase p
 
 #### Automated
 
-- [x] 1.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [x] 1.2 Smoke lokalny kończy się „All smoke steps passed” bez zakładania konta
-- [x] 1.3 Smoke bez danych konta kończy się kodem 1 i komunikatem z nazwą zmiennej
-- [x] 1.4 Sonda lokalnie z małymi parametrami loguje się kontem testowym i kończy pomiar
-- [x] 1.5 `git grep -n "api/auth/signup" -- scripts` nic nie zwraca
-- [ ] 1.9 Po pushu `main` CI zielone (`ci` i `smoke` z kontem testowym)
-- [ ] 1.10 Smoke na produkcji kończy się „All smoke steps passed” na koncie testowym
+- [x] 1.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build` — bc5867c
+- [x] 1.2 Smoke lokalny kończy się „All smoke steps passed” bez zakładania konta — bc5867c
+- [x] 1.3 Smoke bez danych konta kończy się kodem 1 i komunikatem z nazwą zmiennej — bc5867c
+- [x] 1.4 Sonda lokalnie z małymi parametrami loguje się kontem testowym i kończy pomiar — bc5867c
+- [x] 1.5 `git grep -n "api/auth/signup" -- scripts` nic nie zwraca — bc5867c
+- [x] 1.9 Po pushu `main` CI zielone (`ci` i `smoke` z kontem testowym) — bc5867c
+- [x] 1.10 Smoke na produkcji kończy się „All smoke steps passed” na koncie testowym — bc5867c
 
 #### Manual
 
-- [x] 1.6 Karol wykonał kroki w panelu Supabase w podanej kolejności
-- [x] 1.7 Authentication → Users pokazuje 2 konta, także po smoke i sondzie
-- [x] 1.8 Karol loguje się na produkcji swoim e-mailem i hasłem po włączeniu „Confirm email”
+- [x] 1.6 Karol wykonał kroki w panelu Supabase w podanej kolejności — bc5867c
+- [x] 1.7 Authentication → Users pokazuje 2 konta, także po smoke i sondzie — bc5867c
+- [x] 1.8 Karol loguje się na produkcji swoim e-mailem i hasłem po włączeniu „Confirm email” — bc5867c
 
 ### Phase 2: Logowanie przez dostawcę (serwer)
 
