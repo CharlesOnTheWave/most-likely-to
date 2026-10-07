@@ -26,7 +26,11 @@ No unit or e2e framework yet. `npm run smoke` (@scripts/smoke.mjs) needs a runni
 
 - Add shadcn/ui components with `npx shadcn@latest add <name>`. Since September 2026 (after your training data) shadcn ships `cn()` as the `cn` npm package and imports it from `"cn"`; `@/lib/utils` only re-exports it. Keep those imports and the `cn` dependency; they are not a bug.
 - No Next.js directives such as `"use client"` in React components.
-- Create Supabase migrations with `npx supabase migration new <name>`; every new table gets RLS with per-operation policies.
+- Create Supabase migrations with `npx supabase migration new <name>` (pattern: `supabase/migrations/*_room_lobby.sql`):
+  - every new table: RLS, `revoke all … from public, anon, authenticated`, an explicit `grant` of only what a role needs and a policy for every granted operation; a table reached only through functions gets no grants and no policies;
+  - every function: `set search_path = ''`, schema-qualified names, `revoke execute … from public, anon, authenticated`, then a selective `grant`;
+  - a `security definer` function granted to `anon` is a public endpoint that bypasses the Worker, so all checks live inside it; its owner is `postgres`;
+  - apply migrations only with `npx supabase db push` (ask), never SQL in the dashboard, and never edit a pushed migration: a fix is a new one. Details: @context/deployment/deploy-plan.md.
 
 ## UI
 
