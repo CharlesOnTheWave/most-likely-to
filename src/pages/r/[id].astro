@@ -2,6 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import RoomLobby from "@/components/room/RoomLobby";
+import RoomMessage from "@/components/room/RoomMessage.astro";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { hostLinkToken, roomLobby } from "@/lib/rooms/server";
 import type { LobbyState } from "@/lib/rooms/shared";
@@ -49,17 +50,9 @@ if (page.kind === "outside") {
     {page.kind === "lobby" && (
       <RoomLobby roomId={page.roomId} initial={page.lobby} linkUrl={page.linkUrl} realtime={realtime} client:load />
     )}
-    {page.kind === "outside" && (
-      <section class="flex flex-col items-center gap-4 py-12 text-center">
-        <h1 class="text-2xl font-semibold text-balance">Nie jesteś w tym pokoju.</h1>
-        <p class="text-muted-foreground">Poproś hosta o link.</p>
-      </section>
-    )}
+    {page.kind === "outside" && <RoomMessage title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />}
     {page.kind === "error" && (
-      <section class="flex flex-col items-center gap-4 py-12 text-center">
-        <h1 class="text-2xl font-semibold text-balance">Nie udało się otworzyć pokoju.</h1>
-        <p class="text-muted-foreground">{roomErrorMessage(page.reason)}</p>
-      </section>
+      <RoomMessage title="Nie udało się otworzyć pokoju." text={roomErrorMessage(page.reason)} />
     )}
   </main>
 </Layout>

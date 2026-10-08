@@ -1,0 +1,338 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AppHeader from "@/components/room/AppHeader.astro";
+import JoinForm from "@/components/room/JoinForm";
+import Landing from "@/components/room/Landing.astro";
+import NewGameForm from "@/components/room/NewGameForm";
+import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
+import RoomCard from "@/components/room/RoomCard.astro";
+import RoomLobby from "@/components/room/RoomLobby";
+import RoomMessage from "@/components/room/RoomMessage.astro";
+// Server only (lessons.md): the islands get just the id and name of each category.
+import { CATEGORIES } from "@/data/questions";
+import { roomErrorMessage } from "@/lib/rooms/errors";
+import type { LobbyPlayer } from "@/lib/rooms/shared";
+
+// Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
+// no Realtime, no polling. Local only; a production build answers an empty 404.
+// (Status instead of an early `return`, which crashes typescript-eslint's no-misused-promises in .astro files.)
+const isDev = import.meta.env.DEV;
+if (!isDev) {
+  Astro.response.status = 404;
+}
+
+const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
+const newGameCard = {
+  title: "Nowa gra",
+  description: "Wpisz swój nick i wybierz kategorie. Link dla graczy dostaniesz od razu.",
+};
+const joinCard = { title: "Dołącz do gry", description: "Wpisz nick i jesteś w grze. Konto nie jest potrzebne." };
+
+// Sample room, link and players; the link has the real length (22 base64url characters after /j/).
+const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
+const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
+const LINK_URL = `https://most-likely-to.charlesonthewave.workers.dev/j/${LINK_TOKEN}`;
+const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true }];
+const fewPlayers: LobbyPlayer[] = [
+  { nick: "Ola", host: true },
+  { nick: "Bartek", host: false },
+  { nick: "Kasia 🎉", host: false },
+];
+// Eight players, with a nick of exactly 20 characters (nickLength) and one with an emoji.
+const eightPlayers: LobbyPlayer[] = [
+  { nick: "Ola", host: true },
+  { nick: "Bartek", host: false },
+  { nick: "Najdłuższy nick 20zn", host: false },
+  { nick: "Kasia 🎉", host: false },
+  { nick: "Zosia", host: false },
+  { nick: "Kuba", host: false },
+  { nick: "Marta", host: false },
+  { nick: "Igor", host: false },
+];
+const guestView: LobbyPlayer[] = [
+  { nick: "Bartek", host: true },
+  { nick: "Ola", host: false },
+  { nick: "Kasia 🎉", host: false },
+  { nick: "Zosia", host: false },
+];
+---
+
+{isDev && (
+  <Layout title="Stany pokoju">
+    <main class="bg-background text-foreground min-h-screen p-6">
+      <h1 class="text-2xl font-semibold">Stany pokoju</h1>
+      <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
+        Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
+        graczy stoją w miejscu. Hover i focus-visible sprawdzasz na stanach 2, 9 i 14: najedź myszą na pola i przyciski
+        albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a
+        „Wyloguj” w nagłówku naprawdę wylogowuje.
+      </p>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Nagłówek</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="header-host" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">a. Zalogowany host</h2>
+            <AppHeader signedIn />
+          </section>
+
+          <section id="header-guest" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">b. Gość lub niezalogowany</h2>
+            <AppHeader signedIn={false} />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Strona główna</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="home-guest" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">1. Niezalogowany</h2>
+            <Landing titleAs="h2" />
+          </section>
+
+          <section id="new-default" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">2. Nowa gra: domyślny · hover · focus-visible</h2>
+            <RoomCard titleAs="h2" {...newGameCard}>
+              <NewGameForm categories={categories} preview={{ idPrefix: "new-default" }} client:load />
+            </RoomCard>
+          </section>
+
+          <section id="new-nick-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">3. Błąd: za długi nick</h2>
+            <RoomCard titleAs="h2" {...newGameCard}>
+              <NewGameForm
+                categories={categories}
+                preview={{ idPrefix: "new-nick-error", nick: "Bardzo długi nick gracza", showErrors: true }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="new-no-categories" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">4. Błąd: brak kategorii</h2>
+            <RoomCard titleAs="h2" {...newGameCard}>
+              <NewGameForm
+                categories={categories}
+                preview={{ idPrefix: "new-no-categories", nick: "Ola", noCategories: true, showErrors: true }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="new-open-room" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">5. Z otwartym pokojem</h2>
+            <div class="flex flex-col gap-6">
+              <OpenRoomNotice roomId={ROOM_ID} players={4} />
+              <RoomCard titleAs="h2" {...newGameCard}>
+                <NewGameForm
+                  categories={categories}
+                  roomToClose={{ players: 4 }}
+                  preview={{ idPrefix: "new-open-room" }}
+                  client:load
+                />
+              </RoomCard>
+            </div>
+          </section>
+
+          <section id="new-confirm-close" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">6. Potwierdzenie: zamknięcie pokoju z gośćmi</h2>
+            <div class="flex flex-col gap-6">
+              <OpenRoomNotice roomId={ROOM_ID} players={4} />
+              <RoomCard titleAs="h2" {...newGameCard}>
+                <NewGameForm
+                  categories={categories}
+                  roomToClose={{ players: 4 }}
+                  preview={{ idPrefix: "new-confirm-close", nick: "Ola", confirming: true }}
+                  client:load
+                />
+              </RoomCard>
+            </div>
+          </section>
+
+          <section id="new-pending" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">7. Wysyłanie</h2>
+            <RoomCard titleAs="h2" {...newGameCard}>
+              <NewGameForm
+                categories={categories}
+                preview={{ idPrefix: "new-pending", nick: "Ola", pending: true }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="new-server-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">8. Błąd: serwer (po przekierowaniu)</h2>
+            {/* Empty nick: after the redirect the real form is empty too, because the nick never goes in a URL. */}
+            <RoomCard titleAs="h2" {...newGameCard}>
+              <NewGameForm
+                categories={categories}
+                serverError={roomErrorMessage("try_again")}
+                preview={{ idPrefix: "new-server-error" }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Link gościa (/j/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="join-default" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">9. Dołącz: domyślny · hover · focus-visible</h2>
+            <RoomCard titleAs="h2" {...joinCard}>
+              <JoinForm linkToken={LINK_TOKEN} preview={{ idPrefix: "join-default" }} client:load />
+            </RoomCard>
+          </section>
+
+          <section id="join-nick-taken" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">10. Błąd: nick zajęty (po przekierowaniu)</h2>
+            {/* Empty nick, as on the real page after the redirect. */}
+            <RoomCard titleAs="h2" {...joinCard}>
+              <JoinForm
+                linkToken={LINK_TOKEN}
+                serverError={roomErrorMessage("nick_taken")}
+                preview={{ idPrefix: "join-nick-taken" }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="join-pending" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">11. Wysyłanie</h2>
+            <RoomCard titleAs="h2" {...joinCard}>
+              <JoinForm
+                linkToken={LINK_TOKEN}
+                preview={{ idPrefix: "join-pending", nick: "Ola", pending: true }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="join-unknown" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">12. Nieznany link</h2>
+            <RoomMessage titleAs="h2" title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />
+          </section>
+
+          <section id="join-closed" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">13. Gra zamknięta</h2>
+            <RoomMessage titleAs="h2" title="Ta gra jest zamknięta." text="Poproś hosta o nowy link." />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Pokój (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="lobby-host-1" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">14. Host, 1 gracz · hover · focus-visible</h2>
+            <RoomLobby
+              roomId={ROOM_ID}
+              initial={{ status: "lobby", role: "host", me: "Ola", players: hostAlone }}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "lobby-host-1" }}
+              client:load
+            />
+          </section>
+
+          <section id="lobby-host-8" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">15. Host, 8 graczy (nick 20 znaków, emotka)</h2>
+            <RoomLobby
+              roomId={ROOM_ID}
+              initial={{ status: "lobby", role: "host", me: "Ola", players: eightPlayers }}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "lobby-host-8" }}
+              client:load
+            />
+          </section>
+
+          <section id="lobby-copied" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">16. Skopiowano</h2>
+            <RoomLobby
+              roomId={ROOM_ID}
+              initial={{ status: "lobby", role: "host", me: "Ola", players: fewPlayers }}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "lobby-copied", copied: true }}
+              client:load
+            />
+          </section>
+
+          <section id="lobby-refresh-failed" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">17. Błąd odświeżania listy</h2>
+            <RoomLobby
+              roomId={ROOM_ID}
+              initial={{ status: "lobby", role: "host", me: "Ola", players: fewPlayers }}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "lobby-refresh-failed", refreshFailed: true }}
+              client:load
+            />
+          </section>
+
+          <section id="lobby-no-link" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">18. Host: link się nie wczytał</h2>
+            <RoomLobby
+              roomId={ROOM_ID}
+              initial={{ status: "lobby", role: "host", me: "Ola", players: hostAlone }}
+              linkUrl={null}
+              realtime={null}
+              preview={{ idPrefix: "lobby-no-link" }}
+              client:load
+            />
+          </section>
+
+          <section id="lobby-guest" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">19. Gość</h2>
+            <RoomLobby
+              roomId={ROOM_ID}
+              initial={{ status: "lobby", role: "guest", me: "Ola", players: guestView }}
+              realtime={null}
+              preview={{ idPrefix: "lobby-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="lobby-closed-host" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">20. Pokój zamknięty: host</h2>
+            <RoomLobby
+              roomId={ROOM_ID}
+              initial={{ status: "closed", role: "host", me: "Ola", players: fewPlayers }}
+              realtime={null}
+              preview={{ idPrefix: "lobby-closed-host" }}
+              client:load
+            />
+          </section>
+
+          <section id="lobby-closed-guest" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">21. Pokój zamknięty: gość</h2>
+            <RoomLobby
+              roomId={ROOM_ID}
+              initial={{ status: "closed", role: "guest", me: "Ola", players: guestView }}
+              realtime={null}
+              preview={{ idPrefix: "lobby-closed-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="room-outside" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">22. Spoza pokoju</h2>
+            <RoomMessage titleAs="h2" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
+          </section>
+
+          <section id="room-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">23. Błąd: serwer niedostępny</h2>
+            <RoomMessage
+              titleAs="h2"
+              title="Nie udało się otworzyć pokoju."
+              text={roomErrorMessage("service_unavailable")}
+            />
+          </section>
+        </div>
+      </div>
+    </main>
+  </Layout>
+)}

@@ -12,6 +12,7 @@ import type { LobbyState } from "@/lib/rooms/shared";
 interface Preview {
   idPrefix: string;
   copied?: boolean;
+  refreshFailed?: boolean;
 }
 
 interface Props {
@@ -32,11 +33,13 @@ const POLL_MS = 15000;
 
 export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const [lobby, setLobby] = useState(initial);
-  const [refreshFailed, setRefreshFailed] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(preview?.refreshFailed ?? false);
   const [copied, setCopied] = useState(preview?.copied ?? false);
   const linkRef = useRef<HTMLInputElement>(null);
   const isPreview = Boolean(preview);
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
+  // The states page has its own h1, so there the lobby title is an h2 (as titleAs in SignInCard.astro).
+  const Title = isPreview ? "h2" : "h1";
   const isHost = lobby.role === "host";
   const isOpen = lobby.status === "lobby";
   const supabaseUrl = realtime?.supabaseUrl;
@@ -128,7 +131,7 @@ export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview 
   if (lobby.status === "closed") {
     return (
       <section className="flex flex-col items-center gap-4 py-12 text-center">
-        <h1 className="text-2xl font-semibold text-balance">Ta gra jest zamknięta.</h1>
+        <Title className="text-2xl font-semibold text-balance">Ta gra jest zamknięta.</Title>
         {isHost ? (
           <a href="/" className={buttonVariants()}>
             Załóż nową grę
@@ -143,9 +146,9 @@ export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold break-words">
+        <Title className="text-2xl font-semibold break-words">
           {isHost ? "Twój pokój" : `Jesteś w grze jako ${lobby.me}`}
-        </h1>
+        </Title>
         <p className="text-muted-foreground">
           {isHost ? "Wklej link na Discordzie. Kto go otworzy, wpisze nick i dołączy." : "Czekamy, aż host zacznie."}
         </p>

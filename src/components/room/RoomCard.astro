@@ -1,0 +1,25 @@
+---
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+// The card around a room form (slot): "Nowa gra" on / and "Dołącz do gry" on /j/<code>, shared with /dev/room-states
+// so the states page shows the real screen. The states page has its own h1, so there the title is an h2.
+interface Props {
+  title: string;
+  description: string;
+  titleAs?: "h1" | "h2";
+}
+
+const { title, description, titleAs: Title = "h1" } = Astro.props;
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle className="text-2xl">
+      <Title>{title}</Title>
+    </CardTitle>
+    <CardDescription>{description}</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <slot />
+  </CardContent>
+</Card>

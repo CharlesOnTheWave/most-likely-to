@@ -3,7 +3,7 @@
 const MESSAGES: Record<string, string> = {
   invalid_nick: "Nick musi mieć od 1 do 20 znaków.",
   nick_taken:
-    "Ten nick jest już zajęty. Jeśli to ty, a telefon cię nie pamięta (np. otworzyłeś link w innej przeglądarce), wpisz inny nick.",
+    "Ten nick jest już zajęty. Jeśli to ty, a telefon cię nie pamięta (np. link otwarty w innej przeglądarce), wpisz inny nick.",
   invalid_categories: "Wybierz co najmniej jedną kategorię.",
   open_room_has_guests:
     "W starym pokoju są już goście. Załóż grę jeszcze raz i potwierdź, że stary pokój ma zostać zamknięty.",
