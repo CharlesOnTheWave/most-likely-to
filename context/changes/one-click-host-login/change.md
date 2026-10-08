@@ -1,9 +1,9 @@
 ---
 change_id: one-click-host-login
 title: One click host login
-status: implementing
+status: implemented
 created: 2026-10-04
-updated: 2026-10-07
+updated: 2026-10-08
 archived_at: null
 ---
 
