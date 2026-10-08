@@ -4,7 +4,6 @@ import { FormField } from "@/components/auth/FormField";
 import { FieldGroup } from "@/components/ui/field";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
-import { ServerError } from "@/components/auth/ServerError";
 import { useSubmitPending } from "@/components/auth/useSubmitPending";
 
 interface FieldErrors {
@@ -22,7 +21,6 @@ interface Preview {
 }
 
 interface Props {
-  serverError?: string | null;
   preview?: Preview;
 }
 
@@ -39,7 +37,7 @@ function getFieldErrors(email: string, password: string): FieldErrors {
   return errors;
 }
 
-export default function SignInForm({ serverError, preview }: Props) {
+export default function SignInForm({ preview }: Props) {
   const [email, setEmail] = useState(preview?.email ?? "");
   const [password, setPassword] = useState(preview?.password ?? "");
   const [showPassword, setShowPassword] = useState(false);
@@ -110,8 +108,6 @@ export default function SignInForm({ serverError, preview }: Props) {
             />
           }
         />
-
-        <ServerError message={serverError} />
 
         <SubmitButton pending={pending} pendingText="Logowanie…" icon={<LogIn className="size-4" />}>
           Zaloguj się

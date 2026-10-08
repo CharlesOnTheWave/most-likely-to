@@ -200,6 +200,15 @@ Historycznych checkboxów nie przepisujemy. Dopisujemy notę z datą.
 
 Aplikacje u dostawców, dostawcy w Supabase, endpoint startu logowania, callback, polskie komunikaty błędów i smoke dla nowych tras. Bez zmian w wyglądzie ekranu: przyciski dochodzą w fazie 3. Wymaga Gmaila gry.
 
+**Adaptacja 07.10 (wieczór): grupa Google zamiast Gmaila gry.** Google odrzuciło zakładanie Gmaila gry, więc wszędzie, gdzie ta faza mówi o Gmailu gry, obowiązuje:
+
+- Projekt Google jest na prywatnym koncie Karola. Gracze go nie widzą.
+- „User support email” na ekranie zgody to grupa Google założona na tym samym koncie (np. `most-likely-to@googlegroups.com`), nazwana „Most Likely To”, z listą członków widoczną tylko dla właściciela. Gracz po kliknięciu nazwy aplikacji widzi tylko nazwę gry i adres grupy.
+- Adres w „Contact information” widzi tylko Google, więc może to być prywatny Gmail.
+- Test 2.7 robimy na prywatnym Gmailu Karola: konto z tym adresem przez Add user (Auto Confirm User) przed pierwszym logowaniem Google'em.
+- Dokumenty (pkt 9) nie zawierają prywatnego adresu Karola ani adresu grupy (repo jest publiczne).
+- Zasady trybu Testing sprawdzone 07.10: przy samych zakresach `openid`, `userinfo.email` i `userinfo.profile` logować się może każdy, bez listy testerów i bez wygasania zgody po 7 dniach (https://support.google.com/cloud/answer/15549945).
+
 ### Changes Required:
 
 #### 1. Panele dostawców i Supabase (Karol, agent prowadzi krok po kroku)
@@ -327,7 +336,7 @@ Do logów trafiają tylko `name`, `status`, `code` oraz `error` i `error_code` d
 
 - Karol loguje się lokalnie Discordem i Google na `http://localhost:4321`, `http://127.0.0.1:4321` i na drugim serwerze na porcie 4322, i trafia na `/` zalogowany (`/dashboard` pokazuje e-mail). Start z tymczasowych przycisków w `/dev/ui-kitchen-sink`.
 - Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem na ekranie logowania
-- Logowanie dostawcą na adres konta Karola dołącza tożsamość do tego samego konta (to samo `user_id` w Authentication → Users). Inny adres u dostawcy daje nowe konto, co jest przyjętym ryzykiem; zapisujemy, jak było. Nota 07.10: Discord i Google Karola są na innych adresach niż jego konto z hasłem, więc ten test robimy na Gmailu gry. Karol dodaje konto z tym adresem w Authentication → Users (Add user, Auto Confirm User), potem loguje się Google'em na ten sam Gmail i sprawdza, że na liście jest jedno konto z dwiema tożsamościami, a nie dwa konta.
+- Logowanie dostawcą na adres konta Karola dołącza tożsamość do tego samego konta (to samo `user_id` w Authentication → Users). Inny adres u dostawcy daje nowe konto, co jest przyjętym ryzykiem; zapisujemy, jak było. Nota 07.10: Discord i Google Karola są na innych adresach niż jego konto z hasłem, więc ten test robimy na Gmailu gry. Karol dodaje konto z tym adresem w Authentication → Users (Add user, Auto Confirm User), potem loguje się Google'em na ten sam Gmail i sprawdza, że na liście jest jedno konto z dwiema tożsamościami, a nie dwa konta. → Adaptacja 07.10 wieczór: zamiast Gmaila gry prywatny Gmail Karola (Overview fazy 2).
 - Wylogowanie w jednej przeglądarce nie wylogowuje drugiej
 
 **Implementation Note**: Logowanie u dostawców przeprowadza Karol, nie agent (ekrany logowania obcych serwisów). Przed fazą 3 pauza na potwierdzenie Karola.
@@ -368,6 +377,8 @@ Przyciski dostawców na górze karty, kreska, formularz z hasłem, nowa stopka i
 - Link „Załóż je” znika.
 - Czytnik ekranu słyszy błąd serwera po przeładowaniu (nota F3 z przeglądu M2L5, archiwum `ui-signin-contract/change.md:22`). `role="alert"` obecny w HTML od załadowania strony większość czytników pomija, więc komunikat dostaje `tabindex="-1"` i znacznik `data-server-error`. Mały `<script>` w `SignInCard.astro` przenosi fokus na pierwszy taki element po załadowaniu strony. Ramka fokusu na komunikacie nie jest potrzebna, bo to nie element do klikania.
 - Błąd pola słychać raz: `FormField` przekazuje do `FieldError` `role={undefined}` (props są rozwijane po `role="alert"`, `field.tsx:203-205`), bo fokus trafia na pole, które wskazuje błąd przez `aria-describedby`. `field.tsx` się nie zmienia.
+
+**Adaptacja 07.10 (ocena zrzutów, Karol):** komunikat serwera jest pod przyciskami dostawców, a nie nad nimi. Kolejność renderu: `ProviderButtons`, `ServerError`, kreska, formularz. Karol chciał też formularz z hasłem nad przyciskami. Wybrał jednak przyciski na górze, bo po fazie 4 żaden prawdziwy host nie ma hasła i formularz zostaje tylko dla konta testowego smoke.
 
 #### 3. Usunięcie rejestracji
 
@@ -566,32 +577,32 @@ Brak nowych kosztów na żądanie. Callback dokłada jedno wywołanie Supabase p
 
 #### Automated
 
-- [ ] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
-- [ ] 2.2 Smoke lokalny kończy się „All smoke steps passed”, z nowymi krokami OAuth
-- [ ] 2.3 Smoke lokalny z `SMOKE_OAUTH=1` dochodzi do discord.com i accounts.google.com
-- [ ] 2.4 `git grep -niE "GOCSPX|client.?secret" -- src scripts` nic nie zwraca
+- [x] 2.1 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build` — 71d2d9b
+- [x] 2.2 Smoke lokalny kończy się „All smoke steps passed”, z nowymi krokami OAuth — 71d2d9b
+- [x] 2.3 Smoke lokalny z `SMOKE_OAUTH=1` dochodzi do discord.com i accounts.google.com — 71d2d9b
+- [x] 2.4 `git grep -niE "GOCSPX|client.?secret" -- src scripts` nic nie zwraca — 71d2d9b
 
 #### Manual
 
-- [ ] 2.5 Karol loguje się lokalnie Discordem i Google na trzech adresach deweloperskich i trafia na `/` zalogowany
-- [ ] 2.6 Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem
-- [ ] 2.7 Logowanie dostawcą na adres konta Karola daje to samo `user_id`
-- [ ] 2.8 Wylogowanie w jednej przeglądarce nie wylogowuje drugiej
+- [x] 2.5 Karol loguje się lokalnie Discordem i Google na trzech adresach deweloperskich i trafia na `/` zalogowany — 71d2d9b
+- [x] 2.6 Anulowanie zgody u Discorda i u Google kończy się polskim komunikatem — 71d2d9b
+- [x] 2.7 Logowanie dostawcą na adres konta Karola daje to samo `user_id` — 71d2d9b
+- [x] 2.8 Wylogowanie w jednej przeglądarce nie wylogowuje drugiej — 71d2d9b
 
 ### Phase 3: Ekran logowania i porządki
 
 #### Automated
 
-- [ ] 3.1 Bramka przechodzi: `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm run build`
-- [ ] 3.2 Smoke lokalny kończy się „All smoke steps passed”, z krokiem `/auth/signup` → `/auth/signin`
-- [ ] 3.3 `git grep` rejestracji zwraca tylko linki w plikach S-01 i krok smoke
-- [ ] 3.4 `/dev/ui-kitchen-sink` daje 200 na dev i 404 w `npm run preview`
-- [ ] 3.7 Po załadowaniu z `?error=` fokus jest na komunikacie serwera, a `FieldError` nie ma `role="alert"`
+- [x] 3.1 Bramka przechodzi: `npm run lint` (z `ui-literals: 0 literals`), `npx astro check`, `npm run build` — 1bcdb9d
+- [x] 3.2 Smoke lokalny kończy się „All smoke steps passed”, z krokiem `/auth/signup` → `/auth/signin` — 1bcdb9d
+- [x] 3.3 `git grep` rejestracji zwraca tylko linki w plikach S-01 i krok smoke — 1bcdb9d
+- [x] 3.4 `/dev/ui-kitchen-sink` daje 200 na dev i 404 w `npm run preview` — 1bcdb9d
+- [x] 3.7 Po załadowaniu z `?error=` fokus jest na komunikacie serwera, a `FieldError` nie ma `role="alert"` — 1bcdb9d
 
 #### Manual
 
-- [ ] 3.5 Karol ocenia zrzuty desktop i 390 px
-- [ ] 3.6 Karol klika lokalnie oba przyciski: „Przekierowuję…” i odblokowanie po „Wstecz”
+- [x] 3.5 Karol ocenia zrzuty desktop i 390 px — 1bcdb9d
+- [x] 3.6 Karol klika lokalnie oba przyciski: „Przekierowuję…” i odblokowanie po „Wstecz” — 1bcdb9d
 
 ### Phase 4: Produkcja i test na telefonach
 
