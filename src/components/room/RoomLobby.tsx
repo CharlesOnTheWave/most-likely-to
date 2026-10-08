@@ -58,6 +58,12 @@ export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview 
       const request = ++sent;
       try {
         const res = await fetch(`/api/rooms/${roomId}/lobby`, { cache: "no-store" });
+        // A 404 is final (the guest's cookie expired, the host signed out in another tab): the page runs the same
+        // room_lobby check, so after a reload it says "Nie jesteś w tym pokoju" instead of retrying every 15 s.
+        if (res.status === 404 && active) {
+          window.location.reload();
+          return;
+        }
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }

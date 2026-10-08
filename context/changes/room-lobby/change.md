@@ -1,7 +1,7 @@
 ---
 change_id: room-lobby
 title: Room lobby
-status: implementing
+status: impl_reviewed
 created: 2026-10-07
 updated: 2026-10-08
 archived_at: null
@@ -16,4 +16,16 @@ archived_at: null
 - **Plan (07.10):** `/10x-plan` z wywiadem (5 pytań o grę, 4 decyzje techniczne po recenzji adwokata diabła i krytyka), 5 faz. `/10x-plan-review`: REVISE → SOUND, 0 krytycznych, 4 ostrzeżenia, 2 obserwacje, wszystkie poprawione (Karol: „zgoda”). Najważniejsze: migracja najpierw w CI na szkicu PR (Karol nie ma Dockera), `/10x-impl-review` przed scaleniem, `seat` zamiast `joined_at` (`reviews/plan-review.md`).
 - **Do fazy 4 (ocena ekranów):** `AppHeader` pokazuje zalogowanemu hostowi jego e-mail. Gracze go nie widzą, ale przy udostępnianiu ekranu na Discordzie byłby widoczny (Karol nie chce swoich danych u graczy). Decyzja Karola na zrzutach: ukryć albo zostawić.
 - **Faza 4 (08.10), ocena zrzutów:** Karol: „Nie mam zastrzeżeń, wszystko gra” na 25 stanów `/dev/room-states` i wszystkie rekomendacje. E: e-mail w nagłówku ukryty, zostaje samo „Wyloguj” (`AppHeader` ma prop `signedIn` tylko dla strony stanów). P1: tytuł ostrzeżenia o zamknięciu pokoju się zawija (`line-clamp-none`; na telefonie ucinało „zamknięty”). P2: nazwa gry w nagłówku w jednej linii. P3: `nick_taken` bez męskiej formy, „np. link otwarty w innej przeglądarce” (plan miał „otworzyłeś”). Do strony stanów wydzielone `RoomMessage`, `RoomCard`, `OpenRoomNotice`; `Landing` i `RoomLobby` (w preview) mają nagłówek `h2`.
+- **Reguła nicku, faktycznie wgrana w fazie 1 (`private.normalize_nick`):**
+  - szersza niż lista w planie;
+  - na spację zamienia także U+000B–000D, U+0085 i U+2800;
+  - usuwa także U+034F, U+115F, U+1160, U+17B4, U+17B5, U+180B–180D, U+2065–206F, U+3164 i U+FFA0;
+  - na końcu jeszcze raz robi NFC;
+  - Karol dostał to jako drobne odstępstwo w fazie 1.
+  - Luki (selektory wariantu, znaczniki) i brak limitu długości przed normalizacją są w `follow-ups/review-fixes.md` (F4 z przeglądu).
+- **Przegląd implementacji (08.10):** APPROVED, 1 ostrzeżenie i 4 obserwacje (`reviews/impl-review.md`). Decyzje Karola:
+  - F1 (uprawnienia hosta do tabel) i F2 (dzwonek bez ogranicznika) → S-02;
+  - F3 (przeładowanie przy 404 w `RoomLobby`) poprawione;
+  - F4 (nick) zapisane;
+  - F5 (zdanie o smoke w AGENTS.md) dopisane.
 - **Po rebase na S-05 (faza 5):** S-05 ustalił, że czytnik ekranu zwykle nie ogłasza `role="alert"`, który jest w HTML od początku (błąd po przekierowaniu). Dlatego `ServerError` dostaje `tabIndex={-1}` i `data-server-error`, a skrypt w `SignInCard.astro` przenosi na niego fokus po załadowaniu. Nasze `/?error=` i `/j/<kod>?error=` (`RoomCard`) potrzebują tego samego skryptu, inaczej „nick zajęty” nie zostanie przeczytany. S-05 zdejmuje też `role="alert"` z błędu pola w `FormField.tsx` (fokus i tak trafia na pole). Po rozwiązaniu konfliktów sprawdzić oba na `/dev/room-states` i na prawdziwym `?error=`.
