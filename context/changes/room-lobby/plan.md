@@ -650,29 +650,29 @@ Dokumentacja, PR, scalenie za zgodą Karola (wdrożenie), smoke na produkcji i t
 
 #### Automated
 
-- [x] 3.1 Bramka przechodzi z `ui-literals: 0 literals`
-- [x] 3.2 Smoke lokalny na porcie 4322 przechodzi z krokami gościa
-- [x] 3.3 Build produkcyjny odpowiada 404 na `/dev/live-sync`
+- [x] 3.1 Bramka przechodzi z `ui-literals: 0 literals` — 1c42d52
+- [x] 3.2 Smoke lokalny na porcie 4322 przechodzi z krokami gościa — 1c42d52
+- [x] 3.3 Build produkcyjny odpowiada 404 na `/dev/live-sync` — 1c42d52
 
 #### Manual
 
-- [x] 3.4 Gość dołącza linkiem, a lista hosta pokazuje go bez odświeżania w około 2 s
-- [x] 3.5 Po powrocie do karty hosta z tła lista jest aktualna
-- [x] 3.6 Gość po odświeżeniu zostaje w poczekalni pod swoim nickiem
-- [x] 3.7 Host otwierający swój link trafia na swój ekran pokoju bez drugiego wpisu
-- [x] 3.8 Po „Nowej grze” z potwierdzeniem gość widzi „Ta gra jest zamknięta” bez odświeżania
+- [x] 3.4 Gość dołącza linkiem, a lista hosta pokazuje go bez odświeżania w około 2 s — 1c42d52
+- [x] 3.5 Po powrocie do karty hosta z tła lista jest aktualna — 1c42d52
+- [x] 3.6 Gość po odświeżeniu zostaje w poczekalni pod swoim nickiem — 1c42d52
+- [x] 3.7 Host otwierający swój link trafia na swój ekran pokoju bez drugiego wpisu — 1c42d52
+- [x] 3.8 Po „Nowej grze” z potwierdzeniem gość widzi „Ta gra jest zamknięta” bez odświeżania — 1c42d52
 
 ### Phase 4: Ekrany — stany do oceny Karola
 
 #### Automated
 
-- [ ] 4.1 Bramka przechodzi z `ui-literals: 0 literals` także dla `room-states.astro`
-- [ ] 4.2 Build produkcyjny odpowiada 404 na `/dev/room-states`
+- [x] 4.1 Bramka przechodzi z `ui-literals: 0 literals` także dla `room-states.astro`
+- [x] 4.2 Build produkcyjny odpowiada 404 na `/dev/room-states`
 
 #### Manual
 
-- [ ] 4.3 Karol ocenia zrzuty wszystkich stanów i akceptuje albo wskazuje poprawki
-- [ ] 4.4 Formularze działają z klawiatury, fokus widoczny, błąd serwera ogłaszany
+- [x] 4.3 Karol ocenia zrzuty wszystkich stanów i akceptuje albo wskazuje poprawki
+- [x] 4.4 Formularze działają z klawiatury, fokus widoczny, błąd serwera ogłaszany
 
 ### Phase 5: Produkcja i telefony
 

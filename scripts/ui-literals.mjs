@@ -8,6 +8,7 @@ const ROOM_DIR = "src/components/room";
 const VIEWS = [
   "src/pages/auth/signin.astro",
   "src/pages/dev/ui-kitchen-sink.astro",
+  "src/pages/dev/room-states.astro",
   ...readdirSync(AUTH_DIR).map((name) => `${AUTH_DIR}/${name}`),
   "src/pages/index.astro",
   "src/pages/r/[id].astro",

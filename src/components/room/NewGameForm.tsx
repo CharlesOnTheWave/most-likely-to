@@ -191,7 +191,10 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
           <div className="flex flex-col gap-3">
             <Alert>
               <TriangleAlert />
-              <AlertTitle>Stary pokój ({playerCountLabel(roomToClose.players)}) zostanie zamknięty</AlertTitle>
+              {/* The title may wrap: on a phone a one-line clamp cut off "zamknięty", the word that matters. */}
+              <AlertTitle className="line-clamp-none">
+                Stary pokój ({playerCountLabel(roomToClose.players)}) zostanie zamknięty
+              </AlertTitle>
               <AlertDescription>Gracze z tamtego pokoju zobaczą, że gra się skończyła.</AlertDescription>
             </Alert>
             {/* A hidden field and not the button's value: the button disables itself on submit, and a disabled

@@ -2,7 +2,8 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import JoinForm from "@/components/room/JoinForm";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import RoomCard from "@/components/room/RoomCard.astro";
+import RoomMessage from "@/components/room/RoomMessage.astro";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import { roomLink, roomLobby } from "@/lib/rooms/server";
 import { LINK_TOKEN_PATTERN, playerCookieName } from "@/lib/rooms/tokens";
@@ -57,35 +58,14 @@ const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
     <AppHeader />
     <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
       {page.kind === "join" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">
-              <h1>Dołącz do gry</h1>
-            </CardTitle>
-            <CardDescription>Wpisz nick i jesteś w grze. Konto nie jest potrzebne.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <JoinForm linkToken={page.linkToken} serverError={serverError} client:load />
-          </CardContent>
-        </Card>
+        <RoomCard title="Dołącz do gry" description="Wpisz nick i jesteś w grze. Konto nie jest potrzebne.">
+          <JoinForm linkToken={page.linkToken} serverError={serverError} client:load />
+        </RoomCard>
       )}
-      {page.kind === "unknown" && (
-        <section class="flex flex-col items-center gap-4 py-12 text-center">
-          <h1 class="text-2xl font-semibold text-balance">Nie znamy tego linku.</h1>
-          <p class="text-muted-foreground">Sprawdź, czy skopiował się cały.</p>
-        </section>
-      )}
-      {page.kind === "closed" && (
-        <section class="flex flex-col items-center gap-4 py-12 text-center">
-          <h1 class="text-2xl font-semibold text-balance">Ta gra jest zamknięta.</h1>
-          <p class="text-muted-foreground">Poproś hosta o nowy link.</p>
-        </section>
-      )}
+      {page.kind === "unknown" && <RoomMessage title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />}
+      {page.kind === "closed" && <RoomMessage title="Ta gra jest zamknięta." text="Poproś hosta o nowy link." />}
       {page.kind === "error" && (
-        <section class="flex flex-col items-center gap-4 py-12 text-center">
-          <h1 class="text-2xl font-semibold text-balance">Nie udało się otworzyć linku.</h1>
-          <p class="text-muted-foreground">{roomErrorMessage(page.reason)}</p>
-        </section>
+        <RoomMessage title="Nie udało się otworzyć linku." text={roomErrorMessage(page.reason)} />
       )}
     </main>
   </Layout>
