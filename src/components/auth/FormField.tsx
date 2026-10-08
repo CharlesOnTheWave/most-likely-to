@@ -54,7 +54,10 @@ export function FormField({
         {endContent && <InputGroupAddon align="inline-end">{endContent}</InputGroupAddon>}
       </InputGroup>
       {error ? (
-        <FieldError id={errorId}>{error}</FieldError>
+        // No role="alert": focus lands on the field, which reads this text through aria-describedby, so it is heard once.
+        <FieldError id={errorId} role={undefined}>
+          {error}
+        </FieldError>
       ) : (
         hint && <FieldDescription id={hintId}>{hint}</FieldDescription>
       )}
