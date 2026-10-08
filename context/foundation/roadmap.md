@@ -47,7 +47,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | proposed |
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                            | S-02             | FR-006, FR-015                                            | proposed |
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                    | S-02             | US-01, FR-011                                             | proposed |
-| S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                       | —                | FR-001                                                    | in-progress |
+| S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                       | —                | FR-001                                                    | done |
 | S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                             | S-02             | FR-012                                                    | proposed |
 | S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                    | S-03             | FR-003, FR-006                                            | proposed |
 | S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                              | S-07             | FR-020                                                    | proposed |
@@ -172,7 +172,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Unknowns:**
   - Którzy dostawcy logowania i jaka droga zapasowa (drugi dostawca czy e-mail)? Rozstrzygnięte 2026-10-06: Discord (główny) + Google (zapasowy), „Confirm email” włączone; logowanie hasłem zostaje dla istniejących kont, rejestracja z hasłem w Parked (`context/changes/one-click-host-login/research.md`, sekcja „Decyzja”). — Owner: Karol. Block: no.
 - **Risk:** Do tego czasu host loguje się e-mailem i hasłem ze startera, co wystarcza do gry z własną ekipą; przed zaproszeniem obcych hostów ten element musi być gotowy.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-06: Przegląd listy pytań przed startem
 
@@ -336,3 +336,4 @@ _Brak: to pierwszy kamień milowy._
 - **F-02: (foundation) Pierwsza wspólna baza pytań po polsku, w kilku kategoriach, jest spisana, zatwierdzona przez twórcę gry i gotowa do wczytania.** — Archived 2026-09-27 → `context/archive/2026-09-27-starter-question-base/`. Lesson: `context/foundation/lessons.md` → „Pytania gry tylko po stronie serwera”.
 - **F-01: (foundation) Technika na żywo jest sprawdzona w prototypie: publiczny kanał Supabase Realtime niesie tylko sygnał „coś się zmieniło” (dzwonek), a stan przeglądarka pobiera z serwera. Dzwonek może nadać każdy, kto zna nazwę kanału, więc stan pochodzi wyłącznie z bazy, nigdy z treści dzwonka. W trakcie rundy stan pokazuje tylko, kto już zagłosował; liczby głosów dopiero przy odsłonie, nigdy „kto na kogo”. Kryterium: 95% dostarczeń do 20 graczy w ≤ 2 s, żadne powyżej 5 s; spełnione na produkcji 2026-10-04 (100% w 2 s, max 247 ms; `context/archive/2026-09-27-live-sync-spike/measurements.md`).** — Archived 2026-10-04 → `context/archive/2026-09-27-live-sync-spike/`. Lesson: —.
 - **S-01: Host tworzy pokój, wybiera kategorie (przy każdej osobno decyduje, czy dołączyć jej pytania 18+) i dostaje link do wklejenia na Discordzie; gość otwiera link na telefonie, wpisuje nick (zajęty nick jest odrzucany) i trafia do pokoju, a host widzi dołączających na żywo.** — Archived 2026-10-08 → `context/archive/2026-10-07-room-lobby/`. Lesson: —.
+- **S-05: Host loguje się jednym kliknięciem przez zewnętrznego dostawcę, bez rejestracji i hasła; ten sam e-mail oznacza tego samego hosta także przy zapasowej drodze logowania.** — Archived 2026-10-08 → `context/archive/2026-10-04-one-click-host-login/`. Lesson: —.
