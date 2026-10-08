@@ -11,6 +11,7 @@
 - **Supabase:** projekt `most-likely-to` (Frankfurt), jedyny, więc wspólny dla rozwoju i produkcji.
   - → Od 07.10.2026 (S-05, faza 1): Confirm email **włączone** i ma takie zostać (wyłączone pozwala przejąć konto hosta przez logowanie dostawcą). Site URL `https://most-likely-to.charlesonthewave.workers.dev/auth/signin`, Redirect URLs `http://localhost:4321/**` i `http://localhost:4322/**`. W Authentication → Users są tylko 2 konta: Karola i testowe dla smoke (`SMOKE_EMAIL` w `.dev.vars`).
   - → Od 07.10.2026 (S-05, faza 2): Discord i Google włączone (sekcja „Logowanie przez dostawców” niżej). Doszły konta Karola z logowania dostawcą: prywatny Gmail (hasło losowe plus Google) i konto z Discorda. Konto z hasłem na adres z pracy znika po fazie 4 S-05.
+  - → 08.10.2026 (S-05, faza 4): konto z hasłem na adres z pracy usunięte. W Authentication → Users są 3 konta: Karola z Discorda, Karola z prywatnym Gmailem (hasło losowe plus Google) i testowe. Na produkcji sprawdzone: smoke z `SMOKE_OAUTH=1` 15/15, logowanie Discordem i Google na laptopie i na Androidzie (także z linku w Discordzie) oraz wygaśnięcie logowania po ponad 300 s z polskim komunikatem. iOS niesprawdzony (`context/changes/one-click-host-login/phone-test.md`).
 - **Wersje:** `c1c7a3b4` (ręczne wdrożenie), `4e3d91b8` (pierwsze z Workers Builds, commit `800c10d`). Próba cofnięcia `4e3d91b8 → c1c7a3b4 → 4e3d91b8` przeszła w kilka sekund.
 - **Cofnięcie przy awarii:** `npx wrangler rollback` (ask) wraca do poprzedniej wersji. Nie cofa danych (KV, Supabase), a następny push do `main` znów wdroży najnowszy kod.
 
@@ -145,6 +146,7 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
   - Aplikację Cloudflare instalujesz **tylko dla repo `most-likely-to`**, a nie dla wszystkich repozytoriów. To minimalne uprawnienia.
   - Gałąź produkcyjna `main`, build command `npm run build`, deploy command `npx wrangler deploy` (domyślne).
   - Buildy innych gałęzi włączone (`npx wrangler versions upload`).
+    - → 08.10.2026: dla gałęzi panel pokazuje deploy command `npx wrangler preview` (Previews), a nie `versions upload`. Buildy gałęzi (`room-lobby`, `one-click-host-login`) padają na ostatnim kroku z błędem `binding SESSION of type kv_namespace must have a namespace_id specified [code: 10021]`. Na `main` `wrangler deploy` sam znajduje KV `most-likely-to-session`, a `wrangler preview` wymaga jego `id` w konfiguracji. Produkcji to nie dotyczy. Check z czasem 0 s to sposób zapisu Cloudflare (także przy sukcesie), a nie natychmiastowa awaria. Do decyzji Karola: wyłączyć buildy gałęzi albo dopisać `id` KV w `wrangler.jsonc`. Podgląd i tak nie ma sekretów Supabase ani swojego adresu w Redirect URLs.
 - [x] **Agent:** robi drobną, bezpieczną zmianę (np. link do gry w `README.md`), commit, potem `git push` (ask).
   - → Commit `800c10d`: adres produkcji w README.
 - [x] **Agent:** sprawdza kolejno:
