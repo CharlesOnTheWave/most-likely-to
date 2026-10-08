@@ -38,7 +38,14 @@
       "Bash(node scripts/live-sync-probe*)",
       "Bash(node ./scripts/live-sync-probe*)",
       "Bash(node *live-sync-probe*)",
-      "Bash(npm *live-probe*)"
+      "Bash(npm *live-probe*)",
+      "Bash(npm run smoke*)",
+      "Bash(npm *smoke*)",
+      "Bash(BASE_URL=* npm*smoke*)",
+      "Bash(SMOKE_OAUTH=* npm*smoke*)",
+      "Bash(node scripts/smoke*)",
+      "Bash(node ./scripts/smoke*)",
+      "Bash(node *smoke.mjs*)"
     ],
     "deny": [
       "Bash(rm -rf *)"

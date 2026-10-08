@@ -1,0 +1,72 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AppHeader from "@/components/room/AppHeader.astro";
+import JoinForm from "@/components/room/JoinForm";
+import RoomCard from "@/components/room/RoomCard.astro";
+import RoomMessage from "@/components/room/RoomMessage.astro";
+import { roomErrorMessage } from "@/lib/rooms/errors";
+import { roomLink, roomLobby } from "@/lib/rooms/server";
+import { LINK_TOKEN_PATTERN, playerCookieName } from "@/lib/rooms/tokens";
+import { createClient } from "@/lib/supabase";
+
+// The host's link. A GET changes nothing, because Discord fetches the link for its preview, and the title and meta tags
+// carry no room data. Someone already in the room (its host, or a guest with the room's cookie) goes straight to it.
+type Page =
+  | { kind: "join"; linkToken: string }
+  | { kind: "inside"; roomId: string }
+  | { kind: "unknown" }
+  | { kind: "closed" }
+  | { kind: "error"; reason: string };
+
+async function loadPage(linkToken: string): Promise<Page> {
+  if (!LINK_TOKEN_PATTERN.test(linkToken)) return { kind: "unknown" };
+  const supabase = createClient(Astro.request.headers, Astro.cookies);
+  if (!supabase) return { kind: "error", reason: "service_unavailable" };
+
+  const link = await roomLink(supabase, linkToken);
+  if (!link.ok) return { kind: "error", reason: link.reason };
+  if (link.status !== "open") return link.status === "closed" ? { kind: "closed" } : { kind: "unknown" };
+
+  // Only the host (a session) or a guest (this room's cookie) can be inside already; anyone else skips the lookup.
+  const playerToken = Astro.cookies.get(playerCookieName(link.roomId))?.value;
+  if (Astro.locals.user || playerToken) {
+    const inside = await roomLobby(supabase, link.roomId, playerToken);
+    if (!inside.ok) return { kind: "error", reason: inside.reason };
+    if (inside.lobby) return { kind: "inside", roomId: link.roomId };
+  }
+  return { kind: "join", linkToken };
+}
+
+const page = await loadPage(Astro.params.token ?? "");
+// Status and Location instead of an early `return Astro.redirect(…)`, which crashes typescript-eslint's
+// no-misused-promises in .astro files (src/pages/dev/ui-kitchen-sink.astro).
+if (page.kind === "inside") {
+  Astro.response.status = 302;
+  Astro.response.headers.set("Location", `/r/${page.roomId}`);
+} else if (page.kind === "unknown") {
+  Astro.response.status = 404;
+} else if (page.kind === "closed") {
+  Astro.response.status = 410;
+} else if (page.kind === "error") {
+  Astro.response.status = page.reason === "service_unavailable" ? 503 : 500;
+}
+const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
+---
+
+{page.kind !== "inside" && (
+  <Layout title="Dołącz do gry">
+    <AppHeader />
+    <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
+      {page.kind === "join" && (
+        <RoomCard title="Dołącz do gry" description="Wpisz nick i jesteś w grze. Konto nie jest potrzebne.">
+          <JoinForm linkToken={page.linkToken} serverError={serverError} client:load />
+        </RoomCard>
+      )}
+      {page.kind === "unknown" && <RoomMessage title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />}
+      {page.kind === "closed" && <RoomMessage title="Ta gra jest zamknięta." text="Poproś hosta o nowy link." />}
+      {page.kind === "error" && (
+        <RoomMessage title="Nie udało się otworzyć linku." text={roomErrorMessage(page.reason)} />
+      )}
+    </main>
+  </Layout>
+)}

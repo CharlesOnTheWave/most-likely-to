@@ -1,0 +1,35 @@
+---
+import { Button } from "@/components/ui/button";
+
+// Top bar of the game screens. A signed-in host also sees "Wyloguj", but not their e-mail: the host often shares this
+// screen on Discord (Karol, phase 4). For a guest the game name is plain text, so it does not lead out of the lobby to
+// the sign-in invitation.
+interface Props {
+  // Only /dev/room-states passes it, to show both variants; the real pages omit it and the session decides.
+  signedIn?: boolean;
+}
+
+const signedIn = Astro.props.signedIn ?? Boolean(Astro.locals.user);
+---
+
+<header class="border-b">
+  <div class="mx-auto flex w-full max-w-lg items-center justify-between gap-4 px-4 py-3">
+    {signedIn ? (
+      <a
+        href="/"
+        class="focus-visible:ring-ring/50 rounded-sm font-semibold whitespace-nowrap outline-hidden focus-visible:ring-3"
+      >
+        Most Likely To
+      </a>
+    ) : (
+      <span class="font-semibold whitespace-nowrap">Most Likely To</span>
+    )}
+    {signedIn && (
+      <form method="POST" action="/api/auth/signout">
+        <Button type="submit" variant="ghost" size="sm">
+          Wyloguj
+        </Button>
+      </form>
+    )}
+  </div>
+</header>
