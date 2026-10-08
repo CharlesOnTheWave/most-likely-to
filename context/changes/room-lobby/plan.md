@@ -618,61 +618,61 @@ Dokumentacja, PR, scalenie za zgodą Karola (wdrożenie), smoke na produkcji i t
 
 #### Automated
 
-- [ ] 1.8 CI na szkicu PR zielone z migracją `room_lobby` przy `auto_expose_new_tables = false` (przed `db push`)
-- [ ] 1.1 `npx supabase db push --dry-run` (ask) pokazuje tylko migrację `room_lobby`
-- [ ] 1.2 Po `npx supabase db push` (ask, za zgodą Karola) `npx supabase migration list` pokazuje `room_lobby` lokalnie i zdalnie
-- [ ] 1.3 Zapytania REST z kluczem publishable do `rooms`, `players`, `player_secrets` kończą się błędem uprawnień
-- [ ] 1.4 Wywołania RPC z kluczem publishable: `room_link` → `unknown`, `join_room` → `room_unknown`, `create_room` jako `anon` → błąd uprawnień
-- [ ] 1.5 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build`
+- [x] 1.8 CI na szkicu PR zielone z migracją `room_lobby` przy `auto_expose_new_tables = false` (przed `db push`) — 6dbfedd
+- [x] 1.1 `npx supabase db push --dry-run` (ask) pokazuje tylko migrację `room_lobby` — 6dbfedd
+- [x] 1.2 Po `npx supabase db push` (ask, za zgodą Karola) `npx supabase migration list` pokazuje `room_lobby` lokalnie i zdalnie — 6dbfedd
+- [x] 1.3 Zapytania REST z kluczem publishable do `rooms`, `players`, `player_secrets` kończą się błędem uprawnień — 6dbfedd
+- [x] 1.4 Wywołania RPC z kluczem publishable: `room_link` → `unknown`, `join_room` → `room_unknown`, `create_room` jako `anon` → błąd uprawnień — 6dbfedd
+- [x] 1.5 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm run build` — 6dbfedd
 
 #### Manual
 
-- [ ] 1.6 Advisors → Security: brak błędów RLS, nowe ostrzeżenia tylko 0028/0029 dla trzech funkcji gościa
-- [ ] 1.7 Table Editor: trzy tabele z włączonym RLS
+- [x] 1.6 Advisors → Security: brak błędów RLS, nowe ostrzeżenia tylko 0028/0029 dla trzech funkcji gościa — 6dbfedd
+- [x] 1.7 Table Editor: trzy tabele z włączonym RLS — 6dbfedd
 
 ### Phase 2: Host — nowa gra i pokój z linkiem
 
 #### Automated
 
-- [ ] 2.1 Bramka przechodzi z `ui-literals: 0 literals`
-- [ ] 2.2 Smoke lokalny na porcie 4322 przechodzi z krokami hosta
-- [ ] 2.3 CI używa `PUBLISHABLE_KEY` zamiast `ANON_KEY`
+- [x] 2.1 Bramka przechodzi z `ui-literals: 0 literals` — 77860b8
+- [x] 2.2 Smoke lokalny na porcie 4322 przechodzi z krokami hosta — 77860b8
+- [x] 2.3 CI używa `PUBLISHABLE_KEY` zamiast `ANON_KEY` — 77860b8
 
 #### Manual
 
-- [ ] 2.4 Formularz „Nowa gra” z 8 kategoriami i wyłączonym 18+ prowadzi na ekran pokoju z linkiem i hostem na liście
-- [ ] 2.5 „Kopiuj” kopiuje pełny link `/j/<kod>`
-- [ ] 2.6 Druga „Nowa gra” przy pustym pokoju działa bez pytania, a `/` pokazuje „Wróć do pokoju”
-- [ ] 2.7 Zalogowany na `/auth/signin` trafia na `/`, a z `?error=access_denied` widzi komunikat
-- [ ] 2.8 Niezalogowany na `/` widzi zaproszenie do logowania
+- [x] 2.4 Formularz „Nowa gra” z 8 kategoriami i wyłączonym 18+ prowadzi na ekran pokoju z linkiem i hostem na liście — 77860b8
+- [x] 2.5 „Kopiuj” kopiuje pełny link `/j/<kod>` — 77860b8
+- [x] 2.6 Druga „Nowa gra” przy pustym pokoju działa bez pytania, a `/` pokazuje „Wróć do pokoju” — 77860b8
+- [x] 2.7 Zalogowany na `/auth/signin` trafia na `/`, a z `?error=access_denied` widzi komunikat — 77860b8
+- [x] 2.8 Niezalogowany na `/` widzi zaproszenie do logowania — 77860b8
 
 ### Phase 3: Gość i lista na żywo
 
 #### Automated
 
-- [ ] 3.1 Bramka przechodzi z `ui-literals: 0 literals`
-- [ ] 3.2 Smoke lokalny na porcie 4322 przechodzi z krokami gościa
-- [ ] 3.3 Build produkcyjny odpowiada 404 na `/dev/live-sync`
+- [x] 3.1 Bramka przechodzi z `ui-literals: 0 literals` — 1c42d52
+- [x] 3.2 Smoke lokalny na porcie 4322 przechodzi z krokami gościa — 1c42d52
+- [x] 3.3 Build produkcyjny odpowiada 404 na `/dev/live-sync` — 1c42d52
 
 #### Manual
 
-- [ ] 3.4 Gość dołącza linkiem, a lista hosta pokazuje go bez odświeżania w około 2 s
-- [ ] 3.5 Po powrocie do karty hosta z tła lista jest aktualna
-- [ ] 3.6 Gość po odświeżeniu zostaje w poczekalni pod swoim nickiem
-- [ ] 3.7 Host otwierający swój link trafia na swój ekran pokoju bez drugiego wpisu
-- [ ] 3.8 Po „Nowej grze” z potwierdzeniem gość widzi „Ta gra jest zamknięta” bez odświeżania
+- [x] 3.4 Gość dołącza linkiem, a lista hosta pokazuje go bez odświeżania w około 2 s — 1c42d52
+- [x] 3.5 Po powrocie do karty hosta z tła lista jest aktualna — 1c42d52
+- [x] 3.6 Gość po odświeżeniu zostaje w poczekalni pod swoim nickiem — 1c42d52
+- [x] 3.7 Host otwierający swój link trafia na swój ekran pokoju bez drugiego wpisu — 1c42d52
+- [x] 3.8 Po „Nowej grze” z potwierdzeniem gość widzi „Ta gra jest zamknięta” bez odświeżania — 1c42d52
 
 ### Phase 4: Ekrany — stany do oceny Karola
 
 #### Automated
 
-- [ ] 4.1 Bramka przechodzi z `ui-literals: 0 literals` także dla `room-states.astro`
-- [ ] 4.2 Build produkcyjny odpowiada 404 na `/dev/room-states`
+- [x] 4.1 Bramka przechodzi z `ui-literals: 0 literals` także dla `room-states.astro` — 6429f75
+- [x] 4.2 Build produkcyjny odpowiada 404 na `/dev/room-states` — 6429f75
 
 #### Manual
 
-- [ ] 4.3 Karol ocenia zrzuty wszystkich stanów i akceptuje albo wskazuje poprawki
-- [ ] 4.4 Formularze działają z klawiatury, fokus widoczny, błąd serwera ogłaszany
+- [x] 4.3 Karol ocenia zrzuty wszystkich stanów i akceptuje albo wskazuje poprawki — 6429f75
+- [x] 4.4 Formularze działają z klawiatury, fokus widoczny, błąd serwera ogłaszany — 6429f75
 
 ### Phase 5: Produkcja i telefony
 

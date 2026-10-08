@@ -1,0 +1,22 @@
+---
+import { buttonVariants } from "@/components/ui/button";
+import { playerCountLabel } from "@/lib/rooms/shared";
+
+// "Wróć do pokoju" above the "Nowa gra" card for a host whose room is still open, shared with /dev/room-states.
+interface Props {
+  roomId: string;
+  players: number;
+}
+
+const { roomId, players } = Astro.props;
+---
+
+<div class="bg-card flex items-center justify-between gap-4 rounded-xl border p-4">
+  <div class="flex min-w-0 flex-col gap-1">
+    <p class="font-medium">Masz otwarty pokój</p>
+    <p class="text-muted-foreground text-sm">{playerCountLabel(players)} w poczekalni</p>
+  </div>
+  <a href={`/r/${roomId}`} class:list={buttonVariants({ variant: "secondary" })}>
+    Wróć do pokoju
+  </a>
+</div>
