@@ -17,8 +17,9 @@ if (!isDev) {
     <main class="bg-background text-foreground min-h-screen p-6">
       <h1 class="text-2xl font-semibold">Stany logowania</h1>
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
-        Te same klocki co na /auth/signin. Hover i focus-visible sprawdzasz na karcie 1: najedź myszą na przycisk, oko i
-        link albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę loguje.
+        Te same klocki co na /auth/signin. Hover i focus-visible sprawdzasz na karcie 1: najedź myszą na przyciski
+        dostawców, oko i przycisk logowania albo przejdź Tabem. Kliknięcie przycisku dostawcy na tej stronie naprawdę
+        prowadzi do Discorda albo Google, a wysłanie formularza naprawdę loguje.
       </p>
 
       <div class="mt-8 grid justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
@@ -37,18 +38,30 @@ if (!isDev) {
         </section>
 
         <section class="flex w-full max-w-sm flex-col gap-3">
-          <h2 class="text-muted-foreground text-sm font-medium">3. Błąd: serwer (po przekierowaniu)</h2>
-          <SignInCard titleAs="h2">
-            <SignInForm
-              serverError={authErrorMessage("invalid_credentials")}
-              preview={{ idPrefix: "server" }}
-              client:load
-            />
+          <h2 class="text-muted-foreground text-sm font-medium">
+            3. Błąd serwera: anulowanie u dostawcy (access_denied)
+          </h2>
+          <SignInCard titleAs="h2" serverError={authErrorMessage("access_denied")}>
+            <SignInForm preview={{ idPrefix: "access-denied" }} client:load />
           </SignInCard>
         </section>
 
         <section class="flex w-full max-w-sm flex-col gap-3">
-          <h2 class="text-muted-foreground text-sm font-medium">4. Ładowanie i zablokowany</h2>
+          <h2 class="text-muted-foreground text-sm font-medium">4. Błąd serwera: złe hasło (invalid_credentials)</h2>
+          <SignInCard titleAs="h2" serverError={authErrorMessage("invalid_credentials")}>
+            <SignInForm preview={{ idPrefix: "invalid-credentials" }} client:load />
+          </SignInCard>
+        </section>
+
+        <section class="flex w-full max-w-sm flex-col gap-3">
+          <h2 class="text-muted-foreground text-sm font-medium">5. Oczekiwanie na dostawcę · zablokowany</h2>
+          <SignInCard titleAs="h2" providerPreview={{ pending: "discord" }}>
+            <SignInForm preview={{ idPrefix: "provider-pending" }} client:load />
+          </SignInCard>
+        </section>
+
+        <section class="flex w-full max-w-sm flex-col gap-3">
+          <h2 class="text-muted-foreground text-sm font-medium">6. Ładowanie formularza z hasłem · zablokowany</h2>
           <SignInCard titleAs="h2">
             <SignInForm
               preview={{ idPrefix: "pending", email: "host@przyklad.pl", password: "przyklad", pending: true }}
@@ -58,7 +71,7 @@ if (!isDev) {
         </section>
 
         <section class="flex w-full max-w-sm flex-col gap-3">
-          <h2 class="text-muted-foreground text-sm font-medium">5. Pusty: nie dotyczy</h2>
+          <h2 class="text-muted-foreground text-sm font-medium">7. Pusty: nie dotyczy</h2>
           <div class="text-muted-foreground rounded-xl border border-dashed p-6 text-sm">
             Widok nie ma listy ani pobieranych danych, więc nie ma czego pokazać jako „pusty”. Puste pola po wysłaniu to
             stan 2, a bez komunikatu serwera nic dodatkowego się nie renderuje.

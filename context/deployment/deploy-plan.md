@@ -10,8 +10,34 @@
   - powiązania: `ASSETS` (pliki z `dist/client`), `IMAGES`, `SESSION` → KV `most-likely-to-session`. KV utworzył wrangler przy pierwszym wdrożeniu (sesje Astro), a Workers Builds używa tego samego.
 - **Supabase:** projekt `most-likely-to` (Frankfurt), jedyny, więc wspólny dla rozwoju i produkcji.
   - → Od 07.10.2026 (S-05, faza 1): Confirm email **włączone** i ma takie zostać (wyłączone pozwala przejąć konto hosta przez logowanie dostawcą). Site URL `https://most-likely-to.charlesonthewave.workers.dev/auth/signin`, Redirect URLs `http://localhost:4321/**` i `http://localhost:4322/**`. W Authentication → Users są tylko 2 konta: Karola i testowe dla smoke (`SMOKE_EMAIL` w `.dev.vars`).
+  - → Od 07.10.2026 (S-05, faza 2): Discord i Google włączone (sekcja „Logowanie przez dostawców” niżej). Doszły konta Karola z logowania dostawcą: prywatny Gmail (hasło losowe plus Google) i konto z Discorda. Konto z hasłem na adres z pracy znika po fazie 4 S-05.
 - **Wersje:** `c1c7a3b4` (ręczne wdrożenie), `4e3d91b8` (pierwsze z Workers Builds, commit `800c10d`). Próba cofnięcia `4e3d91b8 → c1c7a3b4 → 4e3d91b8` przeszła w kilka sekund.
 - **Cofnięcie przy awarii:** `npx wrangler rollback` (ask) wraca do poprzedniej wersji. Nie cofa danych (KV, Supabase), a następny push do `main` znów wdroży najnowszy kod.
+
+## Logowanie przez dostawców (S-05, od 07.10.2026)
+
+Host loguje się Discordem albo Google (`POST /api/auth/oauth` → Supabase → dostawca → `GET /api/auth/callback`). Oba panele dostawców mają jeden adres zwrotny, `https://<ref>.supabase.co/auth/v1/callback` (Supabase pokazuje go w ustawieniach dostawcy jako „Callback URL”). Ten adres obsługuje i rozwój, i produkcję.
+
+- **Discord:** aplikacja „Most Likely To” w Discord Developer Portal na koncie Discord Karola. OAuth2 → Redirects: adres zwrotny jak wyżej. Pola Privacy Policy i ToS są puste.
+- **Google:** projekt „Most Likely To” (bez organizacji) na prywatnym koncie Google Karola, które gracze nie widzą. Gmaila gry nie ma, bo Google odrzuciło zakładanie konta. Google Auth Platform:
+  - odbiorcy External, tryb Testing: bez publikacji, bez logo i bez listy testerów. Przy samych zakresach `openid`, `userinfo.email` i `userinfo.profile` logować się może każdy, a zgoda nie wygasa po 7 dniach (https://support.google.com/cloud/answer/15549945);
+  - „User support email” to grupa Google gry, założona na tym samym koncie. Członków widzi tylko właściciel, a anonimowy gość strony grupy widzi „Content unavailable”. Gracz widzi tylko nazwę gry i adres grupy. Mail na grupę trafia do skrzynki Karola. Graczom odpowiadamy na Discordzie, nie z prywatnej skrzynki, bo odpowiedź ujawniłaby jej adres;
+  - „Contact information” to prywatny adres Karola, widoczny tylko dla Google;
+  - klient Web application „Supabase” z adresem zwrotnym jak wyżej. Authorized domains są puste, konsola o nie nie prosiła;
+  - ekran zgody pokazuje `<ref>.supabase.co` zamiast nazwy gry. To przyjęte ryzyko, bo poprawka wymaga płatnej własnej domeny w Supabase.
+- **Supabase** → Authentication → Sign In / Providers: Discord i Google włączone. „Allow users without an email” i „Skip nonce checks” są wyłączone.
+- **Sekrety dostawców** są tylko w panelu Supabase: nie w repo, nie w `.dev.vars`, nie w czacie. Wymiana:
+  - Discord: OAuth2 → Reset Secret, potem wklejenie w Supabase (Discord);
+  - Google: klient „Supabase” → dodanie nowego sekretu, wklejenie w Supabase (Google), potem wyłączenie starego.
+- **Po każdej zmianie ustawień dostawcy** (sekret, client id, adres zwrotny) Karol loguje się raz ręcznie na laptopie. Smoke takiej pomyłki nie wykryje, nawet z `SMOKE_OAUTH=1`: Supabase odsyła do dostawcy bez sprawdzania tych wartości, a sekret sprawdza dopiero wymiana kodu po zgodzie.
+- **Smoke:** domyślnie sprawdza start logowania (302 do Supabase i ciasteczko PKCE) oraz callback bez kodu i po anulowaniu. `SMOKE_OAUTH=1` idzie jeden skok dalej, do discord.com i accounts.google.com. Wymaga to włączonych dostawców, więc działa tylko na projekcie Supabase, a nie w CI.
+- **Serwery deweloperskie:** `localhost` tylko na portach 4321 i 4322 (Redirect URLs), `127.0.0.1` na dowolnym porcie. Na innym porcie `localhost` po cichu odeśle logowanie na produkcję. Astro na Windows słucha domyślnie tylko na `[::1]`, więc pod `127.0.0.1` trzeba uruchomić `npm run dev -- --host 127.0.0.1`.
+- **Sprawdzone lokalnie 07.10.2026** (faza 2):
+  - oba logowania działają na `localhost:4321`, `127.0.0.1:4321` i `localhost:4322`;
+  - anulowanie zgody kończy się polskim komunikatem;
+  - Google na adres istniejącego konta dołącza się do tego konta;
+  - wylogowanie w jednej przeglądarce nie wylogowuje drugiej (`scope: "local"`).
+- **Polityka prywatności:** nie ma. To przyjęte ryzyko, bo gra jest na razie tylko dla znajomych. Polityka wraca przed otwarciem gry dla obcych: wymaga jej Discord Developer Policy, a dotyczy też ekranu zgody Google i art. 13 RODO.
 
 ## Migracje Supabase (od 07.10.2026, S-01)
 
