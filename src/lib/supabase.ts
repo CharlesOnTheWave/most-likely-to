@@ -7,6 +7,8 @@ export function createClient(requestHeaders: Headers, cookies: AstroCookies) {
     return null;
   }
   return createServerClient(SUPABASE_URL, SUPABASE_KEY, {
+    // Only the server reads the session and PKCE cookies (no auth client in the browser), so scripts never need them.
+    cookieOptions: { httpOnly: true },
     cookies: {
       getAll() {
         return parseCookieHeader(requestHeaders.get("Cookie") ?? "");

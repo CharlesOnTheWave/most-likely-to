@@ -23,9 +23,10 @@ function cookieHeader(cookies = jar) {
 }
 
 // Returns the names this response set (not the ones it cleared), so a step checks its own cookies and not what an
-// earlier step left in the jar.
+// earlier step left in the jar, and which of them are HttpOnly.
 function storeCookies(response, cookies = jar) {
   const set = [];
+  const httpOnly = [];
   for (const raw of response.headers.getSetCookie()) {
     const [pair, ...attrs] = raw.split(";");
     const [name, ...rest] = pair.split("=");
@@ -34,9 +35,10 @@ function storeCookies(response, cookies = jar) {
     else {
       cookies.set(name.trim(), rest.join("="));
       set.push(name.trim());
+      if (attrs.some((a) => a.trim().toLowerCase() === "httponly")) httpOnly.push(name.trim());
     }
   }
-  return set;
+  return { set, httpOnly };
 }
 
 // `cookies`: a jar of its own (one per player in the room steps). `form`: an object, or [name, value] pairs for repeated
@@ -52,8 +54,8 @@ async function request(path, { method = "GET", form, cookies = jar, readBody = f
     },
     body: form ? new URLSearchParams(form).toString() : undefined,
   });
-  const set = storeCookies(response, cookies);
-  const result = { status: response.status, location: response.headers.get("location") ?? "", cookies: set };
+  const { set, httpOnly } = storeCookies(response, cookies);
+  const result = { status: response.status, location: response.headers.get("location") ?? "", cookies: set, httpOnly };
   return readBody ? { ...result, body: await response.text() } : result;
 }
 
@@ -71,9 +73,11 @@ async function startOAuth(provider) {
 // still passes here: only a real sign-in catches those.
 async function followToProvider(provider) {
   const url = authorizeUrls.get(provider) ?? "";
-  if (!url.startsWith("http")) return { status: 0, location: "(no Supabase URL from the start step)", cookies: [] };
+  if (!url.startsWith("http")) {
+    return { status: 0, location: "(no Supabase URL from the start step)", cookies: [], httpOnly: [] };
+  }
   const response = await fetch(url, { redirect: "manual" });
-  return { status: response.status, location: response.headers.get("location") ?? "", cookies: [] };
+  return { status: response.status, location: response.headers.get("location") ?? "", cookies: [], httpOnly: [] };
 }
 
 const steps = [
@@ -89,16 +93,24 @@ const steps = [
   [
     "signin accepts correct password",
     () => request("/api/auth/signin", { method: "POST", form: { email, password } }),
-    { status: 302, exact: "/" },
+    // Only the server reads the session cookie, so scripts must not see it (src/lib/supabase.ts).
+    { status: 302, exact: "/", httpOnly: "-auth-token" },
   ],
   ["dashboard renders for signed-in user", () => request("/dashboard"), { status: 200 }],
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, exact: "/" }],
   ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
-  // OAuth steps run signed out, after the password steps, so they cannot disturb them.
+  // OAuth steps run signed out, after the password steps, so they cannot disturb them. auth-js also writes per-flow
+  // verifier cookies, but the callback (exchangeCodeForSession without a flow id) reads only the fixed
+  // <storageKey>-code-verifier, so that is the one to check: if a library update stops writing it, sign-in breaks.
   [
     "oauth start sends discord to Supabase",
     () => startOAuth("discord"),
-    { status: 302, contains: ["/auth/v1/authorize?provider=discord"], cookie: "-code-verifier" },
+    {
+      status: 302,
+      contains: ["/auth/v1/authorize?provider=discord"],
+      cookie: "-auth-token-code-verifier",
+      httpOnly: "-auth-token",
+    },
   ],
   [
     "oauth start sends google to Supabase",
@@ -106,7 +118,8 @@ const steps = [
     {
       status: 302,
       contains: ["/auth/v1/authorize?provider=google", "prompt=select_account"],
-      cookie: "-code-verifier",
+      cookie: "-auth-token-code-verifier",
+      httpOnly: "-auth-token",
     },
   ],
   [
@@ -123,6 +136,11 @@ const steps = [
     "callback passes on cancelled consent",
     () => request("/api/auth/callback?error=access_denied"),
     { status: 302, location: "/auth/signin?error=access_denied" },
+  ],
+  [
+    "callback turns free text into unknown",
+    () => request(`/api/auth/callback?error=${encodeURIComponent("<b>not a code</b>")}`),
+    { status: 302, exact: "/auth/signin?error=unknown" },
   ],
   ...(OAUTH
     ? [
@@ -260,6 +278,12 @@ function matches(pattern, value) {
   return pattern instanceof RegExp ? pattern.test(value) : value.startsWith(pattern);
 }
 
+// At least one cookie this step set has `part` in its name, and every such cookie is HttpOnly.
+function httpOnlyOk(actual, part) {
+  const named = actual.cookies.filter((cookie) => cookie.includes(part));
+  return named.length > 0 && named.every((cookie) => actual.httpOnly.includes(cookie));
+}
+
 let failed = 0;
 for (const [name, run, expectation] of [...steps, ...roomSteps]) {
   const actual = await run();
@@ -267,7 +291,7 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
   const expected = typeof expectation === "function" ? expectation() : expectation;
   // location: Location starts with it (a string) or matches it (a RegExp); exact: Location is exactly it (a bare "/"
   // as a prefix matches any path); contains: Location has every part; body: the response text matches it; cookie: a
-  // cookie this step set ends with it.
+  // cookie this step set ends with it; httpOnly: the step set cookies whose names contain it, all of them HttpOnly.
   const contains = expected.contains ?? [];
   const ok =
     actual.status === expected.status &&
@@ -275,7 +299,8 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
     (expected.exact === undefined || actual.location === expected.exact) &&
     contains.every((part) => actual.location.includes(part)) &&
     (expected.body === undefined || expected.body.test(actual.body ?? "")) &&
-    (expected.cookie === undefined || actual.cookies.some((cookie) => cookie.endsWith(expected.cookie)));
+    (expected.cookie === undefined || actual.cookies.some((cookie) => cookie.endsWith(expected.cookie))) &&
+    (expected.httpOnly === undefined || httpOnlyOk(actual, expected.httpOnly));
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}  -> ${actual.status} ${mask(actual.location)}`);
   if (!ok) {
     failed++;
@@ -283,6 +308,11 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
     if (contains.length > 0) console.log(`      expected Location to contain ${contains.join(" and ")}`);
     if (expected.cookie !== undefined) {
       console.log(`      expected a cookie ending in ${expected.cookie}, set: ${actual.cookies.join(", ") || "none"}`);
+    }
+    if (expected.httpOnly !== undefined) {
+      console.log(
+        `      expected HttpOnly cookies containing ${expected.httpOnly}, HttpOnly: ${actual.httpOnly.join(", ") || "none"}`,
+      );
     }
   }
 }
