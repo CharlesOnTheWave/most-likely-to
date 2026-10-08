@@ -1,0 +1,179 @@
+# Test Plan
+
+> Phased test rollout for this project. Strategy is frozen at the top
+> (§1–§5); cookbook patterns at the bottom (§6) fill in as phases ship.
+> Read before writing any new test.
+>
+> Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
+>
+> Last updated: 2026-10-08
+
+## 1. Strategy
+
+Testy w tym projekcie trzymają się trzech zasad, od których nie ma wyjątków:
+
+1. **Koszt × sygnał.** Wygrywa najtańszy test, który daje prawdziwy sygnał
+   dla danego ryzyka. Nie przenoś testu do e2e tylko dlatego, że e2e
+   „wydaje się bezpieczniejsze”. Nie kładź modelu wizji na deterministyczny
+   diff wizualny, który już wyłapuje regresję.
+2. **Obawy użytkownika są pełnoprawnym dowodem.** Ryzyka zakotwiczone w
+   „właściciel obawia się X, a awaria ujawniłaby się gdzieś w <obszarze>”
+   ważą tyle samo co linie PRD albo dane z hot-spotów.
+3. **Ryzyka to scenariusze, nie miejsca w kodzie.** Ten plan dokumentuje,
+   *co może się zepsuć* i *dlaczego uważamy to za prawdopodobne* — na
+   podstawie dokumentów, wywiadu i *sygnału* z bazy kodu (częstotliwość
+   zmian, struktura, stan testów). NIE twierdzi, że wie, która linia
+   odpowiada za awarię. Tę wiedzę wytwarza `/10x-research` w każdym etapie
+   wdrożenia. Jeśli plan i research nie zgadzają się co do tego, gdzie
+   mieszka awaria, rozstrzyga research.
+
+Właściciel projektu nie weryfikuje kodu sam (wywiad Q3), więc każdy test
+musi sprawdzać zachowanie opisane w PRD, z oczekiwanym wynikiem
+pochodzącym z PRD, roadmapy albo wywiadu, nigdy z implementacji.
+
+Hot-spot scope used for likelihood weighting: `src/`, `supabase/migrations/`,
+`scripts/` (27 commitów w oknie 2026-09-08 → 2026-10-08).
+
+## 2. Risk Map
+
+Najważniejsze scenariusze awarii, uporządkowane według wpływ ×
+prawdopodobieństwo. Kolumna Source cytuje *dowód, który podniósł ryzyko*,
+nigdy plik jako „miejsce awarii” (§1, zasada 3).
+
+| # | Risk (failure scenario) | Impact | Likelihood | Source (evidence — not anchor) |
+|---|---|---|---|---|
+| 1 | Gracz, host albo twórca gry może odtworzyć, kto na kogo głosował: z bazy, z kanału na żywo, z odpowiedzi serwera, z logów albo z kolejności zdarzeń | High | High | PRD Non-Goals i Non-Functional Requirements („kto na kogo” nigdy, także dla hosta i twórcy); roadmap S-02 Risk i S-04 Unknowns; AGENTS.md Hard Rules; interview Q1 |
+| 2 | Odsłona albo nowy stan rundy nie dociera do wszystkich graczy w 2 s, także po odświeżeniu strony albo uśpieniu telefonu; część ekipy wisi na „czekamy na głosy” | High | High | PRD Non-Functional Requirements (2 s, 10 s) i US-01; interview Q1; archive live-sync-spike (mierzony tylko sygnał zmiany, nie prawdziwe głosy; powrót po uśpieniu i iOS niesprawdzone); roadmap S-02; hot-spot dir `src/lib/` (11 commits/30d) |
+| 3 | Runda łamie reguły gry: pytanie spoza wybranych kategorii, pytanie 18+ wbrew decyzji hosta, powtórka w tej grze, albo wynik odsłony niezgodny z oddanymi głosami (podwójny głos po powrocie, zgubiony głos, głos na osobę spoza listy) | High | High | PRD FR-008, FR-009, FR-011, FR-015 i US-01 Acceptance Criteria; roadmap S-02 |
+| 4 | Ktoś działa ponad swoją rolę: host przeskakuje etapy gry, otwiera zamknięty pokój albo sam wybiera kod linku; gość działa w cudzym pokoju albo jako inny gracz | High | High | archive room-lobby (impl-review F1: host omija reguły przez REST); roadmap S-02 Risk; PRD Access Control; AGENTS.md Conventions (funkcje bazy przyznane `anon` to publiczne wejścia); hot-spot dir `src/pages/api/` (10 commits/30d) |
+| 5 | Zepsuta wersja gry trafia do graczy, choć sprawdzenia są zielone: test niczego nie pilnuje, narzędzie sprawdzające samo się psuje albo produkcja wdraża mimo czerwonego CI | High | Medium | interview Q3 (właściciel nie zweryfikuje kodu sam); AGENTS.md Commands (Workers Builds wdraża `main` nawet przy czerwonym CI); lessons.md (poprawka przeszła bramkę, a decydujący przebieg sondy na produkcji padł); tech-stack.md (auto-deploy on merge); hot-spot dir `scripts/` (13 commits/30d) |
+| 6 | Gość nie wchodzi do pokoju albo traci nick: link z Discorda nie działa na telefonie, dwa identycznie wyglądające nicki przechodzą, po odświeżeniu ktoś inny zajmuje jego nick | High | Medium | PRD FR-002, FR-011 i Guardrails (dołączenie < 30 s); archive room-lobby (impl-review F4: niewidoczne znaki w nicku; iOS niesprawdzony); roadmap S-04; hot-spot dir `src/components/room/` (5 commits/30d) |
+| 7 | Gra przestaje działać dla wszystkich do końca dnia, bo seria sygnałów zmiany (spam albo zwykły ruch rundy z głosami) wyczerpuje dzienny limit żądań | High | Medium | archive room-lobby (impl-review F2: brak ogranicznika); infrastructure.md (100 tys. żądań dziennie na konto); roadmap S-02 Risk |
+
+Poza mapą świadomie: awaria dostawcy logowania albo uśpiony projekt
+Supabase to wysoki wpływ × niskie prawdopodobieństwo; należy do listy
+kontrolnej przed wieczorem i obserwowalności, nie do testu. Logowanie
+hosta pokrywa już smoke (§4).
+
+### Risk Response Guidance
+
+| Risk | What would prove protection | Must challenge | Context `/10x-research` must ground | Likely cheapest layer | Anti-pattern to avoid |
+|------|-----------------------------|----------------|--------------------------------------|-----------------------|-----------------------|
+| #1 | Po zakończonej rundzie żadna rola (gość, host, twórca gry) i żaden kanał (baza, odpowiedź serwera, zdarzenie na żywo, log) nie pozwala połączyć głosującego z osobą, na którą głosował | „Tabela głosów nie ma kolumny głosującego, więc jest anonimowo” — para może wyciec kolejnością zapisów, znacznikami czasu, logiem albo zestawieniem „kto już zagłosował” z liczbami w trakcie rundy | gdzie głos jest zapisywany i liczony; co niesie sygnał na żywo i sygnał „kto już zagłosował”; co trafia do logów; jak S-04 ma przywracać oddany głos | integration (baza w CI) + integration na odpowiedziach serwera | test sprawdzający tylko kolumny tabeli; test uruchamiany rolą, która omija uprawnienia |
+| #2 | Po ostatnim głosie albo przewinięciu przez prowadzącego każdy ekran w pokoju pokazuje tę samą odsłonę w 2 s, także ekran, który dołączył albo wrócił w trakcie | „Sygnał zmiany doszedł, więc gracz widzi wynik” — sygnał to tylko podpowiedź, stan musi zostać pobrany; spóźniony ekran może czekać na kolejny sygnał | moment, w którym serwer uznaje rundę za zamkniętą; jak ekran pobiera stan po sygnale i po powrocie; budżet czasu na produkcji vs lokalnie | integration (stan rundy po ostatnim głosie) + e2e z kilkoma przeglądarkami; ręczna sonda na produkcji dla 2 s | pomiar 2 s na lokalnym serwerze dev (sam nie mieści się w budżecie); całkowite mockowanie kanału na żywo |
+| #3 | Reguły z PRD: jeden głos na gracza na rundę (także po odświeżeniu), głos na siebie dozwolony, wstrzymanie się dozwolone, głos tylko na osobę z listy, liczby w odsłonie równe oddanym głosom; pytania tylko z wybranych kategorii, 18+ tylko tam, gdzie host je włączył, bez powtórek w grze | „Interfejs blokuje drugi głos, więc serwer też” | gdzie serwer przyjmuje i liczy głos; jak losowane jest pytanie i skąd bierze kategorie | unit (losowanie pytań) + integration (przyjmowanie i liczenie głosów) | problem wyroczni: oczekiwane liczby przepisane z implementacji zamiast z reguł PRD |
+| #4 | Każda rola dostaje odmowę tam, gdzie PRD Access Control jej zabrania: host nie zmieni etapu gry poza dozwolonym przejściem, nie otworzy zamkniętego pokoju, nie wybierze kodu linku; gość nie zadziała w cudzym pokoju ani jako inny gracz | „Uprawnienia w bazie są włączone i smoke przechodzi, więc jest bezpiecznie” — smoke sprawdza ścieżki szczęśliwe | uprawnienia i polityki per rola; funkcje bazy otwarte dla gości; przejścia stanów gry z S-02 | integration (baza w CI, z rolą gościa i rolą zalogowanego hosta) | test na roli administratora, która omija uprawnienia (fałszywie zielony) |
+| #5 | Celowo zepsute zachowanie z §2 robi bramkę czerwoną, a czerwona bramka zatrzymuje wdrożenie na produkcję | „CI zielone, więc produkcja bezpieczna” i „skrypt sprawdzający działa, bo przeszedł lint” | co i kiedy wdraża się na produkcję; które bramki blokują; czy smoke i sonda wykonują zmieniony kod | gates (CI + blokada wdrożenia) + hook po edycji + ręczna próba „czy test potrafi zawieść” | testy, których nikt nie uruchamia przed pushem; zielone, bo pominięte |
+| #6 | Gość z ważnym linkiem wchodzi z telefonu w < 30 s; nick wyglądający identycznie jak zajęty (niewidoczne znaki, selektor wariantu emotki) jest odrzucany; za długi nick dostaje czytelną odmowę; samo otwarcie linku (podgląd Discorda) niczego nie zmienia; po odświeżeniu gracz wraca na swój nick | „Normalizacja usuwa niewidoczne znaki” — znane są wyjątki | reguła normalizacji nicku i gdzie działa; zachowanie ciasteczka gościa; plany S-04 | integration (funkcja bazy) + istniejące kroki smoke; ręczny test telefonu (iOS) | oczekiwany wynik skopiowany z funkcji normalizującej zamiast z listy par identycznie wyglądających nicków |
+| #7 | Seria sygnałów zmiany z jednego pokoju daje ograniczoną liczbę żądań na ekran, a wieczór z 20 graczami mieści się w dziennym limicie z zapasem | „Kanał jest nasz, więc sygnały są prawdziwe” — kanał jest publiczny | jak ekran reaguje na sygnał; ile żądań generuje runda z głosami; konfiguracja kanału | unit (ogranicznik po stronie ekranu, z kontrolowanym czasem) + szacunek żądań na wieczór | test obciążeniowy na produkcji (zjada limit); e2e do sprawdzania reguły czasowej |
+
+## 3. Phased Rollout
+
+Each row is a discrete rollout phase that will open its own change folder
+via `/10x-new`. Status moves left-to-right through the values below; the
+orchestrator updates Status as artifacts appear on disk.
+
+| # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
+|---|---|---|---|---|---|---|
+| 1 | Fundament testów i zabezpieczenie lobby | Postawić pierwszy runner i udowodnić w istniejącym lobby, że role dostają odmowę tam, gdzie PRD zabrania, a identycznie wyglądające nicki są odrzucane | #4, #6 | unit + integration (DB) | change opened | testing-lobby-foundation |
+| 2 | Anonimowość i reguły rundy | Udowodnić, że po rundzie nie da się odtworzyć „kto na kogo”, a runda spełnia reguły PRD; testy powstają przed kodem głosowania S-02 | #1, #3 | unit + integration (DB) | not started | — |
+| 3 | Odsłona na żywo w przeglądarkach | Udowodnić, że każdy ekran dostaje tę samą odsłonę w budżecie czasu, a sygnały zmiany nie zjadają limitu żądań | #2, #7 | e2e + unit + AI-native exploratory | not started | — |
+| 4 | Bramki, które naprawdę zatrzymują | Udowodnić, że zepsute zachowanie z §2 zapala bramkę na czerwono, a czerwona bramka zatrzymuje produkcję | #5 | gates + post-edit-hook | not started | — |
+
+Faza 2 dzieje się razem z S-02 z roadmapy: przy przekazaniu `/10x-new`
+użyć change-id `first-live-round` (wspólny folder z S-02), a nie
+`testing-…`. Testy bazy wymagają lokalnego Supabase, który dziś działa
+tylko w CI (lokalnie brak Dockera); research fazy 1 rozstrzyga, gdzie i
+jak je uruchamiać.
+
+## 4. Stack
+
+Klasyczna baza testów tego projektu. Narzędzia AI-native mają datę
+`checked:`, żeby było widać, które wiersze wymagają ponownej weryfikacji.
+
+| Layer | Tool | Version | Notes |
+|---|---|---|---|
+| unit + integration | none yet — see Phase 1 (kandydat kategorii: Vitest, checked: 2026-10-08) | — | integracja z Astro 7 do potwierdzenia w research fazy 1 |
+| DB (uprawnienia, funkcje) | none yet — see Phase 1 (kandydat kategorii: pgTAP przez `supabase test db`, checked: 2026-10-08) | Supabase CLI 2.x (devDependency) | wymaga lokalnego Supabase: jest w CI (job `smoke` uruchamia `supabase start`), lokalnie brak Dockera |
+| HTTP smoke | `npm run smoke` (własny skrypt Node) | Node 22.14 | 32 kroki: logowanie, start i powrót OAuth, pokój i wejście gościa; CI na lokalnym Supabase i produkcja po pushu; zostawia pokoje w bazie produkcyjnej |
+| sonda live-sync | `npm run live-probe` | Node 22.14 | ręcznie, na produkcji; nie w CI |
+| e2e | none yet — see Phase 3 (kandydat kategorii: Playwright, checked: 2026-10-08) | — | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju |
+| accessibility | none yet | — | lint `jsx-a11y` w `npm run lint`; kontrast sprawdzany ręcznie przy zmianach UI |
+| (optional) AI-native | agent rozgrywa rundę w przeglądarce (Claude in Chrome — checked: 2026-10-08) | n/a | When NOT to use: zamiast testów deterministycznych; do pomiaru 2 s; na produkcji z prawdziwymi graczami |
+| (optional) AI-native | hook po edycji w pętli agenta (checked: 2026-10-08) | n/a | When NOT to use: jako zamiennik CI albo do wolnych testów bazy |
+
+**Stack grounding tools (current session):**
+- Docs: none — Context7 i MCP dokumentacji not available in current session; wersje narzędzi do potwierdzenia w research; checked: 2026-10-08
+- Search: wbudowane wyszukiwanie w sieci (nie MCP; Exa.ai not available in current session) — potwierdzone: Supabase testuje uprawnienia przez pgTAP i `supabase test db` (supabase.com/docs/guides/database/testing); dokumentacji Astro 7 dla Vitest nie znaleziono; checked: 2026-10-08
+- Runtime/browser: Claude in Chrome (przeglądarka właściciela) — możliwy dla rundy prowadzonej przez agenta; Playwright MCP not available in current session; checked: 2026-10-08
+- Provider/platform: Cloudflare MCP obecny, ale niezalogowany; GitHub przez CLI `gh` (nie MCP); Supabase MCP not available in current session — not used; checked: 2026-10-08
+
+## 5. Quality Gates
+
+Pełny zestaw bramek, które zmiana musi przejść, zanim trafi na produkcję.
+„Required after §3 Phase <N>” znaczy, że bramka obowiązuje od momentu
+wdrożenia tej fazy; wcześniej jest `planned`.
+
+| Gate | Where | Required? | Catches |
+|---|---|---|---|
+| lint (z kontrolą literałów UI) + `astro check` + build | local + CI | required | błędy składni i typów, kolory spoza tokenów |
+| HTTP smoke | CI (lokalny Supabase) + produkcja po pushu | required | zepsute logowanie, wejście do pokoju, konfiguracja środowiska |
+| unit + integration (w tym uprawnienia w bazie) | local + CI | required after §3 Phase 1 | regresje reguł gry i uprawnień |
+| e2e na rundzie z kilkoma graczami | CI | required after §3 Phase 3 | zepsuta runda widziana przez graczy |
+| czerwone CI zatrzymuje wdrożenie | GitHub → Cloudflare | required after §3 Phase 4 | dziś Workers Builds wdraża `main` mimo czerwonego CI |
+| post-edit hook | local (agent loop) | recommended after §3 Phase 4 | regresje w chwili edycji |
+| sonda live-sync | produkcja, ręcznie | optional (przed prawdziwym wieczorem) | budżet 2 s w prawdziwej sieci |
+| agent rozgrywa rundę (AI-native) | ręcznie, przed wieczorem | optional after §3 Phase 3 | problemy, których nie opisał żaden test |
+
+## 6. Cookbook Patterns
+
+Jak dodawać testy w tym projekcie. Każda podsekcja wypełnia się, gdy
+odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
+„TBD — see §3 Phase <N>”.
+
+### 6.1 Adding a unit test
+
+- TBD — see §3 Phase 1 (wzorzec: reguła gry sprawdzana na wyroczni z PRD, np. odrzucenie identycznie wyglądającego nicku).
+
+### 6.2 Adding a database permission or function test
+
+- TBD — see §3 Phase 1 (wzorzec: rola gościa i rola hosta dostają odmowę tam, gdzie PRD Access Control zabrania).
+
+### 6.3 Adding an anonymity check
+
+- TBD — see §3 Phase 2 (wzorzec: po rundzie żaden kanał nie pozwala połączyć głosującego z celem głosu).
+
+### 6.4 Adding an e2e multi-player test
+
+- TBD — see §3 Phase 3 (wzorzec: kilku graczy w jednym pokoju widzi tę samą odsłonę).
+
+### 6.5 Adding a smoke step
+
+- **Location**: `scripts/smoke.mjs` (lista kroków; kroki pokoju po krokach logowania).
+- **Run locally**: `npm run smoke` przy działającym serwerze; potrzebuje `.dev.vars` z `SMOKE_EMAIL` / `SMOKE_PASSWORD`; pyta przed uruchomieniem, bo zostawia pokoje w bazie produkcyjnej.
+- **Production**: `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` po każdym pushu na `main`.
+
+### 6.6 Per-rollout-phase notes
+
+(Uzupełniane przez `/10x-implement` po każdej fazie: 2–3 linie o tym, co faza pokazała.)
+
+## 7. What We Deliberately Don't Test
+
+Wykluczenia uzgodnione podczas wdrożenia. Kolejne osoby i agenci trzymają
+się ich, dopóki nie zmieni się założenie.
+
+- **Treść i jakość pytań** — czy pytanie jest dobre i śmieszne, ocenia ręcznie twórca gry. Format bazy pytań i stałe numery pytań NIE są wykluczone. Re-evaluate if pytania zaczną trafiać do bazy bez ręcznego przeglądu (propozycje gości, generowanie). (Source: Phase 2 interview Q5.)
+- **Awaria dostawców logowania i uśpienie Supabase** — wysoki wpływ × niskie prawdopodobieństwo; zamiast testu lista kontrolna przed prawdziwym wieczorem (obudzenie projektu, próbne logowanie). Re-evaluate if pojawi się monitoring albo płatny plan. (Source: brief zaakceptowany 2026-10-08, kontrola challengera.)
+
+## 8. Freshness Ledger
+
+- Strategy (§1–§5) last reviewed: 2026-10-08
+- Stack versions last verified: 2026-10-08
+- AI-native tool references last verified: 2026-10-08
+
+Refresh (`/10x-test-plan --refresh`) when:
+
+- a new top-3 risk surfaces from the roadmap or archive,
+- a recommended tool's `checked:` date is older than three months,
+- the project's tech stack changes (new framework, new test runner),
+- §7 negative-space no longer matches what the team believes.
