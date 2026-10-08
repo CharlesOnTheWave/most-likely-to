@@ -6,7 +6,8 @@ import { isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js
 const MESSAGES: Record<string, string> = {
   missing_fields: "Podaj e-mail i hasło.",
   invalid_credentials: "Nieprawidłowy e-mail lub hasło.",
-  email_not_confirmed: "Najpierw potwierdź adres e-mail. Link jest w wiadomości od nas.",
+  // The game sends no emails: an unconfirmed account can only come from Supabase's own sign-up API (deploy-plan.md).
+  email_not_confirmed: "To konto nie jest potwierdzone. Zaloguj się przez Discord albo Google.",
   over_request_rate_limit: "Za dużo prób. Odczekaj chwilę i spróbuj ponownie.",
   over_email_send_rate_limit: "Za dużo prób. Odczekaj chwilę i spróbuj ponownie.",
   validation_failed: "Sprawdź adres e-mail i hasło.",

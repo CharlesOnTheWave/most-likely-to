@@ -1,7 +1,7 @@
 ---
 change_id: one-click-host-login
 title: One click host login
-status: implemented
+status: impl_reviewed
 created: 2026-10-04
 updated: 2026-10-08
 archived_at: null
@@ -29,3 +29,7 @@ archived_at: null
 - **Decyzja 2026-10-07 (faza 3, ocena zrzutów):** komunikat błędu jest pod przyciskami dostawców. Formularz z hasłem zostaje na ekranie także po S-05. Karol: „to logowanie zwykłe zostawiamy”, więc nie proponować jego usunięcia.
 - **Przyjęte w fazie 2 (z raportu implementacji):** start Discorda, potem Google i powrót z Discorda daje „Logowanie wygasło albo się urwało” (stały klucz weryfikatora PKCE). Callback loguje `error` i `error_code` z adresu tak, jak przyszły: to tekst od dowolnej osoby, ale bez danych hosta.
 - **Faza 4 2026-10-08:** PR #2, CI zielone, scalenie za zgodą Karola (merge commit `1a40af4` na `main`, SHA faz zachowane), Workers Builds `main` OK, smoke na produkcji z `SMOKE_OAUTH=1` 15/15, kitchen sink 404. Karol zalogował się na produkcji Discordem i Google na laptopie i na Androidzie, także z linku w Discordzie (Discord otwiera linki w Chrome Custom Tab, Google nie blokuje). Logowanie po ponad 300 s kończy się polskim komunikatem. iOS niesprawdzony (brak iPhone'a), podpowiedź o Chrome/Safari: nie dotyczy (`phone-test.md`). Konto z adresem z pracy usunięte, zostały 3 konta. Buildy gałęzi w Workers Builds padają na `wrangler preview` bez `id` KV `SESSION` (opis i decyzja do podjęcia w `deploy-plan.md`, Etap 6); produkcji to nie dotyczy.
+- **Przegląd implementacji (08.10, po wdrożeniu, przed archiwum):**
+  - wynik: APPROVED, 6 obserwacji (`reviews/impl-review.md`); plan wykonany w całości, odstępstwa to udokumentowane decyzje Karola;
+  - poprawione (decyzja Karola): ciasteczka sesji i PKCE z `HttpOnly`; smoke sprawdza ciasteczko PKCE, które czyta callback; callback przepuszcza tylko krótkie kody; nowy komunikat `email_not_confirmed`; rejestracja przez API Supabase opisana jako przyjęte ryzyko w `deploy-plan.md`;
+  - błąd `signOut` przyjęty jako ryzyko, a zdublowana lista dostawców pominięta.
