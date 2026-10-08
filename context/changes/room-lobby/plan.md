@@ -666,13 +666,13 @@ Dokumentacja, PR, scalenie za zgodą Karola (wdrożenie), smoke na produkcji i t
 
 #### Automated
 
-- [x] 4.1 Bramka przechodzi z `ui-literals: 0 literals` także dla `room-states.astro`
-- [x] 4.2 Build produkcyjny odpowiada 404 na `/dev/room-states`
+- [x] 4.1 Bramka przechodzi z `ui-literals: 0 literals` także dla `room-states.astro` — 6429f75
+- [x] 4.2 Build produkcyjny odpowiada 404 na `/dev/room-states` — 6429f75
 
 #### Manual
 
-- [x] 4.3 Karol ocenia zrzuty wszystkich stanów i akceptuje albo wskazuje poprawki
-- [x] 4.4 Formularze działają z klawiatury, fokus widoczny, błąd serwera ogłaszany
+- [x] 4.3 Karol ocenia zrzuty wszystkich stanów i akceptuje albo wskazuje poprawki — 6429f75
+- [x] 4.4 Formularze działają z klawiatury, fokus widoczny, błąd serwera ogłaszany — 6429f75
 
 ### Phase 5: Produkcja i telefony
 
