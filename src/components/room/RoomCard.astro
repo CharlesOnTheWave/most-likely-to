@@ -23,3 +23,9 @@ const { title, description, titleAs: Title = "h1" } = Astro.props;
     <slot />
   </CardContent>
 </Card>
+
+<script>
+  // The server message (/?error=, /j/<code>?error=) is in the HTML from the start, and screen readers skip a role="alert"
+  // that never changed; focus makes them read it, as on SignInCard. On the states page the first one is enough.
+  document.querySelector<HTMLElement>("[data-server-error]")?.focus();
+</script>
