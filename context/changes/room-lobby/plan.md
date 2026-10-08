@@ -678,12 +678,12 @@ Dokumentacja, PR, scalenie za zgodą Karola (wdrożenie), smoke na produkcji i t
 
 #### Automated
 
-- [ ] 5.1 CI na PR zielone (`ci` i `smoke` z migracją i `PUBLISHABLE_KEY`)
-- [ ] 5.2 Smoke na produkcji po scaleniu przechodzi
-- [ ] 5.3 Produkcja odpowiada 404 na `/dev/live-sync` i `/dev/room-states`
+- [x] 5.1 CI na PR zielone (`ci` i `smoke` z migracją i `PUBLISHABLE_KEY`)
+- [x] 5.2 Smoke na produkcji po scaleniu przechodzi
+- [x] 5.3 Produkcja odpowiada 404 na `/dev/live-sync` i `/dev/room-states`
 
 #### Manual
 
-- [ ] 5.4 Test na telefonach: każdy gość dołącza w mniej niż 30 s bez instrukcji, lista na żywo, wynik w `phone-test.md`
-- [ ] 5.5 Karol zakłada grę w mniej niż 5 minut
-- [ ] 5.6 iPhone: przejście z przeglądarki Discorda do Safari daje komunikat „zajęty” z podpowiedzią, zapisany jako znane ograniczenie
+- [x] 5.4 Test na telefonach: każdy gość dołącza w mniej niż 30 s bez instrukcji, lista na żywo, wynik w `phone-test.md`
+- [x] 5.5 Karol zakłada grę w mniej niż 5 minut
+- [x] 5.6 iPhone: przejście z przeglądarki Discorda do Safari daje komunikat „zajęty” z podpowiedzią, zapisany jako znane ograniczenie
