@@ -1,7 +1,7 @@
 ---
 change_id: room-lobby
 title: Room lobby
-status: impl_reviewed
+status: implemented
 created: 2026-10-07
 updated: 2026-10-08
 archived_at: null
@@ -29,3 +29,4 @@ archived_at: null
   - F4 (nick) zapisane;
   - F5 (zdanie o smoke w AGENTS.md) dopisane.
 - **Po rebase na S-05 (faza 5):** S-05 ustalił, że czytnik ekranu zwykle nie ogłasza `role="alert"`, który jest w HTML od początku (błąd po przekierowaniu). Dlatego `ServerError` dostaje `tabIndex={-1}` i `data-server-error`, a skrypt w `SignInCard.astro` przenosi na niego fokus po załadowaniu. Nasze `/?error=` i `/j/<kod>?error=` (`RoomCard`) potrzebują tego samego skryptu, inaczej „nick zajęty” nie zostanie przeczytany. S-05 zdejmuje też `role="alert"` z błędu pola w `FormField.tsx` (fokus i tak trafia na pole). Po rozwiązaniu konfliktów sprawdzić oba na `/dev/room-states` i na prawdziwym `?error=`.
+- **Faza 5 (08.10):** PR #1 scalony jako `ecbf211` (za zgodą Karola), Workers Builds `main` success, smoke na produkcji z `SMOKE_OAUTH=1` 34/34, `/dev/*` 404. Telefony (`phone-test.md`): laptop + Android OK. iOS niesprawdzony (brak iPhone'a); 5.6 odhaczone jako niesprawdzone, ryzyko otwarte (decyzja Karola, jak w S-05).
