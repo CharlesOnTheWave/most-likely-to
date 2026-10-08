@@ -1,10 +1,10 @@
 ---
 change_id: one-click-host-login
 title: One click host login
-status: impl_reviewed
+status: archived
 created: 2026-10-04
 updated: 2026-10-08
-archived_at: null
+archived_at: 2026-10-08T14:00:28Z
 ---
 
 ## Notes
@@ -33,3 +33,4 @@ archived_at: null
   - wynik: APPROVED, 6 obserwacji (`reviews/impl-review.md`); plan wykonany w całości, odstępstwa to udokumentowane decyzje Karola;
   - poprawione (decyzja Karola): ciasteczka sesji i PKCE z `HttpOnly`; smoke sprawdza ciasteczko PKCE, które czyta callback; callback przepuszcza tylko krótkie kody; nowy komunikat `email_not_confirmed`; rejestracja przez API Supabase opisana jako przyjęte ryzyko w `deploy-plan.md`;
   - błąd `signOut` przyjęty jako ryzyko, a zdublowana lista dostawców pominięta.
+- **Sprawdzenie przed archiwum (08.10, po `957bb6d`):** Karol wylogował się na produkcji i zalogował Discordem na laptopie. Wrócił na `/` zalogowany i bez błędów, więc wymiana kodu na sesję działa przy ciasteczkach `HttpOnly` (smoke tego nie sprawdza).
