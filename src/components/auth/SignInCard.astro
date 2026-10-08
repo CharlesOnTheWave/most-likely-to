@@ -1,13 +1,20 @@
 ---
+import type { ComponentProps } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import ProviderButtons from "@/components/auth/ProviderButtons";
+import { ServerError } from "@/components/auth/ServerError";
 
-// The sign-in card around the form (slot), shared by /auth/signin and /dev/ui-kitchen-sink so the states page shows
-// the real screen. The states page has its own h1, so there the title is an h2.
+// The sign-in card around the password form (slot), shared by /auth/signin and /dev/ui-kitchen-sink so the states page
+// shows the real screen. The states page has its own h1, so there the title is an h2. The server message sits under
+// the provider buttons, above the password form, because it can come from either way of signing in (Karol's pick).
 interface Props {
   titleAs?: "h1" | "h2";
+  serverError?: string | null;
+  providerPreview?: ComponentProps<typeof ProviderButtons>["preview"];
 }
 
-const { titleAs: Title = "h1" } = Astro.props;
+const { titleAs: Title = "h1", serverError, providerPreview } = Astro.props;
 ---
 
 <Card className="w-full max-w-sm">
@@ -17,16 +24,23 @@ const { titleAs: Title = "h1" } = Astro.props;
     </CardTitle>
     <CardDescription className="text-balance">Konto ma tylko osoba prowadząca. Goście grają bez konta.</CardDescription>
   </CardHeader>
-  <CardContent>
+  <CardContent className="flex flex-col gap-6">
+    <ProviderButtons preview={providerPreview} client:load />
+    <ServerError message={serverError} />
+    <div class="flex items-center gap-3">
+      <Separator className="flex-1" />
+      <span class="text-muted-foreground text-sm">albo e-mailem i hasłem</span>
+      <Separator className="flex-1" />
+    </div>
     <slot />
   </CardContent>
-  <CardFooter className="text-muted-foreground justify-center gap-1 text-sm">
-    Nie masz konta?
-    <a
-      href="/auth/signup"
-      class="text-primary hover:text-foreground focus-visible:ring-ring/50 rounded-sm underline underline-offset-4 outline-hidden focus-visible:ring-3"
-    >
-      Załóż je
-    </a>
+  <CardFooter className="text-muted-foreground justify-center text-sm">
+    Nowe konto: przez Discord albo Google.
   </CardFooter>
 </Card>
+
+<script>
+  // Screen readers skip a role="alert" that is already in the HTML on load; focus makes them read the server message.
+  // On the states page several cards have one, and the first is enough.
+  document.querySelector<HTMLElement>("[data-server-error]")?.focus();
+</script>

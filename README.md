@@ -139,12 +139,11 @@ The local stack (`supabase/config.toml`) keeps confirmations off only so CI can 
 
 ### Auth routes
 
-| Route                 | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------- |
-| `/auth/signin`        | Email/password sign-in form                                             |
-| `/auth/signup`        | Email/password sign-up form                                             |
-| `/auth/confirm-email` | Post-signup "check your inbox" page                                     |
-| `/dashboard`          | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| Route          | Description                                                                        |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `/auth/signin` | Sign-in with Discord, Google or email and password                                 |
+| `/auth/signup` | Redirects to `/auth/signin`; new hosts create an account through Discord or Google |
+| `/dashboard`   | Example protected page (redirects to `/auth/signin` if unauthenticated)            |
 
 Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
 
