@@ -608,13 +608,13 @@ Brak nowych kosztów na żądanie. Callback dokłada jedno wywołanie Supabase p
 
 #### Automated
 
-- [x] 4.1 CI na PR zielone (`ci` i `smoke`)
-- [x] 4.2 Smoke na produkcji z `SMOKE_OAUTH=1` kończy się „All smoke steps passed”
-- [x] 4.3 `/dev/ui-kitchen-sink` na produkcji daje 404
+- [x] 4.1 CI na PR zielone (`ci` i `smoke`) — 6721ed3
+- [x] 4.2 Smoke na produkcji z `SMOKE_OAUTH=1` kończy się „All smoke steps passed” — 6721ed3
+- [x] 4.3 `/dev/ui-kitchen-sink` na produkcji daje 404 — 6721ed3
 
 #### Manual
 
-- [x] 4.4 Karol loguje się na produkcji na laptopie Discordem i Google
-- [x] 4.5 Test na telefonach wg macierzy, wyniki w `phone-test.md`
-- [x] 4.6 Logowanie dłuższe niż 300 s kończy się polskim komunikatem
-- [x] 4.7 Podpowiedź o Chrome i Safari wdrożona i sprawdzona albo „nie dotyczy”
+- [x] 4.4 Karol loguje się na produkcji na laptopie Discordem i Google — 6721ed3
+- [x] 4.5 Test na telefonach wg macierzy, wyniki w `phone-test.md` — 6721ed3
+- [x] 4.6 Logowanie dłuższe niż 300 s kończy się polskim komunikatem — 6721ed3
+- [x] 4.7 Podpowiedź o Chrome i Safari wdrożona i sprawdzona albo „nie dotyczy” — 6721ed3
