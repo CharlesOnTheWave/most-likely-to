@@ -145,7 +145,8 @@ describe("role guards: hosts and guests stay inside their roles", () => {
 
   // Only a signed-in host opens a room (prd.md:162,167). The function's name is checked, not only 42501: create_room
   // runs as its caller and starts with the nick rule in schema private, which anon cannot use either, so a create_room
-  // granted to anon would still answer 42501, as "permission denied for schema private".
+  // granted to anon would still answer 42501, as "permission denied for function normalize_nick" (the phase 2
+  // break-check).
   it("G2: anon calling create_room is refused permission on the function", async () => {
     const result = await anon.rpc("create_room", {
       p_nick: "Host",

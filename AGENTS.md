@@ -7,20 +7,26 @@
 - Never persist, log or return a pairing of voter and voted-for player, in any form. Votes are anonymous by design (PRD Non-Goals).
 - Do not add points, leaderboards or round timers; they are PRD Non-Goals.
 - Ask the user before any command that publishes or changes remote or database state: `git push` (a push to `main` deploys to production), `npx wrangler deploy`, `npx wrangler rollback`, `npx wrangler versions deploy`, `npx wrangler delete`, `npx wrangler secret put`, `npx supabase db push`, `npx supabase db reset`.
+- Changes to `supabase/migrations/`, `src/lib/rooms/`, `src/pages/api/rooms/`, `src/pages/j/` or `src/pages/r/` go only through a PR and are merged only on green CI, the `db` job included; never push them straight to `main`. Until test-plan §3 Phase 4, nothing else stops a red `db` from reaching production.
 - Read `SUPABASE_URL` / `SUPABASE_KEY` only through `astro:env/server` (see @src/lib/supabase.ts), never via `import.meta.env`. Never commit `.env` or `.dev.vars`.
 - `SUPABASE_KEY` must be the publishable key (`sb_publishable_…`). Server code may pass the URL and this key to the browser at runtime (page props or a JSON endpoint), only for Realtime subscriptions. A secret or `service_role` key never goes to the browser, the repo or logs.
 - Only `/10x-archive` moves a finished change into `context/archive/`; never edit anything already there.
 
 ## Commands
 
-Before handing off a change, `npm run lint`, `npx astro check` and `npm run build` must pass; CI (@.github/workflows/ci.yml) runs the same gate. Other scripts: @README.md.
+Before handing off a change, `npm run lint`, `npx astro check`, `npm test` and `npm run build` must pass; CI (@.github/workflows/ci.yml) runs the same gate, plus the `smoke` and `db` jobs. Other scripts: @README.md.
 
 - `npx astro sync`: regenerate `.astro/` types after a fresh clone or config change; without it, lint reports false `no-unsafe-*` errors.
 - Workers Builds deploys every push to `main` to production, even when CI fails: run the gate before `git push`, then `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke`. Deploy steps and status: @context/deployment/deploy-plan.md.
 
 ## Testing
 
-No unit or e2e framework yet. `npm run smoke` (@scripts/smoke.mjs) needs a running server and a reachable Supabase. It signs in with the fixed test account `SMOKE_EMAIL` / `SMOKE_PASSWORD` from `.dev.vars` and creates no accounts; the account lives in the only Supabase project, which production also uses. Its room steps leave rooms and guests on that account in that database (until S-13 cleans up), so `npm run smoke` asks first. Keep "Confirm email" ON in that project: never turn it off to make smoke or the probe pass, it reopens account takeover through OAuth. Without `.dev.vars` or its `SMOKE_*` lines (fresh clone, new worktree), copy `.dev.vars` from the main checkout or skip smoke; a failure then is not a code bug.
+- `npm test`: unit tests (Vitest, `tests/unit/`), local and CI.
+- `npm run test:db`: database tests (`tests/db/`) through REST/RPC as a guest and as a host. Local Supabase only, so in practice it runs only in the CI job `db` (no Docker locally); it refuses any URL but `127.0.0.1`/`localhost` and any key but `sb_publishable_…` before the first request.
+- How to add a test (oracle, refusals, hooks, sign-up limit): @context/foundation/test-plan.md §6.
+- A `test.fails` test named "znana dziura <F> → <change>" documents a known hole. When the fix turns it red, remove the marker; never delete the test.
+
+`npm run smoke` (@scripts/smoke.mjs) needs a running server and a reachable Supabase. It signs in with the fixed test account `SMOKE_EMAIL` / `SMOKE_PASSWORD` from `.dev.vars` and creates no accounts; the account lives in the only Supabase project, which production also uses. Its room steps leave rooms and guests on that account in that database (until S-13 cleans up), so `npm run smoke` asks first. Keep "Confirm email" ON in that project: never turn it off to make smoke or the probe pass, it reopens account takeover through OAuth. Without `.dev.vars` or its `SMOKE_*` lines (fresh clone, new worktree), copy `.dev.vars` from the main checkout or skip smoke; a failure then is not a code bug.
 
 ## Conventions
 

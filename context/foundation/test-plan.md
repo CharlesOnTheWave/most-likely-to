@@ -93,10 +93,10 @@ Klasyczna baza testów tego projektu. Narzędzia AI-native mają datę
 
 | Layer | Tool | Version | Notes |
 |---|---|---|---|
-| unit + integration | none yet — see Phase 1 (kandydat kategorii: Vitest, checked: 2026-10-08) | — | integracja z Astro 7 do potwierdzenia w research fazy 1 |
-| DB (uprawnienia, funkcje) | none yet — see Phase 1 (kandydat kategorii: pgTAP przez `supabase test db`, checked: 2026-10-08) | Supabase CLI 2.x (devDependency) | wymaga lokalnego Supabase: jest w CI (job `smoke` uruchamia `supabase start`), lokalnie brak Dockera |
-| HTTP smoke | `npm run smoke` (własny skrypt Node) | Node 22.14 | 32 kroki: logowanie, start i powrót OAuth, pokój i wejście gościa; CI na lokalnym Supabase i produkcja po pushu; zostawia pokoje w bazie produkcyjnej |
-| sonda live-sync | `npm run live-probe` | Node 22.14 | ręcznie, na produkcji; nie w CI |
+| unit + integration | Vitest (checked: 2026-10-10) | 5.0.x (zainstalowana 5.0.3) | własny `vitest.config.ts` bez `getViteConfig` (styk z adapterem Cloudflare niepotwierdzony); dwa projekty: `unit` (`npm test`, lokalnie i w CI) i `db` (`npm run test:db`, tylko CI); Node 22 w CI i 24 lokalnie (Vitest 5 wymaga Node ≥ 22.12) |
+| DB (uprawnienia, funkcje) | Vitest, projekt `db`: integracja przez REST/RPC (supabase-js) kluczem publishable, jako gość i jako zalogowany host; pgTAP (`supabase test db`) nie wybrany, bo potrzebuje Dockera także przy `--db-url` (checked: 2026-10-10) | Supabase CLI 2.120.0 w CI (stała wersja) | tylko w CI: job `db` uruchamia `supabase start` na jednorazowej bazie; lokalnie brak Dockera; bez klucza secret i `service_role` |
+| HTTP smoke | `npm run smoke` (własny skrypt Node) | Node 22 w CI, 24 lokalnie | 37 kroków (14 logowania + 23 pokoju; z `SMOKE_OAUTH=1` jeszcze 2): logowanie, start i powrót OAuth, pokój, wejście gościa, otwarcie linku bez ciasteczka i bez nowego gracza, powrót na nick; CI na lokalnym Supabase i produkcja po pushu; zostawia pokoje w bazie produkcyjnej |
+| sonda live-sync | `npm run live-probe` | Node 24 lokalnie | ręcznie, na produkcji; nie w CI |
 | e2e | none yet — see Phase 3 (kandydat kategorii: Playwright, checked: 2026-10-08) | — | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju |
 | accessibility | none yet | — | lint `jsx-a11y` w `npm run lint`; kontrast sprawdzany ręcznie przy zmianach UI |
 | (optional) AI-native | agent rozgrywa rundę w przeglądarce (Claude in Chrome — checked: 2026-10-08) | n/a | When NOT to use: zamiast testów deterministycznych; do pomiaru 2 s; na produkcji z prawdziwymi graczami |
@@ -118,7 +118,8 @@ wdrożenia tej fazy; wcześniej jest `planned`.
 |---|---|---|---|
 | lint (z kontrolą literałów UI) + `astro check` + build | local + CI | required | błędy składni i typów, kolory spoza tokenów |
 | HTTP smoke | CI (lokalny Supabase) + produkcja po pushu | required | zepsute logowanie, wejście do pokoju, konfiguracja środowiska |
-| unit + integration (w tym uprawnienia w bazie) | local + CI | required after §3 Phase 1 | regresje reguł gry i uprawnień |
+| unit (`npm test`) | local + CI | required | regresje reguł w kodzie TS (dziś: czytelne odmowy na drodze gościa) |
+| integracja bazy (`npm run test:db`: uprawnienia ról, reguła nicku) | CI only (job `db`; lokalnie brak Dockera) | required w sensie reguły PR z `AGENTS.md`: zmiany bazy i pokoju są scalane tylko na zielonym CI, także `db`; technicznie bramka zatrzyma wdrożenie dopiero po §3 Phase 4 | regresje uprawnień ról i reguły nicku; znane dziury F1 i F4 jako oczekiwane porażki do naprawy w S-02 |
 | e2e na rundzie z kilkoma graczami | CI | required after §3 Phase 3 | zepsuta runda widziana przez graczy |
 | czerwone CI zatrzymuje wdrożenie | GitHub → Cloudflare | required after §3 Phase 4 | dziś Workers Builds wdraża `main` mimo czerwonego CI |
 | post-edit hook | local (agent loop) | recommended after §3 Phase 4 | regresje w chwili edycji |
@@ -133,11 +134,50 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
 
 ### 6.1 Adding a unit test
 
-- TBD — see §3 Phase 1 (wzorzec: reguła gry sprawdzana na wyroczni z PRD, np. odrzucenie identycznie wyglądającego nicku).
+- **Location**: `tests/unit/**/*.test.ts` (projekt `unit` w `vitest.config.ts`). Wzór: `tests/unit/room-errors.test.ts`.
+- **Run**: `npm test`, lokalnie i w CI (job `ci`). Skrypty testów nie podają `--env-file`, bo `.dev.vars` wskazuje na produkcję.
+- **Imports**: `describe`, `it` i `expect` jawnie z `vitest` (bez globals). Kod aplikacji przez alias `@/` (→ `src/`). Bez modułów `astro:*` i bez `src/lib/supabase.ts`, bo ten importuje `astro:env/server`, a konfiguracja testów nie zna Astro.
+- **Oracle**: oczekiwanie z PRD, roadmapy albo decyzji właściciela. Nigdy nie licz go tą samą logiką co testowany kod.
+- **Assert**: sprawdzaj zachowanie, nie tekst. Przykład: każda odmowa gościa ma tekst inny niż ogólny „coś poszło nie tak”; polskich tekstów nie przepisujemy do asercji, bo to byłoby lustro.
+- **Cases**: jedna właściwość to jeden `it.each`, a do tego przypadek brzegowy, np. `null` albo nieznany kod (w tym `"constructor"`, który siedzi w `Object.prototype`).
 
 ### 6.2 Adding a database permission or function test
 
-- TBD — see §3 Phase 1 (wzorzec: rola gościa i rola hosta dostają odmowę tam, gdzie PRD Access Control zabrania).
+- **Location**: `tests/db/**/*.test.ts` (projekt `db`). Wzory:
+  - `canary.test.ts`: jedna odmowa i jedna kontrola pozytywna;
+  - `roles.test.ts`: role gościa i hosta, znane dziury F1;
+  - `nicks.test.ts`: reguła nicku z tabeli par, znane dziury F4.
+- **Helpers** (`tests/db/support/`):
+  - `clients.ts`: `anonClient()` (gość bez sesji), `newHost()` (rejestracja, od razu z sesją) oraz `newLinkToken` i `newPlayerToken` (te same generatory co Worker);
+  - `rooms.ts`: `seedRoom`, `seedGuest`, `readOwnRoom`, `hostLobbyNicks`. Seedują prawdziwymi drzwiami: pokój przez `create_room` jako host, gość przez `join_room` jako `anon`. Przy błędzie rzucają, więc używaj ich tylko w hookach;
+  - `nick-pairs.ts`: tabela par nicków (same dane). `node tests/db/support/print-nick-pairs.ts` wypisuje ją do porównania przez człowieka z `research.md` §3.1.
+- **Oracle**: z researchu fazy (PRD Access Control, decyzje właściciela, pliki Unicode), nigdy z implementacji. `private.normalize_nick` nie jest przyznana `anon`, więc testy nicku idą przez `join_room` jako gość.
+- **Roles**: tylko klucz publishable (`sb_publishable_…`), jako `anon` albo jako host po `signUp`. Nigdy klucz secret ani `service_role`, także do seedowania: omija uprawnienia i daje fałszywą zieleń.
+- **Refusal**: odmowa to konkretny wynik, nigdy „jakiś błąd”.
+  - Brak grantu albo nieudane `with check`: `error.code` równe `42501`.
+  - Gdy funkcja jest przyznana, a coś w jej środku nie, rola też dostaje `42501`, tylko z innym komunikatem. Test, że odmówiła konkretna funkcja, sprawdza więc także, że komunikat ją nazywa (G2 w `roles.test.ts`).
+  - Cicha RLS (`using`) zwraca 0 wierszy bez błędu. Sprawdzaj skutek: właściciel czyta ponownie, `room_link` daje ten sam status, lista graczy się nie zmienia.
+- **Positive control**: każdy plik ma test, w którym rola robi coś dozwolonego i to działa. Bez niego zły adres albo brak sesji wyglądałyby jak odmowa wszędzie.
+- **Known hole**: `it.fails` z prawdziwym oczekiwaniem z wyroczni i nazwą zaczynającą się od „znana dziura <F> → <zmiana>: ” (dziś F1 i F4 → S-02).
+  - Nigdy test, który zapisuje dziurę jako dozwolone zachowanie. Nigdy `skip` ani `todo`, bo milczą w wyniku.
+  - Gdy naprawa przyjdzie, test zrobi się czerwony. Zdejmij znacznik, nigdy nie usuwaj testu.
+- **Preconditions**: `test.fails` odwraca każdy błąd, nie tylko asercję: awaria sieci albo padnięte seedowanie też dałyby „oczekiwaną porażkę”. Dlatego:
+  - warunki wstępne (konta, pokoje, zajęty nick) powstają w `beforeAll` albo `beforeEach`, bo błąd w hooku zostaje czerwony;
+  - ciało testu nigdy nie rzuca, tylko zbiera `{ data, error }` (supabase-js sam nie rzuca);
+  - jedyne, co może zawieść, to końcowe `expect`.
+- **Sign-up limit**: lokalny Supabase przyjmuje 30 rejestracji i logowań na 5 minut z jednego IP (`sign_in_sign_ups` w `supabase/config.toml`). Jeden przebieg zakłada dziś 7 kont: `canary` 0, `roles` 6, `nicks` 1.
+  - Nowy plik: jeden host na plik.
+  - Host ma najwyżej jeden otwarty pokój, więc kolejny pokój tego samego hosta zakładaj przez `seedRoom(host, { confirmClose: true })`; zamyka on poprzedni.
+  - Pliki biegną po kolei (`fileParallelism: false`).
+- **Run**: tylko w CI, w jobie `db`. Job uruchamia `supabase start`, zapisuje `API_URL` i `PUBLISHABLE_KEY` jako `TEST_SUPABASE_URL` i `TEST_SUPABASE_KEY`, a potem `npm run test:db -- --reporter=verbose`, więc log wymienia z nazwy każdą znaną dziurę. Lokalnie nie ma Dockera.
+  - Bezpiecznik (`tests/db/support/env.ts`, wołany w `globalSetup`) przerywa przebieg przed pierwszym żądaniem, gdy brakuje zmiennych, adres nie jest `127.0.0.1` ani `localhost` albo klucz nie zaczyna się od `sb_publishable_`.
+  - Poluzowanie bezpiecznika wymaga w tej samej zmianie reguły `ask` dla `Bash(npm run test:db*)` w `.claude/settings.json` (lessons.md, wpis 1), bo zestaw zakłada konta i pokoje.
+- **Invisible characters**: w źródle tylko jako ucieczki `\u{…}`, nigdy dosłownie. Edytor albo formatter może je zgubić, a przegląd ich nie zobaczy.
+- **Break-check** (próbny alarm): dowód, że nowy strażnik potrafi zaświecić na czerwono.
+  1. Tymczasowy commit na gałęzi psuje dokładnie jedną rzecz (tymczasowa migracja albo edycja strony). Opis commita wymienia testy, które mają zaświecić na czerwono.
+  2. Push gałęzi i porównanie CI z listą. Inny czerwony test albo przewidziany, który został zielony, znaczy, że test nie pilnuje tego, co deklaruje: zatrzymaj się i wyjaśnij przyczynę.
+  3. `git revert` tego commita, push, CI znów zielone.
+  4. Nigdy `npx supabase db push` tymczasowej migracji. Na końcu `git diff main...HEAD -- supabase/migrations` jest pusty.
 
 ### 6.3 Adding an anonymity check
 
@@ -152,10 +192,19 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
 - **Location**: `scripts/smoke.mjs` (lista kroków; kroki pokoju po krokach logowania).
 - **Run locally**: `npm run smoke` przy działającym serwerze; potrzebuje `.dev.vars` z `SMOKE_EMAIL` / `SMOKE_PASSWORD`; pyta przed uruchomieniem, bo zostawia pokoje w bazie produkcyjnej.
 - **Production**: `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` po każdym pushu na `main`.
+- **Expectations**: trzeci element kroku to obiekt oczekiwań albo funkcja, gdy wartość znana jest dopiero po wcześniejszych krokach (np. id pokoju). Klucze (`status`, `location`, `exact`, `contains`, `body`, `cookie`, `noCookie`, `httpOnly`) opisuje komentarz nad pętlą porównań. Przy porażce skrypt wypisuje oczekiwanie, także wyrażenie dla `body`.
+- **No cookie**: `noCookie: "<tekst>"` znaczy, że żadne ciasteczko ustawione w tym kroku nie ma tego tekstu w nazwie. Liczą się tylko ciasteczka ustawione przez ten krok, a nie te, które zostały w słoiku. Krok z kilkoma żądaniami zbiera ciasteczka wszystkich odpowiedzi. Wzór: `openLinkThreeTimes` (otwarcie linku trzy razy nie ustawia `mlt_player_`).
+- **Jars**: każdy gracz ma własny słoik ciasteczek (`hostJar`, `olaJar`, `new Map()` dla jednorazowego gościa).
+- **Break-check**: nowy krok, który pilnuje zakazu, sprawdź raz próbnym alarmem jak w §6.2 (tymczasowa edycja strony zamiast migracji).
 
 ### 6.6 Per-rollout-phase notes
 
 (Uzupełniane przez `/10x-implement` po każdej fazie: 2–3 linie o tym, co faza pokazała.)
+
+- **Phase 1** (`testing-lobby-foundation`, 2026-10-10):
+  - Runner stoi, a testy bazy biegną tylko w CI (job `db`): 52 testy, 39 zielonych i 13 oczekiwanych porażek (4 × „znana dziura F1 → S-02”, 9 × „znana dziura F4 → S-02”). Te 13 to kryteria akceptacji migracji S-02. Nick z 10 000 znaków dostaje dziś `invalid_nick`, więc to zwykły strażnik, a nie znana dziura.
+  - Próbne alarmy trafiły dokładnie. Tymczasowa migracja otworzyła 3 uprawnienia i zaświeciła 3 przewidziane testy (kanarek, odczyt cudzego pokoju z H6, G2). Ciasteczko gracza na stronie linku zaświeciło 1 przewidziany krok smoke. Samo `42501` nie mówi, kto odmówił, dlatego G2 sprawdza też nazwę funkcji w komunikacie.
+  - `supabase/setup-cli` z wersją `latest` pyta API GitHuba i czasem pada na „rate limit exceeded”, zanim ruszy jakikolwiek test. Supabase CLI jest więc przypięty (2.120.0) w jobach `smoke` i `db` i podbijany ręcznie.
 
 ## 7. What We Deliberately Don't Test
 
@@ -168,7 +217,7 @@ się ich, dopóki nie zmieni się założenie.
 ## 8. Freshness Ledger
 
 - Strategy (§1–§5) last reviewed: 2026-10-08
-- Stack versions last verified: 2026-10-08
+- Stack versions last verified: 2026-10-10
 - AI-native tool references last verified: 2026-10-08
 
 Refresh (`/10x-test-plan --refresh`) when:
