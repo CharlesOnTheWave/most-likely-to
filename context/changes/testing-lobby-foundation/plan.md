@@ -596,13 +596,13 @@ Brak migracji w stanie końcowym. Tymczasowa migracja próbnego alarmu powstaje 
 #### Automated
 
 - [x] 2.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
-- [ ] 2.2 CI `db` zielone: strażnicy ról przechodzą, a H1–H3 to oczekiwane porażki z dopiskiem „znana dziura F1 → S-02”
-- [ ] 2.3 Próbny alarm: commit z tymczasową migracją daje czerwone dokładnie przewidziane testy i żadne inne
-- [ ] 2.4 Po cofnięciu próbnego alarmu CI zielone, a `git diff main...HEAD -- supabase/migrations` jest pusty
+- [x] 2.2 CI `db` zielone: strażnicy ról przechodzą, a H1–H3 to oczekiwane porażki z dopiskiem „znana dziura F1 → S-02”
+- [x] 2.3 Próbny alarm: commit z tymczasową migracją daje czerwone dokładnie przewidziane testy i żadne inne
+- [x] 2.4 Po cofnięciu próbnego alarmu CI zielone, a `git diff main...HEAD -- supabase/migrations` jest pusty
 
 #### Manual
 
-- [ ] 2.5 Karol zatwierdza zestawienie „przewidziane czerwone vs faktycznie czerwone” z próbnego alarmu
+- [x] 2.5 Karol zatwierdza zestawienie „przewidziane czerwone vs faktycznie czerwone” z próbnego alarmu
 
 ### Phase 3: Nicki i wejście gościa (#6)
 
