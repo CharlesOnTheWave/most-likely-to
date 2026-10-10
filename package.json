@@ -10,6 +10,8 @@
     "lint": "eslint . && node scripts/ui-literals.mjs",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
+    "test": "vitest run --project unit",
+    "test:db": "vitest run --project db",
     "smoke": "node --env-file-if-exists=.dev.vars scripts/smoke.mjs",
     "live-probe": "node --env-file-if-exists=.dev.vars scripts/live-sync-probe.mjs"
   },
@@ -53,6 +55,7 @@
     "supabase": "^2.23.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.3",
     "wrangler": "^4.131.1"
   },
   "lint-staged": {
