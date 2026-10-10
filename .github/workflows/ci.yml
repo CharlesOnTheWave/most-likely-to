@@ -33,9 +33,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # A fixed CLI version: "latest" asks the GitHub API on every run, and on shared runners that sometimes fails with
+      # "rate limit exceeded" before any test runs (a red check with nothing broken). Bump it by hand.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.120.0
       - run: npm ci
       - name: Start local Supabase
         run: |
@@ -77,9 +79,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Fixed version, as in smoke.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.120.0
       - run: npm ci
       # The suite reads only TEST_SUPABASE_*; its guard refuses anything but a local URL and a publishable key.
       - name: Start local Supabase
