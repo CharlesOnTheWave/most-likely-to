@@ -91,6 +91,7 @@ jobs:
           supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
           source supabase.env
           printf 'TEST_SUPABASE_URL=%s\nTEST_SUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" >> "$GITHUB_ENV"
-      - run: npm run test:db
+      # Verbose: the log names every test, so each known hole ("znana dziura … → S-02") shows up, not only a count.
+      - run: npm run test:db -- --reporter=verbose
       - if: always()
         run: supabase stop --no-backup
