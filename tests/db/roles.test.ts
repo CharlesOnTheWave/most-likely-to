@@ -18,11 +18,12 @@ import {
 // hides rows without an error, so a silent refusal is checked by its effect: read back by the owner or via room_link.
 //
 // Known holes (F1, fixed by S-02) are test.fails with the oracle's expectation. test.fails passes on any failure, a
-// crashed seed or a network error too, so: preconditions live in hooks (a failed hook stays red); the attack only
-// collects results (supabase-js returns { data, error } and does not throw) and skips steps whose input is missing; the
-// closing expect is the only thing that can fail.
+// crashed seed or a network error too, so: preconditions live in beforeAll (a failed beforeAll stays red; beforeEach and
+// afterEach run inside the test, so never use them here); the attack only collects results (supabase-js returns
+// { data, error } and does not throw) and skips steps whose input is missing; a failed closing read returns early, so
+// the test passes and shows red; the closing expect is the only thing that can fail.
 //
-// Six sign-ups per run, all in hooks: sign-ups and sign-ins share 30 per 5 minutes with the other db files.
+// Six sign-ups per run, all in beforeAll: sign-ups and sign-ins share 30 per 5 minutes with the other db files.
 
 const anon = anonClient();
 
@@ -115,6 +116,16 @@ describe("role guards: hosts and guests stay inside their roles", () => {
     const result = await hostB.client
       .from("players")
       .insert({ room_id: roomB.id, nick: OLA_ZWSP, user_id: null, seat: 99 });
+
+    expect(result.error?.code).toBe("42501");
+  });
+
+  // A room opens only as a lobby (research.md §2, H8). Host B already has an open room; a closed one does not clash
+  // with the one-open-room rule, so only the room rule itself can refuse.
+  it("H8: a host inserting a room that is already closed gets 42501", async () => {
+    const result = await hostB.client
+      .from("rooms")
+      .insert({ host_id: hostB.userId, link_token: newLinkToken(), categories: SEED_CATEGORIES, status: "closed" });
 
     expect(result.error?.code).toBe("42501");
   });
@@ -213,9 +224,11 @@ describe("known holes F1: expected failures until S-02", () => {
       await host.client.from("rooms").update({ status: "closed" }).eq("id", openRoom.id);
       await host.client.from("rooms").update({ status: "lobby" }).eq("id", closedRoom.id);
       const link = await anon.rpc("room_link", { p_link_token: closedRoom.linkToken });
+      // A failed read is not the expected failure: returning passes the test, and test.fails shows it red.
+      if (link.error !== null) return;
       const data: unknown = link.data;
 
-      expect(data).toEqual({ status: "closed" });
+      expect(data).toMatchObject({ status: "closed" });
     });
   });
 
@@ -240,9 +253,10 @@ describe("known holes F1: expected failures until S-02", () => {
         p_confirm_close: false,
       });
       const link = await anon.rpc("room_link", { p_link_token: picked });
+      if (link.error !== null) return;
       const data: unknown = link.data;
 
-      expect(data).toEqual({ status: "unknown" });
+      expect(data).toMatchObject({ status: "unknown" });
     });
 
     it.fails("znana dziura F1 → S-02: an insert into rooms does not take a link code the host picked", async () => {
@@ -251,9 +265,10 @@ describe("known holes F1: expected failures until S-02", () => {
         .from("rooms")
         .insert({ host_id: viaInsert.userId, link_token: picked, categories: SEED_CATEGORIES });
       const link = await anon.rpc("room_link", { p_link_token: picked });
+      if (link.error !== null) return;
       const data: unknown = link.data;
 
-      expect(data).toEqual({ status: "unknown" });
+      expect(data).toMatchObject({ status: "unknown" });
     });
   });
 

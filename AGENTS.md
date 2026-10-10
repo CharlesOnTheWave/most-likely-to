@@ -7,7 +7,7 @@
 - Never persist, log or return a pairing of voter and voted-for player, in any form. Votes are anonymous by design (PRD Non-Goals).
 - Do not add points, leaderboards or round timers; they are PRD Non-Goals.
 - Ask the user before any command that publishes or changes remote or database state: `git push` (a push to `main` deploys to production), `npx wrangler deploy`, `npx wrangler rollback`, `npx wrangler versions deploy`, `npx wrangler delete`, `npx wrangler secret put`, `npx supabase db push`, `npx supabase db reset`.
-- Changes to `supabase/migrations/`, `src/lib/rooms/`, `src/pages/api/rooms/`, `src/pages/j/` or `src/pages/r/` go only through a PR and are merged only on green CI, the `db` job included; never push them straight to `main`. Until test-plan §3 Phase 4, nothing else stops a red `db` from reaching production.
+- Changes to `supabase/migrations/`, `src/lib/rooms/`, `src/pages/api/rooms/`, `src/pages/j/`, `src/pages/r/`, `tests/`, `vitest.config.ts` or `.github/workflows/` go only through a PR and are merged only on green CI, the `db` job included; never push them straight to `main`. Until test-plan §3 Phase 4, nothing else stops a red `db` from reaching production.
 - Read `SUPABASE_URL` / `SUPABASE_KEY` only through `astro:env/server` (see @src/lib/supabase.ts), never via `import.meta.env`. Never commit `.env` or `.dev.vars`.
 - `SUPABASE_KEY` must be the publishable key (`sb_publishable_…`). Server code may pass the URL and this key to the browser at runtime (page props or a JSON endpoint), only for Realtime subscriptions. A secret or `service_role` key never goes to the browser, the repo or logs.
 - Only `/10x-archive` moves a finished change into `context/archive/`; never edit anything already there.

@@ -89,6 +89,26 @@ const scriptsConfig = defineConfig({
   rules: { "no-console": "off" },
 });
 
+// The db suite's guard (local Supabase, publishable key) runs in tests/db/support/clients.ts. A test that built its own
+// client would skip it and could reach production.
+const testsConfig = defineConfig({
+  files: ["tests/**/*.ts"],
+  ignores: ["tests/db/support/clients.ts"],
+  rules: {
+    "@typescript-eslint/no-restricted-imports": [
+      "error",
+      {
+        paths: ["@supabase/supabase-js", "@supabase/ssr", "@/lib/supabase"].map((name) => ({
+          name,
+          message:
+            "Use anonClient() or newHost() from tests/db/support/clients.ts: they run the guard that keeps tests off production.",
+          allowTypeImports: true,
+        })),
+      },
+    ],
+  },
+});
+
 export default defineConfig(
   includeIgnoreFile(gitignorePath),
   // Agent skills in .claude/ come from the course package with their own scripts; they are not project code.
@@ -99,5 +119,6 @@ export default defineConfig(
   eslintPluginAstro.configs["flat/jsx-a11y-recommended"],
   astroConfig,
   scriptsConfig,
+  testsConfig,
   eslintPluginPrettier,
 );

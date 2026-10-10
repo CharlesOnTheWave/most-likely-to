@@ -29,7 +29,7 @@ function randomHex(byteCount: number): string {
 }
 
 // A new signed-in host. The local stack keeps "Confirm email" off (supabase/config.toml), so sign-up returns the session
-// at once. It counts against 30 sign-ups and sign-ins per 5 minutes: create hosts in hooks, a few per run.
+// at once. It counts against 30 sign-ups and sign-ins per 5 minutes: create hosts in beforeAll, a few per run.
 export async function newHost(): Promise<Host> {
   const client = anonClient();
   const { data, error } = await client.auth.signUp({

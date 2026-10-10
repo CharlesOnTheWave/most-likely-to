@@ -10,8 +10,9 @@ import { hostLobbyNicks, seedGuest, seedRoom, type OwnRoom } from "./support/roo
 //
 // Known holes (F4, fixed by S-02) are test.fails with the oracle's expectation. test.fails passes on any failure, a
 // crashed seed or a network error too, so, as in roles.test.ts: preconditions (the host, a fresh room, the taken nick)
-// live in hooks, whose helpers throw (a failed hook stays red); a test sends one probe, collects { data, error } and
-// never throws; the closing expect is the only thing that can fail.
+// live in beforeAll, whose helpers throw (a failed beforeAll stays red; beforeEach and afterEach run inside the test, so
+// never use them here); a test sends one probe, collects { data, error } and never throws; in a known hole a failed
+// call returns early, so the test passes and shows red; the closing expect is the only thing that can fail.
 //
 // One sign-up per run: one host opens every room in turn. One open room per host, so each new room (confirm_close)
 // closes the one before. Vitest runs the suites in order, each suite's beforeAll right before its tests.
@@ -67,6 +68,8 @@ describe("nick pairs: what looks the same is the same nick (research.md §3.1)",
       const name = `${nickLabel(pair.probe)} against ${nickLabel(pair.taken)} ${outcome}`;
       const probe = async () => {
         const answer = await tryJoin(room.linkToken, pair.probe);
+        // A failed call is not the expected failure: returning passes the test, and test.fails shows it red.
+        if (pair.knownHole && answer.error !== null) return;
 
         expect(answer).toMatchObject(pair.expected === "joins" ? joined(room) : NICK_TAKEN);
       };
