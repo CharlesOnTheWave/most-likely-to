@@ -580,22 +580,22 @@ Brak migracji w stanie końcowym. Tymczasowa migracja próbnego alarmu powstaje 
 
 #### Automated
 
-- [x] 1.1 `npm run lint`, `npx astro check` i `npm run build` przechodzą z nowymi plikami
-- [x] 1.2 `npm test` przechodzi lokalnie (projekt unit)
-- [x] 1.3 Celowe psucie unit: usunięty `nick_taken` z mapy w `src/lib/rooms/errors.ts` daje czerwony `npm test`, a po przywróceniu zielony
-- [x] 1.4 Błąd w `beforeAll` w pliku z testem `test.fails` daje czerwony przebieg (tymczasowy plik, potem usunięty)
-- [x] 1.5 `npm run test:db` lokalnie odmawia startu bez zmiennych, z adresem spoza localhost i z kluczem spoza `sb_publishable_`, zanim wyśle żądanie
-- [ ] 1.6 CI na szkicu PR: joby `ci`, `smoke` i `db` zielone, a w logu `db` przechodzi kanarek
+- [x] 1.1 `npm run lint`, `npx astro check` i `npm run build` przechodzą z nowymi plikami — 4c50599
+- [x] 1.2 `npm test` przechodzi lokalnie (projekt unit) — 4c50599
+- [x] 1.3 Celowe psucie unit: usunięty `nick_taken` z mapy w `src/lib/rooms/errors.ts` daje czerwony `npm test`, a po przywróceniu zielony — 4c50599
+- [x] 1.4 Błąd w `beforeAll` w pliku z testem `test.fails` daje czerwony przebieg (tymczasowy plik, potem usunięty) — 4c50599
+- [x] 1.5 `npm run test:db` lokalnie odmawia startu bez zmiennych, z adresem spoza localhost i z kluczem spoza `sb_publishable_`, zanim wyśle żądanie — 4c50599
+- [x] 1.6 CI na szkicu PR: joby `ci`, `smoke` i `db` zielone, a w logu `db` przechodzi kanarek — 4c50599
 
 #### Manual
 
-- [ ] 1.7 Karol widzi w szkicu PR trzy sprawdzenia: `ci`, `smoke` i `db`
+- [x] 1.7 Karol widzi w szkicu PR trzy sprawdzenia: `ci`, `smoke` i `db` — 4c50599
 
 ### Phase 2: Role (#4)
 
 #### Automated
 
-- [ ] 2.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
+- [x] 2.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
 - [ ] 2.2 CI `db` zielone: strażnicy ról przechodzą, a H1–H3 to oczekiwane porażki z dopiskiem „znana dziura F1 → S-02”
 - [ ] 2.3 Próbny alarm: commit z tymczasową migracją daje czerwone dokładnie przewidziane testy i żadne inne
 - [ ] 2.4 Po cofnięciu próbnego alarmu CI zielone, a `git diff main...HEAD -- supabase/migrations` jest pusty
