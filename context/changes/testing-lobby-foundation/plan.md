@@ -608,23 +608,23 @@ Brak migracji w stanie końcowym. Tymczasowa migracja próbnego alarmu powstaje 
 
 #### Automated
 
-- [x] 3.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
-- [ ] 3.2 CI `db` zielone: 14 par i przypadki długości przechodzą, a 9 par to oczekiwane porażki „znana dziura F4 → S-02”
-- [ ] 3.3 CI `smoke` zielone z 4 nowymi krokami
+- [x] 3.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą — 2f566bf
+- [x] 3.2 CI `db` zielone: 14 par i przypadki długości przechodzą, a 9 par to oczekiwane porażki „znana dziura F4 → S-02” — 2f566bf
+- [x] 3.3 CI `smoke` zielone z 4 nowymi krokami — 2f566bf
 
 #### Manual
 
-- [ ] 3.4 Karol przegląda wypis par z testu (punkty kodowe i oczekiwanie) obok tabeli z `research.md` §3.1: ten sam zestaw, te same oczekiwania
+- [x] 3.4 Karol przegląda wypis par z testu (punkty kodowe i oczekiwanie) obok tabeli z `research.md` §3.1: ten sam zestaw, te same oczekiwania — 2f566bf
 
 ### Phase 4: Cookbook, reguły i scalenie
 
 #### Automated
 
-- [ ] 4.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
+- [x] 4.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
 - [ ] 4.2 CI na PR zielone (`ci`, `smoke`, `db`), a `git diff main...HEAD -- supabase/migrations` jest pusty
 - [ ] 4.3 Po scaleniu Workers Builds wdrożył `main`, CI na `main` zielone, a smoke na produkcji przechodzi z nowymi krokami
 
 #### Manual
 
-- [ ] 4.4 Karol akceptuje tekst nowych reguł w `AGENTS.md` przed commitem
+- [x] 4.4 Karol akceptuje tekst nowych reguł w `AGENTS.md` przed commitem
 - [ ] 4.5 Karol zgadza się na scalenie PR (= wdrożenie)
