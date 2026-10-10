@@ -19,6 +19,7 @@ jobs:
       - run: npx astro sync
       - run: npm run lint
       - run: npx astro check
+      - run: npm test
       - run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -63,5 +64,30 @@ jobs:
           npm run preview -- --port 4321 &
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:4321/ && break; sleep 1; done
           BASE_URL=http://localhost:4321 npm run smoke
+      - if: always()
+        run: supabase stop --no-backup
+
+  # Database rules through REST/RPC as a guest and as a host (tests/db), on a throwaway local stack. A job of its own:
+  # its own red signal, in parallel with smoke.
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: npm ci
+      # The suite reads only TEST_SUPABASE_*; its guard refuses anything but a local URL and a publishable key.
+      - name: Start local Supabase
+        run: |
+          supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,realtime,storage-api,postgres-meta,supavisor
+          supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
+          source supabase.env
+          printf 'TEST_SUPABASE_URL=%s\nTEST_SUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" >> "$GITHUB_ENV"
+      - run: npm run test:db
       - if: always()
         run: supabase stop --no-backup
