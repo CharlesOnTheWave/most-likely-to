@@ -83,8 +83,7 @@ orchestrator updates Status as artifacts appear on disk.
 Faza 2 dzieje się razem z S-02 z roadmapy: przy przekazaniu `/10x-new`
 użyć change-id `first-live-round` (wspólny folder z S-02), a nie
 `testing-…`. Testy bazy wymagają lokalnego Supabase, który dziś działa
-tylko w CI (lokalnie brak Dockera); research fazy 1 rozstrzyga, gdzie i
-jak je uruchamiać.
+tylko w CI (lokalnie brak Dockera), więc biegną w jobie `db` (patrz §6.2).
 
 ## 4. Stack
 
@@ -149,7 +148,7 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   - `nicks.test.ts`: reguła nicku z tabeli par, znane dziury F4.
 - **Helpers** (`tests/db/support/`):
   - `clients.ts`: `anonClient()` (gość bez sesji), `newHost()` (rejestracja, od razu z sesją) oraz `newLinkToken` i `newPlayerToken` (te same generatory co Worker);
-  - `rooms.ts`: `seedRoom`, `seedGuest`, `readOwnRoom`, `hostLobbyNicks`. Seedują prawdziwymi drzwiami: pokój przez `create_room` jako host, gość przez `join_room` jako `anon`. Przy błędzie rzucają, więc używaj ich tylko w hookach;
+  - `rooms.ts`: `seedRoom`, `seedGuest`, `readOwnRoom`, `hostLobbyNicks`. Seedują prawdziwymi drzwiami: pokój przez `create_room` jako host, gość przez `join_room` jako `anon`. Przy błędzie rzucają, więc używaj ich tylko w `beforeAll`;
   - `nick-pairs.ts`: tabela par nicków (same dane). `node tests/db/support/print-nick-pairs.ts` wypisuje ją do porównania przez człowieka z `research.md` §3.1.
 - **Oracle**: z researchu fazy (PRD Access Control, decyzje właściciela, pliki Unicode), nigdy z implementacji. `private.normalize_nick` nie jest przyznana `anon`, więc testy nicku idą przez `join_room` jako gość.
 - **Roles**: tylko klucz publishable (`sb_publishable_…`), jako `anon` albo jako host po `signUp`. Nigdy klucz secret ani `service_role`, także do seedowania: omija uprawnienia i daje fałszywą zieleń.
@@ -162,9 +161,12 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   - Nigdy test, który zapisuje dziurę jako dozwolone zachowanie. Nigdy `skip` ani `todo`, bo milczą w wyniku.
   - Gdy naprawa przyjdzie, test zrobi się czerwony. Zdejmij znacznik, nigdy nie usuwaj testu.
 - **Preconditions**: `test.fails` odwraca każdy błąd, nie tylko asercję: awaria sieci albo padnięte seedowanie też dałyby „oczekiwaną porażkę”. Dlatego:
-  - warunki wstępne (konta, pokoje, zajęty nick) powstają w `beforeAll` albo `beforeEach`, bo błąd w hooku zostaje czerwony;
+  - warunki wstępne (konta, pokoje, zajęty nick) powstają tylko w `beforeAll`, bo jego błąd oblewa cały blok i zostaje czerwony;
+  - w pliku z `it.fails` nigdy `beforeEach` ani `afterEach`: Vitest uruchamia je w środku testu, więc ich błąd liczy się jako oczekiwana porażka. Tak samo przekroczony czas w ciele `it.fails`;
   - ciało testu nigdy nie rzuca, tylko zbiera `{ data, error }` (supabase-js sam nie rzuca);
-  - jedyne, co może zawieść, to końcowe `expect`.
+  - jedyne, co może zawieść, to końcowe `expect`;
+  - gdy wyrocznia oczekuje danych, a nie odmowy błędem: jeśli końcowe wywołanie zwróciło `error` (awaria, a nie odpowiedź funkcji), ciało robi `return` przed `expect`. Test wtedy przechodzi i `test.fails` pokazuje go na czerwono, zamiast liczyć awarię jako oczekiwaną porażkę;
+  - asercja sprawdza tylko pola z wyroczni (`toMatchObject`, nie `toEqual`), żeby po naprawie test zrobił się czerwony, nawet gdy odpowiedź dostanie nowe pole.
 - **Sign-up limit**: lokalny Supabase przyjmuje 30 rejestracji i logowań na 5 minut z jednego IP (`sign_in_sign_ups` w `supabase/config.toml`). Jeden przebieg zakłada dziś 7 kont: `canary` 0, `roles` 6, `nicks` 1.
   - Nowy plik: jeden host na plik.
   - Host ma najwyżej jeden otwarty pokój, więc kolejny pokój tego samego hosta zakładaj przez `seedRoom(host, { confirmClose: true })`; zamyka on poprzedni.
@@ -202,7 +204,7 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
 (Uzupełniane przez `/10x-implement` po każdej fazie: 2–3 linie o tym, co faza pokazała.)
 
 - **Phase 1** (`testing-lobby-foundation`, 2026-10-10):
-  - Runner stoi, a testy bazy biegną tylko w CI (job `db`): 52 testy, 39 zielonych i 13 oczekiwanych porażek (4 × „znana dziura F1 → S-02”, 9 × „znana dziura F4 → S-02”). Te 13 to kryteria akceptacji migracji S-02. Nick z 10 000 znaków dostaje dziś `invalid_nick`, więc to zwykły strażnik, a nie znana dziura.
+  - Runner stoi, a testy bazy biegną tylko w CI (job `db`): 53 testy, 40 zielonych i 13 oczekiwanych porażek (4 × „znana dziura F1 → S-02”, 9 × „znana dziura F4 → S-02”). Te 13 to kryteria akceptacji migracji S-02. Nick z 10 000 znaków dostaje dziś `invalid_nick`, więc to zwykły strażnik, a nie znana dziura.
   - Próbne alarmy trafiły dokładnie. Tymczasowa migracja otworzyła 3 uprawnienia i zaświeciła 3 przewidziane testy (kanarek, odczyt cudzego pokoju z H6, G2). Ciasteczko gracza na stronie linku zaświeciło 1 przewidziany krok smoke. Samo `42501` nie mówi, kto odmówił, dlatego G2 sprawdza też nazwę funkcji w komunikacie.
   - `supabase/setup-cli` z wersją `latest` pyta API GitHuba i czasem pada na „rate limit exceeded”, zanim ruszy jakikolwiek test. Supabase CLI jest więc przypięty (2.120.0) w jobach `smoke` i `db` i podbijany ręcznie.
 
@@ -216,7 +218,7 @@ się ich, dopóki nie zmieni się założenie.
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-10-08
+- Strategy (§1–§5) last reviewed: 2026-10-10
 - Stack versions last verified: 2026-10-10
 - AI-native tool references last verified: 2026-10-08
 

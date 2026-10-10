@@ -27,6 +27,8 @@ jobs:
 
   smoke:
     runs-on: ubuntu-latest
+    # A hung `supabase start` (image pull) would otherwise wait for GitHub's 6 h default.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -73,6 +75,7 @@ jobs:
   # its own red signal, in parallel with smoke.
   db:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

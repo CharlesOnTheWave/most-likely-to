@@ -108,7 +108,7 @@ Wszystkie fazy realizuje `/10x-implement`. `/10x-tdd` się nie nadaje, bo testuj
 
 **`test.fails` odwraca każdy błąd, nie tylko asercję.** Awaria sieci, zmieniona nazwa funkcji albo upadek seedowania wewnątrz takiego testu też dają „oczekiwaną porażkę”, czyli fałszywą zieleń. Dlatego obowiązują trzy zasady:
 
-- warunki wstępne (konta, pokoje, nick zajęty) powstają w `beforeAll`/`beforeEach`, bo błąd w hooku zostaje czerwony (sprawdzane raz w fazie 1);
+- warunki wstępne (konta, pokoje, nick zajęty) powstają tylko w `beforeAll`, bo błąd w nim zostaje czerwony (sprawdzane raz w fazie 1). `beforeEach` i `afterEach` biegną w środku testu, więc ich błąd `test.fails` odwraca jak każdy inny (poprawka z przeglądu, F1);
 - w ciele testu atak nigdy nie rzuca, tylko zbiera `{ data, error }`;
 - jedynym miejscem, które może zawieść, jest końcowa asercja z wyroczni.
 
@@ -621,7 +621,7 @@ Brak migracji w stanie końcowym. Tymczasowa migracja próbnego alarmu powstaje 
 #### Automated
 
 - [x] 4.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
-- [ ] 4.2 CI na PR zielone (`ci`, `smoke`, `db`), a `git diff main...HEAD -- supabase/migrations` jest pusty
+- [x] 4.2 CI na PR zielone (`ci`, `smoke`, `db`), a `git diff main...HEAD -- supabase/migrations` jest pusty
 - [ ] 4.3 Po scaleniu Workers Builds wdrożył `main`, CI na `main` zielone, a smoke na produkcji przechodzi z nowymi krokami
 
 #### Manual

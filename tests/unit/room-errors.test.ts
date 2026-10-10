@@ -28,6 +28,12 @@ describe("roomErrorMessage", () => {
     expect(message).not.toBe(generic);
   });
 
+  it("gives every guest refusal a different text", () => {
+    const messages = new Set(GUEST_REFUSALS.map((code) => roomErrorMessage(code)));
+
+    expect(messages.size).toBe(GUEST_REFUSALS.length);
+  });
+
   it("gives no text when there is no code", () => {
     expect(roomErrorMessage(null)).toBeNull();
   });

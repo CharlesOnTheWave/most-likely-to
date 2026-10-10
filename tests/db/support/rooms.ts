@@ -3,7 +3,7 @@ import { anonClient, newLinkToken, newPlayerToken, type Host } from "./clients";
 
 // Seeding through the roles' own doors: a room comes from create_room as its host, a guest from join_room as anon,
 // exactly as in the real game, so no test skips the rules it checks. These helpers throw on any failure: use them in
-// hooks only, never inside a test.fails body, where a throw would count as the expected failure.
+// beforeAll only, never inside a test.fails body or its beforeEach, where a throw would count as the expected failure.
 
 // Real category ids, as the Worker sends them (src/pages/api/rooms/index.ts): picked ones in the order of the base.
 export const SEED_CATEGORIES: string[] = CATEGORIES.slice(0, 2).map((category) => category.id);
