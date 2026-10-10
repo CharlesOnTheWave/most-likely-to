@@ -38,8 +38,6 @@ async function loadPage(linkToken: string): Promise<Page> {
 }
 
 const page = await loadPage(Astro.params.token ?? "");
-// TEMPORARY break-check (p3): opening the link sets a player cookie. Smoke must go red at exactly one step. Revert.
-if (page.kind === "join") Astro.cookies.set("mlt_player_breakcheck", "x", { path: "/", httpOnly: true });
 // Status and Location instead of an early `return Astro.redirect(…)`, which crashes typescript-eslint's
 // no-misused-promises in .astro files (src/pages/dev/ui-kitchen-sink.astro).
 if (page.kind === "inside") {
