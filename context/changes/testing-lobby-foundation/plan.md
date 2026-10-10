@@ -595,20 +595,20 @@ Brak migracji w stanie końcowym. Tymczasowa migracja próbnego alarmu powstaje 
 
 #### Automated
 
-- [x] 2.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
-- [x] 2.2 CI `db` zielone: strażnicy ról przechodzą, a H1–H3 to oczekiwane porażki z dopiskiem „znana dziura F1 → S-02”
-- [x] 2.3 Próbny alarm: commit z tymczasową migracją daje czerwone dokładnie przewidziane testy i żadne inne
-- [x] 2.4 Po cofnięciu próbnego alarmu CI zielone, a `git diff main...HEAD -- supabase/migrations` jest pusty
+- [x] 2.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą — 0174ff0
+- [x] 2.2 CI `db` zielone: strażnicy ról przechodzą, a H1–H3 to oczekiwane porażki z dopiskiem „znana dziura F1 → S-02” — 0174ff0
+- [x] 2.3 Próbny alarm: commit z tymczasową migracją daje czerwone dokładnie przewidziane testy i żadne inne — 0174ff0
+- [x] 2.4 Po cofnięciu próbnego alarmu CI zielone, a `git diff main...HEAD -- supabase/migrations` jest pusty — 0174ff0
 
 #### Manual
 
-- [x] 2.5 Karol zatwierdza zestawienie „przewidziane czerwone vs faktycznie czerwone” z próbnego alarmu
+- [x] 2.5 Karol zatwierdza zestawienie „przewidziane czerwone vs faktycznie czerwone” z próbnego alarmu — 0174ff0
 
 ### Phase 3: Nicki i wejście gościa (#6)
 
 #### Automated
 
-- [ ] 3.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
+- [x] 3.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
 - [ ] 3.2 CI `db` zielone: 14 par i przypadki długości przechodzą, a 9 par to oczekiwane porażki „znana dziura F4 → S-02”
 - [ ] 3.3 CI `smoke` zielone z 4 nowymi krokami
 
