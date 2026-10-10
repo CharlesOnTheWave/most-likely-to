@@ -198,6 +198,20 @@ function lobby(roomId, cookies) {
   return request(`/api/rooms/${roomId}/lobby`, { cookies, readBody: true });
 }
 
+// Discord's preview, or a guest opening the link again. One fresh jar for all three, so a later open sends back
+// whatever an earlier one set; the cookies of every response count. Status and Location of the first response that is
+// not 200, if any.
+async function openLinkThreeTimes() {
+  const cookies = new Map();
+  const results = [];
+  for (let i = 0; i < 3; i++) results.push(await request(`/j/${room.link}`, { cookies }));
+  const shown = results.find((result) => result.status !== 200) ?? results[0];
+  return { ...shown, cookies: results.flatMap((r) => r.cookies), httpOnly: results.flatMap((r) => r.httpOnly) };
+}
+
+// Exactly one player object in the lobby's list, whatever the key order inside it. Nicks hold no braces here.
+const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
+
 // The room's own page; a function, because the id is known only once the room exists.
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
@@ -236,9 +250,13 @@ const roomSteps = [
     { status: 200, body: LINK_IN_PAGE },
   ],
   ["home renders for signed-in host", () => request("/", { cookies: hostJar }), { status: 200 }],
-  // Guests. "Ola " (a trailing space) and "O\u200Bla" (a zero-width space) look like "Ola", so the room refuses them;
+  // Guests. Opening the link only reads (Discord fetches it for its preview): however often, it sets no player cookie
+  // and adds nobody to the room. Joining sets the cookie, and with it the lobby knows Ola again after a refresh. The
+  // nick stays taken, also by "Ola " (a trailing space) and "O\u200Bla" (a zero-width space), which look like it;
   // "ola" is another nick, because case counts.
   ["guest sees the join form", () => request(`/j/${room.link}`, { cookies: olaJar }), { status: 200 }],
+  ["opening the link three times sets no player cookie", openLinkThreeTimes, { status: 200, noCookie: "mlt_player_" }],
+  ["opening the link adds no player", () => lobby(room.id, hostJar), { status: 200, body: ONLY_ONE_PLAYER }],
   [
     "guest joins as Ola and gets the room's cookie",
     () => join("Ola", olaJar),
@@ -249,6 +267,8 @@ const roomSteps = [
     () => lobby(room.id, olaJar),
     { status: 200, body: /"nick":"Smoke host".*"nick":"Ola"/ },
   ],
+  ["lobby with Ola's cookie still shows Ola as me", () => lobby(room.id, olaJar), { status: 200, body: /"me":"Ola"/ }],
+  ["same plain nick Ola again is taken", () => join("Ola", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a trailing space is taken", () => join("Ola ", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a zero-width space is taken", () => join("O\u200Bla", new Map()), { status: 302, location: NICK_TAKEN }],
   ["same nick in another case joins", () => join("ola", new Map()), thisRoom],
@@ -291,7 +311,8 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
   const expected = typeof expectation === "function" ? expectation() : expectation;
   // location: Location starts with it (a string) or matches it (a RegExp); exact: Location is exactly it (a bare "/"
   // as a prefix matches any path); contains: Location has every part; body: the response text matches it; cookie: a
-  // cookie this step set ends with it; httpOnly: the step set cookies whose names contain it, all of them HttpOnly.
+  // cookie this step set ends with it; noCookie: no cookie this step set has it in its name; httpOnly: the step set
+  // cookies whose names contain it, all of them HttpOnly.
   const contains = expected.contains ?? [];
   const ok =
     actual.status === expected.status &&
@@ -300,14 +321,21 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
     contains.every((part) => actual.location.includes(part)) &&
     (expected.body === undefined || expected.body.test(actual.body ?? "")) &&
     (expected.cookie === undefined || actual.cookies.some((cookie) => cookie.endsWith(expected.cookie))) &&
+    (expected.noCookie === undefined || !actual.cookies.some((cookie) => cookie.includes(expected.noCookie))) &&
     (expected.httpOnly === undefined || httpOnlyOk(actual, expected.httpOnly));
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}  -> ${actual.status} ${mask(actual.location)}`);
   if (!ok) {
     failed++;
     console.log(`      expected ${expected.status} ${expected.exact ?? expected.location ?? ""}`);
     if (contains.length > 0) console.log(`      expected Location to contain ${contains.join(" and ")}`);
+    if (expected.body !== undefined) console.log(`      expected the body to match ${expected.body}`);
     if (expected.cookie !== undefined) {
       console.log(`      expected a cookie ending in ${expected.cookie}, set: ${actual.cookies.join(", ") || "none"}`);
+    }
+    if (expected.noCookie !== undefined) {
+      console.log(
+        `      expected no cookie containing ${expected.noCookie}, set: ${actual.cookies.join(", ") || "none"}`,
+      );
     }
     if (expected.httpOnly !== undefined) {
       console.log(
