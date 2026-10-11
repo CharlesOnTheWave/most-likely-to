@@ -1,9 +1,9 @@
 ---
 change_id: testing-lobby-foundation
 title: Fundament testów i zabezpieczenie lobby (faza 1 planu testów)
-status: impl_reviewed
+status: implemented
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-11
 archived_at: null
 ---
 

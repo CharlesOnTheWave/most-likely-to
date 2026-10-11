@@ -620,11 +620,11 @@ Brak migracji w stanie końcowym. Tymczasowa migracja próbnego alarmu powstaje 
 
 #### Automated
 
-- [x] 4.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą
-- [x] 4.2 CI na PR zielone (`ci`, `smoke`, `db`), a `git diff main...HEAD -- supabase/migrations` jest pusty
-- [ ] 4.3 Po scaleniu Workers Builds wdrożył `main`, CI na `main` zielone, a smoke na produkcji przechodzi z nowymi krokami
+- [x] 4.1 `npm run lint`, `npx astro check`, `npm run build` i `npm test` przechodzą — 12229d1
+- [x] 4.2 CI na PR zielone (`ci`, `smoke`, `db`), a `git diff main...HEAD -- supabase/migrations` jest pusty — 12229d1
+- [x] 4.3 Po scaleniu Workers Builds wdrożył `main`, CI na `main` zielone, a smoke na produkcji przechodzi z nowymi krokami — 12229d1
 
 #### Manual
 
-- [x] 4.4 Karol akceptuje tekst nowych reguł w `AGENTS.md` przed commitem
-- [ ] 4.5 Karol zgadza się na scalenie PR (= wdrożenie)
+- [x] 4.4 Karol akceptuje tekst nowych reguł w `AGENTS.md` przed commitem — 12229d1
+- [x] 4.5 Karol zgadza się na scalenie PR (= wdrożenie) — 12229d1
