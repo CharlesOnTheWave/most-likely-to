@@ -23,6 +23,7 @@ Before handing off a change, `npm run lint`, `npx astro check`, `npm test` and `
 
 - `npm test`: unit tests (Vitest, `tests/unit/`), local and CI.
 - `npm run test:db`: database tests (`tests/db/`) through REST/RPC as a guest and as a host. Local Supabase only, so in practice it runs only in the CI job `db` (no Docker locally); it refuses any URL but `127.0.0.1`/`localhost` and any key but `sb_publishable_…` before the first request.
+- `npm run test:hooks`: the agent hooks (`.claude/hooks/`, wired in `.claude/settings.json`) run against throwaway git repos with stub tools; local and CI. Change a hook together with its case in `tests/hooks/agent-hooks.test.ts`.
 - How to add a test (oracle, refusals, hooks, sign-up limit): @context/foundation/test-plan.md §6.
 - A `test.fails` test named "znana dziura <F> → <change>" documents a known hole. When the fix turns it red, remove the marker; never delete the test.
 

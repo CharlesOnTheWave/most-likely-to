@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-10
+> Last updated: 2026-10-11
 
 ## 1. Strategy
 
@@ -92,14 +92,14 @@ Klasyczna baza testów tego projektu. Narzędzia AI-native mają datę
 
 | Layer | Tool | Version | Notes |
 |---|---|---|---|
-| unit + integration | Vitest (checked: 2026-10-10) | 5.0.x (zainstalowana 5.0.3) | własny `vitest.config.ts` bez `getViteConfig` (styk z adapterem Cloudflare niepotwierdzony); dwa projekty: `unit` (`npm test`, lokalnie i w CI) i `db` (`npm run test:db`, tylko CI); Node 22 w CI i 24 lokalnie (Vitest 5 wymaga Node ≥ 22.12) |
+| unit + integration | Vitest (checked: 2026-10-10) | 5.0.x (zainstalowana 5.0.3) | własny `vitest.config.ts` bez `getViteConfig` (styk z adapterem Cloudflare niepotwierdzony); trzy projekty: `unit` (`npm test`, lokalnie i w CI), `db` (`npm run test:db`, tylko CI) i `hooks` (`npm run test:hooks`, lokalnie i w CI); Node 22 w CI i 24 lokalnie (Vitest 5 wymaga Node ≥ 22.12) |
 | DB (uprawnienia, funkcje) | Vitest, projekt `db`: integracja przez REST/RPC (supabase-js) kluczem publishable, jako gość i jako zalogowany host; pgTAP (`supabase test db`) nie wybrany, bo potrzebuje Dockera także przy `--db-url` (checked: 2026-10-10) | Supabase CLI 2.120.0 w CI (stała wersja) | tylko w CI: job `db` uruchamia `supabase start` na jednorazowej bazie; lokalnie brak Dockera; bez klucza secret i `service_role` |
 | HTTP smoke | `npm run smoke` (własny skrypt Node) | Node 22 w CI, 24 lokalnie | 37 kroków (14 logowania + 23 pokoju; z `SMOKE_OAUTH=1` jeszcze 2): logowanie, start i powrót OAuth, pokój, wejście gościa, otwarcie linku bez ciasteczka i bez nowego gracza, powrót na nick; CI na lokalnym Supabase i produkcja po pushu; zostawia pokoje w bazie produkcyjnej |
 | sonda live-sync | `npm run live-probe` | Node 24 lokalnie | ręcznie, na produkcji; nie w CI |
 | e2e | none yet — see Phase 3 (kandydat kategorii: Playwright, checked: 2026-10-08) | — | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju |
 | accessibility | none yet | — | lint `jsx-a11y` w `npm run lint`; kontrast sprawdzany ręcznie przy zmianach UI |
 | (optional) AI-native | agent rozgrywa rundę w przeglądarce (Claude in Chrome — checked: 2026-10-08) | n/a | When NOT to use: zamiast testów deterministycznych; do pomiaru 2 s; na produkcji z prawdziwymi graczami |
-| (optional) AI-native | hook po edycji w pętli agenta (checked: 2026-10-08) | n/a | When NOT to use: jako zamiennik CI albo do wolnych testów bazy |
+| agent hooks | hooki Claude Code w `.claude/settings.json`, skrypty Node w `.claude/hooks/` (checked: 2026-10-11) | Claude Code (hooki `PostToolUse`, `Stop`) | dowód: `npm run test:hooks` (`tests/hooks/`, lokalnie i w CI); When NOT to use: jako zamiennik CI albo do wolnych testów bazy i smoke |
 
 **Stack grounding tools (current session):**
 - Docs: none — Context7 i MCP dokumentacji not available in current session; wersje narzędzi do potwierdzenia w research; checked: 2026-10-08
@@ -121,7 +121,7 @@ wdrożenia tej fazy; wcześniej jest `planned`.
 | integracja bazy (`npm run test:db`: uprawnienia ról, reguła nicku) | CI only (job `db`; lokalnie brak Dockera) | required w sensie reguły PR z `AGENTS.md`: zmiany bazy i pokoju są scalane tylko na zielonym CI, także `db`; technicznie bramka zatrzyma wdrożenie dopiero po §3 Phase 4 | regresje uprawnień ról i reguły nicku; znane dziury F1 i F4 jako oczekiwane porażki do naprawy w S-02 |
 | e2e na rundzie z kilkoma graczami | CI | required after §3 Phase 3 | zepsuta runda widziana przez graczy |
 | czerwone CI zatrzymuje wdrożenie | GitHub → Cloudflare | required after §3 Phase 4 | dziś Workers Builds wdraża `main` mimo czerwonego CI |
-| post-edit hook | local (agent loop) | recommended after §3 Phase 4 | regresje w chwili edycji |
+| hooki agenta: po edycji ESLint pliku, literały UI i powiązane testy unit; na koniec tury (tylko gdy zmienił się kod) ESLint zmienionych plików, literały UI, testy unit i `astro check`, z jednym odesłaniem agenta | local (agent loop) | required od 2026-10-11 (M3L3; właściciel przyspieszył wiersz „recommended after §3 Phase 4”) | błędy lintu, typów i testów unit w chwili edycji, zanim agent odda turę; nie łapie zachowania w przeglądarce ani uprawnień bazy |
 | sonda live-sync | produkcja, ręcznie | optional (przed prawdziwym wieczorem) | budżet 2 s w prawdziwej sieci |
 | agent rozgrywa rundę (AI-native) | ręcznie, przed wieczorem | optional after §3 Phase 3 | problemy, których nie opisał żaden test |
 
@@ -149,7 +149,7 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
 - **Helpers** (`tests/db/support/`):
   - `clients.ts`: `anonClient()` (gość bez sesji), `newHost()` (rejestracja, od razu z sesją) oraz `newLinkToken` i `newPlayerToken` (te same generatory co Worker);
   - `rooms.ts`: `seedRoom`, `seedGuest`, `readOwnRoom`, `hostLobbyNicks`. Seedują prawdziwymi drzwiami: pokój przez `create_room` jako host, gość przez `join_room` jako `anon`. Przy błędzie rzucają, więc używaj ich tylko w `beforeAll`;
-  - `nick-pairs.ts`: tabela par nicków (same dane). `node tests/db/support/print-nick-pairs.ts` wypisuje ją do porównania przez człowieka z `research.md` §3.1.
+  - `nick-pairs.ts`: tabela par nicków (same dane). `node tests/db/support/print-nick-pairs.ts` wypisuje ją do porównania przez człowieka z `context/archive/2026-10-10-testing-lobby-foundation/research.md` §3.1.
 - **Oracle**: z researchu fazy (PRD Access Control, decyzje właściciela, pliki Unicode), nigdy z implementacji. `private.normalize_nick` nie jest przyznana `anon`, więc testy nicku idą przez `join_room` jako gość.
 - **Roles**: tylko klucz publishable (`sb_publishable_…`), jako `anon` albo jako host po `signUp`. Nigdy klucz secret ani `service_role`, także do seedowania: omija uprawnienia i daje fałszywą zieleń.
 - **Refusal**: odmowa to konkretny wynik, nigdy „jakiś błąd”.
