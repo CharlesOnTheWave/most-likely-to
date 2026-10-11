@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BELL_EVENT, topicFor } from "@/lib/live-sync/shared";
+import { BELL_EVENT, LOBBY_POLL_MS, topicFor } from "@/lib/live-sync/shared";
 import type { LobbyState } from "@/lib/rooms/shared";
 
 // Starting state for /dev/room-states, which renders several lobbies on one page; the real page never sets it.
@@ -28,8 +28,6 @@ interface Props {
 }
 
 const COPIED_MS = 2000;
-// The bell is the fast path; polling catches a missed bell, a dropped connection and a phone that slept.
-const POLL_MS = 15000;
 
 export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const [lobby, setLobby] = useState(initial);
@@ -84,7 +82,7 @@ export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview 
       if (document.visibilityState === "visible") void refresh();
     }
 
-    const timer = window.setInterval(refreshIfVisible, POLL_MS);
+    const timer = window.setInterval(refreshIfVisible, LOBBY_POLL_MS);
     document.addEventListener("visibilitychange", refreshIfVisible);
 
     // Realtime only: this client never signs in, the host's session lives in server-side cookies.
