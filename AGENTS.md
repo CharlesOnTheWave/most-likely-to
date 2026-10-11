@@ -23,6 +23,7 @@ Before handing off a change, `npm run lint`, `npx astro check`, `npm test` and `
 
 - `npm test`: unit tests (Vitest, `tests/unit/`), local and CI.
 - `npm run test:db`: database tests (`tests/db/`) through REST/RPC as a guest and as a host. Local Supabase only, so in practice it runs only in the CI job `db` (no Docker locally); it refuses any URL but `127.0.0.1`/`localhost` and any key but `sb_publishable_…` before the first request.
+- `npx playwright test`: E2E (Playwright, `tests/e2e/`), the real build in a browser with several players in one room, against local Supabase with Realtime. CI job `e2e` only: locally `playwright.config.ts` refuses before the build, because `.dev.vars` points at production (`npx playwright test --list` still works). Details: @context/foundation/test-stack.md.
 - `npm run test:hooks`: the agent hooks (`.claude/hooks/`, wired in `.claude/settings.json`) run against throwaway git repos with stub tools; local and CI. Change a hook together with its case in `tests/hooks/agent-hooks.test.ts`.
 - How to add a test (oracle, refusals, hooks, sign-up limit): @context/foundation/test-plan.md §6.
 - A `test.fails` test named "znana dziura <F> → <change>" documents a known hole. When the fix turns it red, remove the marker; never delete the test.
