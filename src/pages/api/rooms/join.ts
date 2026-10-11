@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { joinRoom, ringLobby, roomLink, roomLobby } from "@/lib/rooms/server";
+import { joinRoom, roomLink, roomLobby } from "@/lib/rooms/server";
 import { LINK_TOKEN_PATTERN, newPlayerToken, playerCookieName, playerCookieOptions } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -46,6 +46,6 @@ export const POST: APIRoute = async (context) => {
 
   context.cookies.set(playerCookieName(result.roomId), newToken, playerCookieOptions(context.url));
   // The host and the players already in the room fetch the list again.
-  await ringLobby(context.locals, supabase, result.roomId);
+  // BREAK-CHECK B1 (temporary): the bell after a join is off.
   return context.redirect(`/r/${result.roomId}`);
 };
