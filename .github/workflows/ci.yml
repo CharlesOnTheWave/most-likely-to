@@ -140,7 +140,7 @@ jobs:
             -d "{\"email\":\"$E2E_USERNAME\",\"password\":\"$E2E_PASSWORD\"}"
           printf 'E2E_USERNAME=%s\nE2E_PASSWORD=%s\n' "$E2E_USERNAME" "$E2E_PASSWORD" >> "$GITHUB_ENV"
       # Playwright builds the app and starts the preview itself (webServer in playwright.config.ts).
-      - run: npx playwright test
+      - run: npx playwright test --repeat-each=2
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
