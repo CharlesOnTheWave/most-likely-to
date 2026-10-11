@@ -57,6 +57,8 @@ npm run dev
 - `npm run lint` - Run ESLint with type-checked rules
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
+- `npm test` - Run the unit tests (Vitest, `tests/unit/`)
+- `npm run test:db` - Run the database tests (`tests/db/`) as a guest and as a host; only against a local Supabase (`TEST_SUPABASE_URL` on `127.0.0.1`/`localhost`, `TEST_SUPABASE_KEY` publishable), so it needs Docker and runs in CI
 - `npm run smoke` - Smoke test the auth and room flows against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
 - `npm run live-probe` - Measure live-sync delivery with simulated players (`--base-url`, defaults to `http://localhost:4321`); signs in with the smoke test account from `.dev.vars` and rings through the app, so it asks first
 
@@ -210,17 +212,18 @@ The live-sync spike (F-01) proved the technique the room screens use: the server
 
 ## CI
 
-GitHub Actions runs two jobs on every push and PR to `main`:
+GitHub Actions runs three jobs on every push and PR to `main`:
 
-- **ci** — lint, `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
+- **ci** — lint, `astro check`, unit tests (`npm test`) and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
 - **smoke** — starts a local Supabase via the Supabase CLI, which applies every migration in `supabase/migrations/` to a fresh database, and takes its `API_URL` and `PUBLISHABLE_KEY` (`sb_publishable_…`, as in production). It then creates the smoke test account there with a plain sign-up, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. Realtime is not started, so the room screens fall back to polling. No secrets required.
+- **db** — starts its own local Supabase the same way, passes its `API_URL` and `PUBLISHABLE_KEY` to the tests as `TEST_SUPABASE_URL` and `TEST_SUPABASE_KEY` and runs `npm run test:db`: the database grants, policies and functions through REST/RPC as a guest and as a signed-in host. Known holes show in the log as expected failures ("znana dziura … → S-02"). Runs in parallel with smoke. No secrets required.
 
 ## Database migrations
 
 Tables and functions live in `supabase/migrations/`. There is one hosted Supabase project for development and production, so applying a migration changes the production database.
 
 - **New migration:** `npx supabase migration new <name>`. Every table gets RLS, explicit grants and a policy per granted operation; every function gets `set search_path = ''` and explicit `execute` grants (rules in `AGENTS.md`, Conventions).
-- **Tried first in CI:** a PR to `main` runs the smoke job, which applies all migrations to a fresh local database with `auto_expose_new_tables = false` (`supabase/config.toml`), as Supabase does for new tables from 30.10.2026.
+- **Tried first in CI:** a PR to `main` runs the smoke and db jobs, each of which applies all migrations to a fresh local database with `auto_expose_new_tables = false` (`supabase/config.toml`), as Supabase does for new tables from 30.10.2026; db then tests the grants, policies and functions as a guest and as a host.
 - **Applied to the hosted project only with `npx supabase db push`**, after `npx supabase db push --dry-run`, and only with the project owner's consent; `npx supabase migration list` then shows it locally and remotely. The CLI must be linked once (`npx supabase login`, `npx supabase link`).
 - **Never paste SQL in the dashboard** (it bypasses the migration history and breaks the next `db push`) and never edit an applied migration: a fix or a rollback is a new migration.
 
