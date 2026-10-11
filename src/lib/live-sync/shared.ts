@@ -2,6 +2,9 @@
 
 export const LIVE_SYNC_TOPIC_PREFIX = "live-sync:";
 export const BELL_EVENT = "bell";
+// How often an open lobby screen fetches the list on its own. The bell is the fast path; the poll catches a missed bell,
+// a dropped connection and a phone that slept. The E2E seed reads it to tell the bell from the poll.
+export const LOBBY_POLL_MS = 15000;
 
 const ROOM_ID_PATTERN = /^[a-z0-9-]{1,64}$/;
 

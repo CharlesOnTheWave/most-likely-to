@@ -99,3 +99,53 @@ jobs:
       - run: npm run test:db -- --reporter=verbose
       - if: always()
         run: supabase stop --no-backup
+
+  # The lobby as players see it (tests/e2e, Playwright): the real build in a browser, against a throwaway local stack.
+  # Realtime stays on here (smoke and db skip it), because the room's bell is what the specs check.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Fixed version, as in smoke.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start local Supabase (with Realtime)
+        run: |
+          supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,storage-api,postgres-meta,supavisor
+          supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
+      # The build copies .dev.vars into dist/server/.dev.vars, which the preview reads. playwright.config.ts refuses to
+      # start unless that file points at this local stack with a publishable key.
+      - name: Point the build at the local stack
+        run: |
+          source supabase.env
+          printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" > .env
+          cp .env .dev.vars
+      # Local Supabase keeps "Confirm email" off (supabase/config.toml), so a plain sign-up creates the host account.
+      - name: Create the E2E host account
+        run: |
+          source supabase.env
+          E2E_USERNAME=e2e-host@example.com
+          E2E_PASSWORD=$(openssl rand -hex 16)
+          echo "::add-mask::$E2E_PASSWORD"
+          curl -sf -o /dev/null -X POST "$API_URL/auth/v1/signup" \
+            -H "apikey: $PUBLISHABLE_KEY" -H "Content-Type: application/json" \
+            -d "{\"email\":\"$E2E_USERNAME\",\"password\":\"$E2E_PASSWORD\"}"
+          printf 'E2E_USERNAME=%s\nE2E_PASSWORD=%s\n' "$E2E_USERNAME" "$E2E_PASSWORD" >> "$GITHUB_ENV"
+      # Playwright builds the app and starts the preview itself (webServer in playwright.config.ts).
+      - run: npx playwright test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+      - if: always()
+        run: supabase stop --no-backup
