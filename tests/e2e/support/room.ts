@@ -1,7 +1,7 @@
 // Room steps shared by the E2E specs. Setup goes through the app's own endpoints; the steps a player takes go
 // through the screen, by role and accessible name.
 
-import { expect, type Browser, type BrowserContext, type Locator, type Page } from "@playwright/test";
+import { expect, type Browser, type BrowserContext, type Locator, type Page, type Response } from "@playwright/test";
 import { CATEGORIES } from "../../../src/data/questions";
 
 const ROOM_PATH = /^\/r\/([0-9a-f-]{36})$/;
@@ -37,14 +37,18 @@ export async function openRoom(page: Page, baseURL: string | undefined): Promise
   expect(id, `"Załóż grę" did not end in a room: ${new URL(response.url()).pathname}`).toBeDefined();
   const roomId = id ?? "";
 
-  const subscribed = page.waitForResponse(
-    (res) => new URL(res.url()).pathname === `/api/rooms/${roomId}/lobby` && res.ok(),
-  );
+  const subscribed = nextListFetch(page, roomId);
   const openedAt = Date.now();
   await page.goto(`/r/${roomId}`);
   await subscribed;
   const link = await page.getByRole("textbox", { name: "Link dla graczy" }).inputValue();
   return { id: roomId, link, openedAt };
+}
+
+// The screen's next successful fetch of the room's list. Before the first poll, the only fetch is the one a screen makes
+// when its channel subscribes, so awaiting it means the screen is listening. Start waiting before the screen loads.
+export function nextListFetch(page: Page, roomId: string): Promise<Response> {
+  return page.waitForResponse((res) => new URL(res.url()).pathname === `/api/rooms/${roomId}/lobby` && res.ok());
 }
 
 // A guest has no account: a browser context with no cookies. A context made with browser.newContext() inside a test
