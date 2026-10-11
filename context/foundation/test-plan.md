@@ -96,7 +96,7 @@ Klasyczna baza testów tego projektu. Narzędzia AI-native mają datę
 | DB (uprawnienia, funkcje) | Vitest, projekt `db`: integracja przez REST/RPC (supabase-js) kluczem publishable, jako gość i jako zalogowany host; pgTAP (`supabase test db`) nie wybrany, bo potrzebuje Dockera także przy `--db-url` (checked: 2026-10-10) | Supabase CLI 2.120.0 w CI (stała wersja) | tylko w CI: job `db` uruchamia `supabase start` na jednorazowej bazie; lokalnie brak Dockera; bez klucza secret i `service_role` |
 | HTTP smoke | `npm run smoke` (własny skrypt Node) | Node 22 w CI, 24 lokalnie | 37 kroków (14 logowania + 23 pokoju; z `SMOKE_OAUTH=1` jeszcze 2): logowanie, start i powrót OAuth, pokój, wejście gościa, otwarcie linku bez ciasteczka i bez nowego gracza, powrót na nick; CI na lokalnym Supabase i produkcja po pushu; zostawia pokoje w bazie produkcyjnej |
 | sonda live-sync | `npm run live-probe` | Node 24 lokalnie | ręcznie, na produkcji; nie w CI |
-| e2e | none yet — see Phase 3 (kandydat kategorii: Playwright, checked: 2026-10-08) | — | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju |
+| e2e | Playwright Test (checked: 2026-10-11) | 1.64.0 | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju; tylko w CI (job `e2e`, lokalny Supabase z Realtime), bo lokalnie `.dev.vars` wskazuje na produkcję i konfiguracja odmawia startu; dziś szkielet w lobby (M3L4), runda z Phase 3; uruchamianie i ograniczenia: `context/foundation/test-stack.md` |
 | accessibility | none yet | — | lint `jsx-a11y` w `npm run lint`; kontrast sprawdzany ręcznie przy zmianach UI |
 | (optional) AI-native | agent rozgrywa rundę w przeglądarce (Claude in Chrome — checked: 2026-10-08) | n/a | When NOT to use: zamiast testów deterministycznych; do pomiaru 2 s; na produkcji z prawdziwymi graczami |
 | agent hooks | hooki Claude Code w `.claude/settings.json`, skrypty Node w `.claude/hooks/` (checked: 2026-10-11) | Claude Code (hooki `PostToolUse`, `Stop`) | dowód: `npm run test:hooks` (`tests/hooks/`, lokalnie i w CI); When NOT to use: jako zamiennik CI albo do wolnych testów bazy i smoke |
@@ -187,7 +187,28 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
 
 ### 6.4 Adding an e2e multi-player test
 
-- TBD — see §3 Phase 3 (wzorzec: kilku graczy w jednym pokoju widzi tę samą odsłonę).
+Dziś szkielet w lobby (M3L4, 2026-10-11); odsłona rundy dojdzie w §3 Phase 3 na tym samym wzorcu (kilku graczy w jednym pokoju widzi tę samą odsłonę).
+
+- **Location**: `tests/e2e/*.spec.ts` (Playwright, `playwright.config.ts`). Wzory:
+  - `seed.spec.ts`: host widzi nowego gościa bez odświeżania (dzwonek);
+  - `lobby-connection-drop.spec.ts`: ekran, któremu padło połączenie, po jego powrocie sam pokazuje, kto wszedł w międzyczasie.
+- **Run**: tylko w CI, w jobie `e2e` (lokalny Supabase z Realtime, konto hosta zakładane w jobie). Lokalnie działa tylko `npx playwright test --list`.
+  - Bezpiecznik (`tests/e2e/support/env.ts`, wołany w `playwright.config.ts`) przerywa przed buildem, gdy `.dev.vars` nie wskazuje na `127.0.0.1` ani `localhost` albo klucz nie zaczyna się od `sb_publishable_`. Build wkleja `.dev.vars` do serwera, więc to ten plik decyduje, gdzie trafiają pokoje.
+  - Poluzowanie bezpiecznika wymaga w tej samej zmianie reguły `ask` dla `Bash(npx playwright test*)` (lessons.md, wpis 1).
+- **Players**: host to `page` z zapisaną sesją (projekt `setup`). Każdy gość to osobny kontekst z `newGuestContext(browser)`: zwykły `browser.newContext()` dziedziczy sesję hosta. Kroki w `tests/e2e/support/room.ts`:
+  - `openRoom`: pokój przez endpoint za „Załóż grę” (z `confirm_close=1`), potem ekran hosta i jego pierwsze pobranie listy;
+  - `joinRoom`: formularz gościa z ponowieniem, bo tekst wpisany przed hydratacją ginie;
+  - `playerRow`: wiersz gracza w liście „Gracze”.
+- **Bell vs poll**: ekran sam pobiera listę co `LOBBY_POLL_MS` (15 s), więc „lista się zmieniła” niczego nie dowodzi, jeśli test trwał dłużej. Test dzwonka albo powrotu połączenia:
+  1. czeka na pierwsze pobranie listy (`nextListFetch`, czekanie zaczyna się przed `goto`), zanim ktoś wejdzie;
+  2. mierzy czas od załadowania ekranu i sprawdza, że jest krótszy niż `LOBBY_POLL_MS`.
+- **Dropped connection**: `sleepableRealtime(page)` (`tests/e2e/support/realtime.ts`) przed wejściem do pokoju. `sleep()` gubi wiadomości serwera, `wake()` zamyka gniazdo, a klient sam łączy się ponownie. Przed asercją test sprawdza, że dzwonek zadzwonił (host widzi nowego gracza) i że uśpiony ekran go zgubił (`missed() > 0`).
+- **Serial**: `workers: 1`, bo jeden host ma najwyżej jeden otwarty pokój. Nicki z `uniqueNick` (najwyżej 20 znaków).
+- **Cleanup**: test zamyka konteksty gości. Pokoje i gracze zostają w bazie, bo do S-13 nie ma czym ich usunąć; baza joba jest jednorazowa. Zestaw przechodzi dwa razy z rzędu na jednej bazie (`--repeat-each=2`, 2026-10-11).
+- **No 2 s here**: budżet 2 s z PRD mierzy sonda na produkcji, nie e2e (§2, #2: pomiar 2 s na lokalnym serwerze to antywzorzec).
+- **Break-check**: jak w §6.2, tymczasowy commit na gałęzi (edycja ekranu albo endpointu) z listą testów, które mają zaświecić na czerwono. Próbne alarmy z 2026-10-11 trafiły dokładnie:
+  - dzwonek po wejściu gościa wyłączony (`join.ts`): oba testy czerwone, seed na „host widzi gościa”, `lobby-connection-drop` na warunku wstępnym „host widzi C”;
+  - lista pobierana tylko przy pierwszym połączeniu kanału, nie po powrocie (`RoomLobby.tsx`): czerwony tylko `lobby-connection-drop`, na asercji końcowej.
 
 ### 6.5 Adding a smoke step
 
