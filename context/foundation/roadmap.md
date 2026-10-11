@@ -133,7 +133,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Parallel with:** S-05
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** Tu pierwszy raz zapisujemy głosy, więc para „kto na kogo” nie może trafić do bazy, logów ani kanału na żywo; to twarda zasada gry, nie szczegół do poprawienia później. Z przeglądu S-01 (`room-lobby/follow-ups/review-fixes.md`, po archiwum w `context/archive/`): host ma dziś bezpośrednie `update (status)` na `rooms`, więc przy stanach gry musi dostać tylko dozwolone przejścia; dzwonek potrzebuje ogranicznika, bo pójdzie przy każdym głosie.
+- **Risk:** Tu pierwszy raz zapisujemy głosy, więc para „kto na kogo” nie może trafić do bazy, logów ani kanału na żywo; to twarda zasada gry, nie szczegół do poprawienia później. Z przeglądu S-01 (`room-lobby/follow-ups/review-fixes.md`, po archiwum w `context/archive/`): host ma dziś bezpośrednie `update (status)` na `rooms`, więc przy stanach gry musi dostać tylko dozwolone przejścia; dzwonek potrzebuje ogranicznika, bo pójdzie przy każdym głosie. Ta sama migracja domyka regułę nicku (F4, decyzja z 2026-10-10): niewidoczne znaki, które reguła dziś pomija (m.in. selektory wariantu i znaczniki), i limit długości przed normalizacją; o emotkach, którym FE0F naprawdę zmienia wygląd, decyzja zapada przy tej poprawce. Kryteria akceptacji: testy „znana dziura F1 → S-02” (`tests/db/roles.test.ts`) i „znana dziura F4 → S-02” (`tests/db/nicks.test.ts`) przechodzą, a znacznik `test.fails` zostaje zdjęty.
 - **Status:** proposed
 
 ### S-03: Pełny wieczór
