@@ -51,7 +51,6 @@ export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview 
     let sent = 0;
     let shown = 0;
     let active = true;
-    let subscribedOnce = false;
 
     async function refresh() {
       const request = ++sent;
@@ -99,11 +98,7 @@ export default function RoomLobby({ roomId, initial, linkUrl, realtime, preview 
         void refresh();
       })
       .subscribe((state) => {
-        // BREAK-CHECK B2 (temporary): only the first SUBSCRIBED fetches; a rejoin after a dropped connection does not.
-        if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED && !subscribedOnce) {
-          subscribedOnce = true;
-          void refresh();
-        }
+        if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) void refresh();
       });
 
     return () => {
