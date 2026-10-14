@@ -28,8 +28,9 @@ import {
 // Exact key sets, not "the fields we know of": a new key in an answer is how a pair or an early count would leak
 // (test-plan §2, #1: never only the table's columns).
 //
-// Until phase 2 adds the round functions, the suites that start a round in beforeAll are red as a whole (PGRST202, no
-// such function). The private-schema guard starts no round and is green from day one.
+// The round functions come from supabase/migrations/*_first_live_round.sql. Without them the suites that start a round
+// in beforeAll are red as a whole (PGRST202, no such function). The private-schema guard starts no round, so it holds
+// with or without them.
 //
 // One sign-up per run. One open room per host, so the rooms come one after another (confirm_close closes the one
 // before); Vitest runs the suites in order, each suite's beforeAll right before its tests.

@@ -6,14 +6,15 @@ import { hostLobbyNicks, seedGuest, seedRoom, type OwnRoom } from "./support/roo
 // Nicks on the guest's way in (#6) through the guest's door: join_room as anon with the publishable key, past the
 // Worker. Oracle: the pair table of context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1, kept in
 // support/nick-pairs.ts (Unicode sources, S-01 decisions), never private.normalize_nick, which anon cannot call anyway.
-// The table guards both ways: look-alikes get nick_taken and visibly different nicks join, so an over-eager fix in
-// S-02 turns red too.
+// The table guards both ways: look-alikes get nick_taken and visibly different nicks join, so an over-eager change of
+// the rule turns red too.
 //
-// Known holes (F4, fixed by S-02) are test.fails with the oracle's expectation. test.fails passes on any failure, a
-// crashed seed or a network error too, so, as in roles.test.ts: preconditions (the host, a fresh room, the taken nick)
-// live in beforeAll, whose helpers throw (a failed beforeAll stays red; beforeEach and afterEach run inside the test, so
-// never use them here); a test sends one probe, collects { data, error } and never throws; in a known hole a failed
-// call returns early, so the test passes and shows red; the closing expect is the only thing that can fail.
+// A pair marked knownHole is a test.fails with the oracle's expectation: F4's nine were, until S-02 closed them; none
+// is today. test.fails passes on any failure, a crashed seed or a network error too, so: preconditions (the host, a
+// fresh room, the taken nick) live in beforeAll, whose helpers throw (a failed beforeAll stays red; beforeEach and
+// afterEach run inside the test, so never use them here); a test sends one probe, collects { data, error } and never
+// throws; in a known hole a failed call returns early, so the test passes and shows red; the closing expect is the
+// only thing that can fail.
 //
 // One sign-up per run: one host opens every room in turn. One open room per host, so each new room (confirm_close)
 // closes the one before. Vitest runs the suites in order, each suite's beforeAll right before its tests.
@@ -52,7 +53,7 @@ function joined(room: OwnRoom) {
   return { error: null, data: { ok: true, room_id: room.id } };
 }
 
-// Each pair in a room of its own, so a probe that got in (a known hole today) cannot change the next pair. The test
+// Each pair in a room of its own, so a probe that got in (a known hole) cannot change the next pair. The test
 // name shows the code points, so the log reads like the research table; the number matches print-nick-pairs.ts.
 describe("nick pairs: what looks the same is the same nick (context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1)", () => {
   for (const [index, pair] of NICK_PAIRS.entries()) {
@@ -86,7 +87,7 @@ describe("nick pairs: what looks the same is the same nick (context/archive/2026
 
 // A nick that is too long, however long, gets the clear refusal invalid_nick, not the generic error (test-plan §2, #6).
 // The limit is S-01's "1–20 characters" (the guest reads "Nick musi mieć od 1 do 20 znaków."), checked on plain
-// letters. Where a fix of F4 cuts a long text before the nick rule is its own detail and is not pinned here.
+// letters. Where the cut before the nick rule sits (100 characters since S-02) is its own detail, not pinned here.
 describe("length and blank nicks: a clear invalid_nick", () => {
   const TWENTY_LETTERS = "a".repeat(20);
   let room: OwnRoom;
@@ -110,7 +111,7 @@ describe("length and blank nicks: a clear invalid_nick", () => {
     expect(answer).toMatchObject(INVALID_NICK);
   });
 
-  // Today the whole text goes through the nick rule first (F4: no limit before it); the guest must still get the clear
+  // Since S-02 a text this long is refused before the nick rule runs (F4); either way the guest must get the clear
   // refusal, not a failed call.
   it("10 000 plain letters get invalid_nick", async () => {
     const answer = await tryJoin(room.linkToken, "a".repeat(10_000));

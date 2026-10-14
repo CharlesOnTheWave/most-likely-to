@@ -18,11 +18,11 @@ import {
 // A refusal is a specific result, never "some error": 42501 for a missing grant or a failed `with check`. RLS `using`
 // hides rows without an error, so a silent refusal is checked by its effect: read back by the owner or via room_link.
 //
-// Known holes (F1, fixed by S-02) are test.fails with the oracle's expectation. test.fails passes on any failure, a
-// crashed seed or a network error too, so: preconditions live in beforeAll (a failed beforeAll stays red; beforeEach and
-// afterEach run inside the test, so never use them here); the attack only collects results (supabase-js returns
-// { data, error } and does not throw) and skips steps whose input is missing; a failed closing read returns early, so
-// the test passes and shows red; the closing expect is the only thing that can fail.
+// F1 (the host writing past the rules) was a set of known holes, test.fails until S-02 closed it
+// (supabase/migrations/*_first_live_round.sql); they are plain tests now, with the same oracle. Preconditions live in
+// beforeAll (a failed beforeAll stays red); the attack only collects results (supabase-js returns { data, error } and
+// does not throw) and skips steps whose input is missing; the closing read must succeed itself, so a failed call is
+// red, never a pass.
 //
 // Six sign-ups per run, all in beforeAll: sign-ups and sign-ins share 30 per 5 minutes with the other db files.
 
@@ -33,7 +33,7 @@ const anon = anonClient();
 const OLA = "Ola";
 const OLA_ZWSP = "Ola\u{200B}";
 
-// Narrowing that never throws, for test.fails bodies.
+// Narrowing that never throws, for the attack bodies below.
 function firstId(rows: unknown): string | null {
   const row: unknown = Array.isArray(rows) ? rows[0] : null;
   return isRecord(row) && typeof row.id === "string" ? row.id : null;
@@ -156,10 +156,10 @@ describe("role guards: hosts and guests stay inside their roles", () => {
     expect(result.error?.code).toBe("42501");
   });
 
-  // Only a signed-in host opens a room (prd.md:162,167). The function's name is checked, not only 42501: create_room
-  // runs as its caller and starts with the nick rule in schema private, which anon cannot use either, so a create_room
-  // granted to anon would still answer 42501, as "permission denied for function normalize_nick" (the phase 2
-  // break-check).
+  // Only a signed-in host opens a room (prd.md:162,167). The function's name is checked, not only 42501, which alone
+  // does not say who refused (test-plan §6.2). Since S-02 create_room is security definer and checks the session
+  // itself, so a create_room granted to anon would answer not_signed_in as data: the 42501 here must be the refusal of
+  // create_room itself.
   it("G2: anon calling create_room is refused permission on the function", async () => {
     const result = await anon.rpc("create_room", {
       p_nick: "Host",
@@ -204,8 +204,8 @@ describe("role guards: hosts and guests stay inside their roles", () => {
   });
 });
 
-// Each test fails today and must pass once S-02 closes F1; then test.fails turns it red and the marker comes off.
-describe("known holes F1: expected failures until S-02", () => {
+// Known holes until S-02 closed F1 (test.fails then, with the same oracles).
+describe("F1, closed by S-02: the host writes only through the functions", () => {
   // Oracle: a closed room is final (F1 triage, roadmap S-02; the game says "Poproś hosta o nowy link.").
   describe("H1: a closed room stays closed", () => {
     let host: Host;
@@ -221,21 +221,21 @@ describe("known holes F1: expected failures until S-02", () => {
       }
     });
 
-    it.fails("znana dziura F1 → S-02: the host cannot reopen a closed room over REST", async () => {
-      // One open room per host, so the open one closes first. The reopen runs either way: a fix may refuse either step.
+    it("the host cannot reopen a closed room over REST", async () => {
+      // One open room per host, so the open one closes first. The reopen runs either way: either step may be refused.
       await host.client.from("rooms").update({ status: "closed" }).eq("id", openRoom.id);
       await host.client.from("rooms").update({ status: "lobby" }).eq("id", closedRoom.id);
       const link = await anon.rpc("room_link", { p_link_token: closedRoom.linkToken });
-      // A failed read is not the expected failure: returning passes the test, and test.fails shows it red.
-      if (link.error !== null) return;
       const data: unknown = link.data;
 
+      // A failed read proves nothing: it must succeed and say closed.
+      expect(link.error).toBeNull();
       expect(data).toMatchObject({ status: "closed" });
     });
   });
 
   // Oracle: the link code is not the host's choice (F1 triage; a known link lets strangers in, FR-002, FR-004). Checked
-  // by effect, so it stays true after a fix where create_room loses the parameter and the call errors.
+  // by effect, so it stays true when a later migration drops create_room's ignored parameter and the call errors.
   describe("H2: the host cannot pick the link code", () => {
     let viaFunction: Host;
     // No room of its own: one open room per host would refuse the insert for another reason.
@@ -245,7 +245,7 @@ describe("known holes F1: expected failures until S-02", () => {
       [viaFunction, viaInsert] = await Promise.all([newHost(), newHost()]);
     });
 
-    it.fails("znana dziura F1 → S-02: create_room does not take a link code the host picked", async () => {
+    it("create_room does not take a link code the host picked", async () => {
       const picked = newLinkToken();
       await viaFunction.client.rpc("create_room", {
         p_nick: "Host",
@@ -255,21 +255,21 @@ describe("known holes F1: expected failures until S-02", () => {
         p_confirm_close: false,
       });
       const link = await anon.rpc("room_link", { p_link_token: picked });
-      if (link.error !== null) return;
       const data: unknown = link.data;
 
+      expect(link.error).toBeNull();
       expect(data).toMatchObject({ status: "unknown" });
     });
 
-    it.fails("znana dziura F1 → S-02: an insert into rooms does not take a link code the host picked", async () => {
+    it("an insert into rooms does not take a link code the host picked", async () => {
       const picked = newLinkToken();
       await viaInsert.client
         .from("rooms")
         .insert({ host_id: viaInsert.userId, link_token: picked, categories: SEED_CATEGORIES });
       const link = await anon.rpc("room_link", { p_link_token: picked });
-      if (link.error !== null) return;
       const data: unknown = link.data;
 
+      expect(link.error).toBeNull();
       expect(data).toMatchObject({ status: "unknown" });
     });
   });
@@ -284,7 +284,7 @@ describe("known holes F1: expected failures until S-02", () => {
       host = await newHost();
     });
 
-    it.fails("znana dziura F1 → S-02: a host cannot store a nick that skips the nick rule", async () => {
+    it("a host cannot store a nick that skips the nick rule", async () => {
       const linkToken = newLinkToken();
       const room = await host.client
         .from("rooms")
@@ -292,7 +292,7 @@ describe("known holes F1: expected failures until S-02", () => {
         .select("id");
       const roomId = firstId(room.data);
 
-      // No room (a fix refused the insert): nothing to join and no nicks, which is the oracle's outcome too.
+      // No room (the insert is refused since S-02): nothing to join and no nicks, which is the oracle's outcome too.
       let nicks: string[] = [];
       if (roomId !== null) {
         await host.client.from("players").insert({ room_id: roomId, nick: OLA_ZWSP, user_id: host.userId, seat: 1 });

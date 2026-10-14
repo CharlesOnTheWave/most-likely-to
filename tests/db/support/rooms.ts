@@ -42,9 +42,9 @@ export async function readOwnRoom(host: Host, roomId: string): Promise<OwnRoom> 
   return { id, linkToken, status };
 }
 
-// "Nowa gra" as the Worker does it: a fresh link code from the Worker's generator. The S-02 fix of F1 (the code made in
-// SQL) changes create_room, so this helper changes with it, in the same change. A second room of the same host closes
-// the first one; confirmClose answers the "guests are still in it" question.
+// "Nowa gra" as the Worker does it. Since S-02 (F1) create_room makes the link code in SQL and ignores the one it is
+// sent, which still goes out because the signature stays; the code comes back from the room itself, as the Worker reads
+// it. A second room of the same host closes the first one; confirmClose answers the "guests are still in it" question.
 export async function seedRoom(host: Host, options: { nick?: string; confirmClose?: boolean } = {}): Promise<OwnRoom> {
   const result = await host.client.rpc("create_room", {
     p_nick: options.nick ?? "Host",
