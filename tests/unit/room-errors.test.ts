@@ -1,13 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { roomErrorMessage } from "@/lib/rooms/errors";
+import { ROUND_REFUSALS, roomErrorMessage } from "@/lib/rooms/errors";
 
-// Every refusal on a guest's way in (src/pages/api/rooms/join.ts) must say what went wrong. A code renamed on one side
-// would leave the guest with the generic "something went wrong" (test-plan #6). The Polish texts are not copied here:
-// the test checks that each refusal has its own text, not what the text says.
-const GUEST_REFUSALS = ["invalid_nick", "nick_taken", "room_closed", "room_unknown", "service_unavailable"];
+// Every refusal on a guest's way in (src/pages/api/rooms/join.ts) and of a round's action (start, vote, reveal) must
+// say what went wrong. A code renamed on one side would leave the player with the generic "something went wrong"
+// (test-plan #6; audit G2). The Polish texts are not copied here: the test checks that each refusal has its own text,
+// not what the text says.
+const GUEST_REFUSALS = [
+  "invalid_nick",
+  "nick_taken",
+  "room_closed",
+  "room_unknown",
+  "service_unavailable",
+  "game_started",
+];
 
-// Codes come from ?error= in the URL, so anything can arrive. "constructor" is on Object.prototype: a lookup that is
-// not an own-property check would find it.
+// The round's codes as the plan lists them (context/changes/first-live-round/plan.md, Faza 3 #4), written out by hand:
+// a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
+const PLANNED_ROUND_REFUSALS = [
+  "game_started",
+  "not_enough_players",
+  "no_questions",
+  "invalid_question",
+  "already_voted",
+  "round_revealed",
+  "unknown_target",
+  "no_round",
+];
+
+const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];
+
+// Codes come from ?error= in the URL or from a JSON answer, so anything can arrive. "constructor" is on
+// Object.prototype: a lookup that is not an own-property check would find it.
 const UNKNOWN_CODES = ["no_such_code", "constructor"];
 
 describe("roomErrorMessage", () => {
@@ -21,20 +44,30 @@ describe("roomErrorMessage", () => {
     expect(message).toBe(generic);
   });
 
-  it.each(GUEST_REFUSALS)("gives the guest refusal %s its own text, not the generic one", (code) => {
+  it.each(ALL_REFUSALS)("gives the refusal %s its own text, not the generic one", (code) => {
     const message = roomErrorMessage(code);
 
     expect(message).toBeTypeOf("string");
     expect(message).not.toBe(generic);
   });
 
-  it("gives every guest refusal a different text", () => {
-    const messages = new Set(GUEST_REFUSALS.map((code) => roomErrorMessage(code)));
+  it("gives every refusal a different text", () => {
+    const messages = new Set(ALL_REFUSALS.map((code) => roomErrorMessage(code)));
 
-    expect(messages.size).toBe(GUEST_REFUSALS.length);
+    expect(messages.size).toBe(ALL_REFUSALS.length);
   });
 
   it("gives no text when there is no code", () => {
     expect(roomErrorMessage(null)).toBeNull();
+  });
+});
+
+describe("ROUND_REFUSALS", () => {
+  it("lists exactly the round's codes from the plan", () => {
+    expect([...ROUND_REFUSALS].sort()).toEqual([...PLANNED_ROUND_REFUSALS].sort());
+  });
+
+  it.each(PLANNED_ROUND_REFUSALS)("gives the listed code %s its own text", (code) => {
+    expect(roomErrorMessage(code)).not.toBe(roomErrorMessage(UNKNOWN_CODES[0]));
   });
 });

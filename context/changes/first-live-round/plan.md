@@ -801,26 +801,26 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 
 #### Automated
 
-- [ ] 2.1 CI `db`: wszystkie testy zielone, 0 oczekiwanych porażek; testy F1 (4) i F4 (9) przechodzą bez znacznika
-- [ ] 2.2 CI `db`: krok pgTAP zielony
-- [ ] 2.3 CI `smoke` i `e2e` zielone na niezmienionym kodzie serwera (dowód kolejności wdrożenia)
-- [x] 2.4 Lokalnie zielone: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 CI `db`: wszystkie testy zielone, 0 oczekiwanych porażek; testy F1 (4) i F4 (9) przechodzą bez znacznika — 4fedd34
+- [x] 2.2 CI `db`: krok pgTAP zielony — 4fedd34
+- [x] 2.3 CI `smoke` i `e2e` zielone na niezmienionym kodzie serwera (dowód kolejności wdrożenia) — 4fedd34
+- [x] 2.4 Lokalnie zielone: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 4fedd34
 
 #### Manual
 
-- [x] 2.5 Przegląd migracji pod niezmienniki urny: żadna funkcja nie zapisuje w transakcji głosu nic poza wierszem głosującego i licznikiem, nie zwraca celu, nie ma kolumn czasu
+- [x] 2.5 Przegląd migracji pod niezmienniki urny: żadna funkcja nie zapisuje w transakcji głosu nic poza wierszem głosującego i licznikiem, nie zwraca celu, nie ma kolumn czasu — 4fedd34
 
 ### Phase 3: Serwer rundy
 
 #### Automated
 
-- [ ] 3.1 Nowe testy jednostkowe zielone: `npm test` (log, room-state, draw, room-errors, client-events)
-- [ ] 3.2 `npm run lint`, `npx astro check`, `npm run build` zielone
+- [x] 3.1 Nowe testy jednostkowe zielone: `npm test` (log, room-state, draw, room-errors, client-events)
+- [x] 3.2 `npm run lint`, `npx astro check`, `npm run build` zielone
 - [ ] 3.3 CI zielone (także `db` i pgTAP, `smoke` i `e2e` lobby)
 
 #### Manual
 
-- [ ] 3.4 Przegląd: żaden nowy `console.*` poza helperem z listą pól; cel głosu nigdzie w URL ani w logu
+- [x] 3.4 Przegląd: żaden nowy `console.*` poza helperem z listą pól; cel głosu nigdzie w URL ani w logu
 
 ### Phase 4: Ekrany rundy
 
