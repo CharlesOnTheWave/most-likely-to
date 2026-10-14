@@ -839,10 +839,10 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 
 #### Automated
 
-- [ ] 5.1 CI `e2e` zielone z `round.spec.ts`
-- [ ] 5.2 CI `smoke` zielone z krokami rundy i FE0F
+- [x] 5.1 CI `e2e` zielone z `round.spec.ts`
+- [x] 5.2 CI `smoke` zielone z krokami rundy i FE0F
 - [ ] 5.3 Próbne alarmy (a) i (b) zaświeciły dokładnie przewidziane testy, a po `git revert` CI znów zielone
-- [ ] 5.4 `git diff main...HEAD -- supabase/migrations` zawiera wyłącznie migracje `*_first_live_round.sql` i `*_close_stale_games.sql`
+- [x] 5.4 `git diff main...HEAD -- supabase/migrations` zawiera wyłącznie migracje `*_first_live_round.sql` i `*_close_stale_games.sql`
 
 #### Manual
 

@@ -190,9 +190,10 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   2. Push gałęzi i porównanie CI z listą. Inny czerwony test albo przewidziany, który został zielony, znaczy, że test nie pilnuje tego, co deklaruje: zatrzymaj się i wyjaśnij przyczynę.
   3. `git revert` tego commita, push, CI znów zielone.
   4. Nigdy `npx supabase db push` tymczasowej migracji. Na końcu `git diff main...HEAD -- supabase/migrations` nie pokazuje tymczasowej migracji: jest pusty albo zawiera tylko migracje samej zmiany.
-  - Strażnicy rundy (S-02), po jednym alarmie na strażnika:
-    - (a) tymczasowa migracja zmienia `private.ballot_boxes` na logowaną: ma zaświecić tylko asercja pgTAP „private.ballot_boxes is unlogged”;
-    - (b) `cast_vote` zwraca dodatkowo liczbę głosów celu: ma zaświecić tylko „cast_vote answers exactly { ok: true }, to a guest and to the host” w `round-anonymity.test.ts`, bo dokładny zbiór kluczy odpowiedzi głosu sprawdza tylko ten test (`round-rules.test.ts` używa `toMatchObject`).
+  - Strażnicy rundy (S-02), po jednym alarmie na strażnika. Próbne alarmy z 2026-10-14 trafiły dokładnie:
+    - (a) tymczasowa migracja zmienia `private.ballot_boxes` na logowaną: czerwona tylko asercja pgTAP „private.ballot_boxes is unlogged” (1 z 56); Vitest, smoke i e2e zielone;
+    - (b) `cast_vote` zwraca dodatkowo liczbę głosów celu: czerwony tylko „cast_vote answers exactly { ok: true }, to a guest and to the host” w `round-anonymity.test.ts` (1 ze 117), bo dokładny zbiór kluczy odpowiedzi głosu sprawdza tylko ten test (`round-rules.test.ts` używa `toMatchObject`). Smoke i e2e zostały zielone, bo Worker oddaje własne `{ ok: true }`: kształt odpowiedzi samej bazy pilnuje tylko ten test.
+  - Tymczasową migrację zakładaj z `npx supabase migration new <nazwa> < /dev/null`: bez tego polecenie czeka na treść SQL ze standardowego wejścia.
 
 ### 6.3 Adding an anonymity check
 
@@ -249,6 +250,7 @@ Dziś lobby (M3L4, 2026-10-11) i jedna runda 3 graczy (S-02, 2026-10-14). Pomiar
 - **Break-check**: jak w §6.2, tymczasowy commit na gałęzi (edycja ekranu albo endpointu) z listą testów, które mają zaświecić na czerwono. Próbne alarmy z 2026-10-11 trafiły dokładnie:
   - dzwonek po wejściu gościa wyłączony (`join.ts`): oba testy czerwone, seed na „host widzi gościa”, `lobby-connection-drop` na warunku wstępnym „host widzi C”;
   - lista pobierana tylko przy pierwszym połączeniu kanału, nie po powrocie (`RoomLobby.tsx`): czerwony tylko `lobby-connection-drop`, na asercji końcowej.
+- Próbny alarm z 2026-10-14 (S-02) też trafił dokładnie: komórka z liczbą głosów w tabeli odsłony pokazuje `votes + 1` (`RoundReveal.tsx`). Czerwony tylko `round.spec.ts`, we wszystkich 3 próbach na „votes of <gość A>” (oczekiwane 2, ekran pokazał 3). Smoke (czyta API, nie ekran), baza i reszta e2e zielone.
 
 ### 6.5 Adding a smoke step
 
@@ -273,6 +275,9 @@ Dziś lobby (M3L4, 2026-10-11) i jedna runda 3 graczy (S-02, 2026-10-14). Pomiar
   - Runner stoi, a testy bazy biegną tylko w CI (job `db`): 53 testy, 40 zielonych i 13 oczekiwanych porażek (4 × „znana dziura F1 → S-02”, 9 × „znana dziura F4 → S-02”). Te 13 to kryteria akceptacji migracji S-02. Nick z 10 000 znaków dostaje dziś `invalid_nick`, więc to zwykły strażnik, a nie znana dziura.
   - Próbne alarmy trafiły dokładnie. Tymczasowa migracja otworzyła 3 uprawnienia i zaświeciła 3 przewidziane testy (kanarek, odczyt cudzego pokoju z H6, G2). Ciasteczko gracza na stronie linku zaświeciło 1 przewidziany krok smoke. Samo `42501` nie mówi, kto odmówił, dlatego G2 sprawdza też nazwę funkcji w komunikacie.
   - `supabase/setup-cli` z wersją `latest` pyta API GitHuba i czasem pada na „rate limit exceeded”, zanim ruszy jakikolwiek test. Supabase CLI jest więc przypięty (2.120.0) w jobach `smoke` i `db` i podbijany ręcznie.
+- **Phase 2** (`first-live-round`, S-02, 2026-10-14):
+  - Testy powstały przed kodem rundy i świeciły na czerwono, zanim pojawiła się migracja. Dziś: baza 117 testów Vitest bez oczekiwanych porażek (13 znanych dziur F1 i F4 domkniętych), pgTAP 56 asercji widoku twórcy, unit 252, e2e 4 testy (runda 3 graczy ok. 4 s, bez ponowień), smoke 46 kroków.
+  - Trzy próbne alarmy trafiły dokładnie (§6.2 i §6.4): urna logowana zaświeciła tylko pgTAP, głos z liczbą tylko test dokładnego `{ ok: true }`, ekran odsłony z liczbą +1 tylko e2e rundy. Głos z liczbą nie ruszył smoke ani e2e, bo Worker oddaje własną odpowiedź, więc odpowiedź bazy pilnuje tylko test anonimowości.
 
 ## 7. What We Deliberately Don't Test
 
