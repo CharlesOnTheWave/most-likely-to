@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-08
+updated: 2026-10-13
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -44,7 +44,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona: kanał-dzwonek + stan z serwera, 20 graczy, 95% w ≤ 2 s, max 5 s      | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | done     |
 | F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                   | —                | FR-005, FR-015, Access Control (twórca gry)               | done     |
 | S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | done |
-| S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | proposed |
+| S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | planning |
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                            | S-02             | FR-006, FR-015                                            | proposed |
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                    | S-02             | US-01, FR-011                                             | proposed |
 | S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                       | —                | FR-001                                                    | done |
@@ -134,7 +134,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Tu pierwszy raz zapisujemy głosy, więc para „kto na kogo” nie może trafić do bazy, logów ani kanału na żywo; to twarda zasada gry, nie szczegół do poprawienia później. Z przeglądu S-01 (`room-lobby/follow-ups/review-fixes.md`, po archiwum w `context/archive/`): host ma dziś bezpośrednie `update (status)` na `rooms`, więc przy stanach gry musi dostać tylko dozwolone przejścia; dzwonek potrzebuje ogranicznika, bo pójdzie przy każdym głosie. Ta sama migracja domyka regułę nicku (F4, decyzja z 2026-10-10): niewidoczne znaki, które reguła dziś pomija (m.in. selektory wariantu i znaczniki), i limit długości przed normalizacją; o emotkach, którym FE0F naprawdę zmienia wygląd, decyzja zapada przy tej poprawce. Kryteria akceptacji: testy „znana dziura F1 → S-02” (`tests/db/roles.test.ts`) i „znana dziura F4 → S-02” (`tests/db/nicks.test.ts`) przechodzą, a znacznik `test.fails` zostaje zdjęty.
-- **Status:** proposed
+- **Status:** planning
 
 ### S-03: Pełny wieczór
 

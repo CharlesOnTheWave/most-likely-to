@@ -76,7 +76,7 @@ orchestrator updates Status as artifacts appear on disk.
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|---|---|---|---|---|---|
 | 1 | Fundament testów i zabezpieczenie lobby | Postawić pierwszy runner i udowodnić w istniejącym lobby, że role dostają odmowę tam, gdzie PRD zabrania, a identycznie wyglądające nicki są odrzucane | #4, #6 | unit + integration (DB) | complete | testing-lobby-foundation |
-| 2 | Anonimowość i reguły rundy | Udowodnić, że po rundzie nie da się odtworzyć „kto na kogo”, a runda spełnia reguły PRD; testy powstają przed kodem głosowania S-02 | #1, #3 | unit + integration (DB) | not started | — |
+| 2 | Anonimowość i reguły rundy | Udowodnić, że po rundzie nie da się odtworzyć „kto na kogo”, a runda spełnia reguły PRD; testy powstają przed kodem głosowania S-02 | #1, #3 | unit + integration (DB) | planned | first-live-round |
 | 3 | Odsłona na żywo w przeglądarkach | Udowodnić, że każdy ekran dostaje tę samą odsłonę w budżecie czasu, a sygnały zmiany nie zjadają limitu żądań | #2, #7 | e2e + unit + AI-native exploratory | not started | — |
 | 4 | Bramki, które naprawdę zatrzymują | Udowodnić, że zepsute zachowanie z §2 zapala bramkę na czerwono, a czerwona bramka zatrzymuje produkcję | #5 | gates + post-edit-hook | not started | — |
 
