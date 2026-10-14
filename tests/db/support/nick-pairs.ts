@@ -1,14 +1,16 @@
-// The nick pairs of research.md §3.1, the oracle of tests/db/nicks.test.ts: what looks the same is the same nick. The
-// expectations come from Unicode (DerivedCoreProperties.txt Default_Ignorable_Code_Point, PropList.txt White_Space,
-// UTS #51, Core Spec §5.21 and §23.4) and S-01's decisions, never from private.normalize_nick.
+// The nick pairs of context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1, the oracle of
+// tests/db/nicks.test.ts: what looks the same is the same nick. The expectations come from Unicode
+// (DerivedCoreProperties.txt Default_Ignorable_Code_Point, PropList.txt White_Space, UTS #51, Core Spec §5.21 and
+// §23.4) and S-01's decisions, never from private.normalize_nick.
 //
 // No imports on purpose: print-nick-pairs.ts prints this data with plain node for the side-by-side check against the
-// research table (plan, Phase 3). Invisible characters only as \u{…} escapes, never literal: an editor or a formatter
-// can drop them, and a review cannot see them.
+// research table (context/archive/2026-10-10-testing-lobby-foundation/plan.md, Faza 3). Invisible characters only as
+// \u{…} escapes, never literal: an editor or a formatter can drop them, and a review cannot see them.
 //
-// Left out by decision (plan, What We're NOT Doing): pairs whose look depends on the emoji decision of the F4 fix
-// (U+2764 with and without FE0F, # with and without FE0F, the flag of Scotland and the black flag) and compatibility
-// forms (full width, ligatures). Spaces are escapes too: one at the end of a string is just as easy to miss.
+// Left out by decision (context/archive/2026-10-10-testing-lobby-foundation/plan.md, What We're NOT Doing): pairs whose
+// look depends on the emoji decision of the F4 fix (U+2764 with and without FE0F, # with and without FE0F, the flag of
+// Scotland and the black flag) and compatibility forms (full width, ligatures). Spaces are escapes too: one at the end
+// of a string is just as easy to miss.
 
 export type NickOutcome = "nick_taken" | "joins";
 

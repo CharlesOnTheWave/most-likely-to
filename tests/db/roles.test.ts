@@ -12,7 +12,8 @@ import {
 } from "./support/rooms";
 
 // Roles (#4) through the attacker's door: REST/RPC with the publishable key, as anon and as signed-in hosts, past the
-// Worker. Oracle: research.md §2 (H1–H8, G1–G3) and PRD Access Control (prd.md:156-175), never the migration's code.
+// Worker. Oracle: context/archive/2026-10-10-testing-lobby-foundation/research.md §2 (H1–H8, G1–G3) and PRD Access
+// Control (prd.md:156-175), never the migration's code.
 //
 // A refusal is a specific result, never "some error": 42501 for a missing grant or a failed `with check`. RLS `using`
 // hides rows without an error, so a silent refusal is checked by its effect: read back by the owner or via room_link.
@@ -27,8 +28,8 @@ import {
 
 const anon = anonClient();
 
-// Look the same, differ in code points: "Ola" and "Ola" + ZERO WIDTH SPACE (research.md §3.1). Invisible characters
-// only as escapes.
+// Look the same, differ in code points: "Ola" and "Ola" + ZERO WIDTH SPACE
+// (context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1). Invisible characters only as escapes.
 const OLA = "Ola";
 const OLA_ZWSP = "Ola\u{200B}";
 
@@ -120,8 +121,9 @@ describe("role guards: hosts and guests stay inside their roles", () => {
     expect(result.error?.code).toBe("42501");
   });
 
-  // A room opens only as a lobby (research.md §2, H8). Host B already has an open room; a closed one does not clash
-  // with the one-open-room rule, so only the room rule itself can refuse.
+  // A room opens only as a lobby (context/archive/2026-10-10-testing-lobby-foundation/research.md §2, H8). Host B
+  // already has an open room; a closed one does not clash with the one-open-room rule, so only the room rule itself
+  // can refuse.
   it("H8: a host inserting a room that is already closed gets 42501", async () => {
     const result = await hostB.client
       .from("rooms")
@@ -272,7 +274,8 @@ describe("known holes F1: expected failures until S-02", () => {
     });
   });
 
-  // Oracle: what looks the same is the same nick (S-01 rule, the pair from research.md §3.1), the host's nick included.
+  // Oracle: what looks the same is the same nick (S-01 rule, the pair from
+  // context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1), the host's nick included.
   describe("H3: the host's nick follows the nick rule", () => {
     // No room of its own: the attack opens one by insert.
     let host: Host;
