@@ -23,16 +23,22 @@ export const POST: APIRoute = async (context) => {
 
   const room = await roomLink(supabase, link);
   if (!room.ok) return backToLink(room.reason);
-  if (room.status !== "open") return backToLink(room.status === "closed" ? "room_closed" : "room_unknown");
+  if (room.status === "closed") return backToLink("room_closed");
+  if (room.status === "unknown") return backToLink("room_unknown");
 
   // Someone already in the room (a guest whose cookie still works, or the host) goes back to it without a second entry:
-  // a double tap on "Dołącz", or the link opened again. Same rule as the /j/<code> page.
+  // a double tap on "Dołącz", or the link opened again, also once the game has started. Same rule as the /j/<code>
+  // page.
   const playerToken = context.cookies.get(playerCookieName(room.roomId))?.value;
   if (context.locals.user || playerToken) {
     const inside = await roomLobby(supabase, room.roomId, playerToken);
     if (!inside.ok) return backToLink(inside.reason);
     if (inside.lobby) return context.redirect(`/r/${room.roomId}`);
   }
+
+  // A game in play takes no one new (S-08 decides about late players). join_room says the same when the game starts
+  // between these two calls.
+  if (room.status === "started") return backToLink("game_started");
 
   const newToken = newPlayerToken();
   const result = await joinRoom(supabase, {

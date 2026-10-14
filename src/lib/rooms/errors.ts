@@ -1,5 +1,22 @@
-// Room errors travel in the URL only as codes; the page shows the Polish text from this map, so text typed into
-// `?error=` never reaches the screen (same as src/lib/auth-errors.ts).
+// Room errors travel only as codes: in the URL (`?error=`) after a form, in the JSON answer of a round's action. The
+// screen shows the Polish text from this map, so text typed into `?error=` never reaches the screen (same as
+// src/lib/auth-errors.ts).
+
+// The refusals of the round's actions (start, vote, reveal) and of joining a game in play, each with its own text
+// (audit G2). tests/unit/room-errors.test.ts checks this list against the plan.
+export const ROUND_REFUSALS = [
+  "game_started",
+  "not_enough_players",
+  "no_questions",
+  "invalid_question",
+  "already_voted",
+  "round_revealed",
+  "unknown_target",
+  "no_round",
+] as const;
+
+export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
+
 const MESSAGES: Record<string, string> = {
   invalid_nick: "Nick musi mieć od 1 do 20 znaków.",
   nick_taken:
@@ -11,6 +28,14 @@ const MESSAGES: Record<string, string> = {
   room_closed: "Ta gra jest zamknięta. Poproś hosta o nowy link.",
   room_unknown: "Nie znamy tego linku. Sprawdź, czy skopiował się cały.",
   service_unavailable: "Serwer jest chwilowo niedostępny. Spróbuj za kilka minut.",
+  game_started: "Gra już trwa. Do rozpoczętej gry nie można dołączyć.",
+  not_enough_players: "Do gry potrzeba co najmniej 3 graczy.",
+  no_questions: "W wybranych kategoriach nie ma pytań. Załóż nową grę z innymi kategoriami.",
+  invalid_question: "Nie udało się wylosować pytania. Spróbuj jeszcze raz.",
+  already_voted: "Twój głos jest już oddany. Nie da się go zmienić.",
+  round_revealed: "Wynik jest już odsłonięty. Głosowanie się skończyło.",
+  unknown_target: "Tej osoby nie ma w grze. Wybierz kogoś z listy.",
+  no_round: "Teraz nie trwa żadna runda.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";

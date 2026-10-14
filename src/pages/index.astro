@@ -15,7 +15,8 @@ const { user } = Astro.locals;
 const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
 const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
 
-// The host's open room, for "Wróć do pokoju" and for the question before "Nowa gra" closes it. If the database does not
+// The host's open room, in the lobby or with a game in play, for "Wróć do pokoju" and for the question before
+// "Nowa gra" closes it (create_room closes either and asks first when guests are in it). If the database does not
 // answer, the form still shows and creating the game reports the error.
 async function findOpenRoom() {
   const supabase = createClient(Astro.request.headers, Astro.cookies);
