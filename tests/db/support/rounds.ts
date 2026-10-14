@@ -4,8 +4,8 @@ import { isRecord } from "./rooms";
 
 // The round's contract (context/changes/first-live-round/plan.md, Faza 1 #4), called through the roles' own doors:
 // start_game and reveal_round as the signed-in host, cast_vote as a guest with its player token or as the host by its
-// session, room_lobby as either. The migration of phase 2 implements it; until then PostgREST answers every round call
-// with PGRST202 (no such function), the expected red of phase 1.
+// session, room_lobby as either. supabase/migrations/*_first_live_round.sql implements it (phase 2); before it,
+// PostgREST answered every round call with PGRST202 (no such function), the expected red of phase 1.
 //
 // seed* helpers throw on any failure: beforeAll only, as in rooms.ts. The other calls are probes: they return
 // { data, error } and never throw, so a test checks the exact answer, a refusal included.

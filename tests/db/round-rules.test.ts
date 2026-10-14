@@ -24,8 +24,9 @@ import {
 // A refusal is the function's answer { ok: false, reason }, never "some error"; a guest calling a host's function gets
 // 42501 naming the function (test-plan §6.2, G2).
 //
-// Until phase 2 adds the round functions, PostgREST answers each round call with PGRST202 (no such function): a suite
-// that starts a round in beforeAll is red as a whole, and every other test here is red on its own probe.
+// The round functions come from supabase/migrations/*_first_live_round.sql. Without them PostgREST answers each round
+// call with PGRST202 (no such function): a suite that starts a round in beforeAll is red as a whole, and every other
+// test here is red on its own probe.
 //
 // Two sign-ups per run, in beforeAll. One open room per host, so host A's rooms come one after another (confirm_close
 // closes the one before); Vitest runs the suites in order, each suite's beforeAll right before its tests.

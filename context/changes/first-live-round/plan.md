@@ -789,13 +789,13 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 
 #### Automated
 
-- [x] 1.1 Lokalnie zielone: `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build`
-- [ ] 1.2 CI na szkicu PR: `ci`, `smoke` i `e2e` zielone
-- [ ] 1.3 CI `db`: stare 53 testy bez zmian (40 zielonych, 13 oczekiwanych porażek); testy z `round-rules.test.ts` i `round-anonymity.test.ts` czerwone z powodu wpisanego w opisie commita (brak funkcji rundy, widoczny w logu `--reporter=verbose`), poza strażnikami wypisanymi tam jako zielone od początku; krok pgTAP uruchomiony, kontrola pozytywna zielona, każda asercja rundy osobno `not ok`
+- [x] 1.1 Lokalnie zielone: `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build` — ebcb9c5
+- [x] 1.2 CI na szkicu PR: `ci`, `smoke` i `e2e` zielone — ebcb9c5
+- [x] 1.3 CI `db`: stare 53 testy bez zmian (40 zielonych, 13 oczekiwanych porażek); testy z `round-rules.test.ts` i `round-anonymity.test.ts` czerwone z powodu wpisanego w opisie commita (brak funkcji rundy, widoczny w logu `--reporter=verbose`), poza strażnikami wypisanymi tam jako zielone od początku; krok pgTAP uruchomiony, kontrola pozytywna zielona, każda asercja rundy osobno `not ok` — ebcb9c5
 
 #### Manual
 
-- [x] 1.4 Karol akceptuje brzmienie dopisków w PRD i AGENTS.md
+- [x] 1.4 Karol akceptuje brzmienie dopisków w PRD i AGENTS.md — ebcb9c5
 
 ### Phase 2: Baza: urna, stany gry, domknięcie F1/F4
 
@@ -804,11 +804,11 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 - [ ] 2.1 CI `db`: wszystkie testy zielone, 0 oczekiwanych porażek; testy F1 (4) i F4 (9) przechodzą bez znacznika
 - [ ] 2.2 CI `db`: krok pgTAP zielony
 - [ ] 2.3 CI `smoke` i `e2e` zielone na niezmienionym kodzie serwera (dowód kolejności wdrożenia)
-- [ ] 2.4 Lokalnie zielone: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.4 Lokalnie zielone: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 
 #### Manual
 
-- [ ] 2.5 Przegląd migracji pod niezmienniki urny: żadna funkcja nie zapisuje w transakcji głosu nic poza wierszem głosującego i licznikiem, nie zwraca celu, nie ma kolumn czasu
+- [x] 2.5 Przegląd migracji pod niezmienniki urny: żadna funkcja nie zapisuje w transakcji głosu nic poza wierszem głosującego i licznikiem, nie zwraca celu, nie ma kolumn czasu
 
 ### Phase 3: Serwer rundy
 
