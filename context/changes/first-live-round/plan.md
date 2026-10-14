@@ -826,14 +826,14 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 
 #### Automated
 
-- [x] 4.1 `npm test` zielone (limiter, results)
-- [x] 4.2 `npm run lint` (z kontrolą literałów UI), `npx astro check`, `npm run build` zielone
-- [ ] 4.3 CI zielone
+- [x] 4.1 `npm test` zielone (limiter, results) — b5a753e
+- [x] 4.2 `npm run lint` (z kontrolą literałów UI), `npx astro check`, `npm run build` zielone — b5a753e
+- [x] 4.3 CI zielone — b5a753e
 
 #### Manual
 
-- [x] 4.4 Karol ocenia zrzuty wszystkich nowych stanów `/dev/room-states` (telefon i komputer) i akceptuje albo zgłasza poprawki
-- [x] 4.5 Fokus i czytnik ekranu: przyciski głosowania osiągalne klawiaturą, zmiana fazy ogłaszana
+- [x] 4.4 Karol ocenia zrzuty wszystkich nowych stanów `/dev/room-states` (telefon i komputer) i akceptuje albo zgłasza poprawki — b5a753e
+- [x] 4.5 Fokus i czytnik ekranu: przyciski głosowania osiągalne klawiaturą, zmiana fazy ogłaszana — b5a753e
 
 ### Phase 5: Test w przeglądarce i smoke z rundą
 
