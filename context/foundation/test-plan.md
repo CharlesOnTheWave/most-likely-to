@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-11
+> Last updated: 2026-10-14
 
 ## 1. Strategy
 
@@ -93,10 +93,11 @@ Klasyczna baza testów tego projektu. Narzędzia AI-native mają datę
 | Layer | Tool | Version | Notes |
 |---|---|---|---|
 | unit + integration | Vitest (checked: 2026-10-10) | 5.0.x (zainstalowana 5.0.3) | własny `vitest.config.ts` bez `getViteConfig` (styk z adapterem Cloudflare niepotwierdzony); trzy projekty: `unit` (`npm test`, lokalnie i w CI), `db` (`npm run test:db`, tylko CI) i `hooks` (`npm run test:hooks`, lokalnie i w CI); Node 22 w CI i 24 lokalnie (Vitest 5 wymaga Node ≥ 22.12) |
-| DB (uprawnienia, funkcje) | Vitest, projekt `db`: integracja przez REST/RPC (supabase-js) kluczem publishable, jako gość i jako zalogowany host; pgTAP (`supabase test db`) nie wybrany, bo potrzebuje Dockera także przy `--db-url` (checked: 2026-10-10) | Supabase CLI 2.120.0 w CI (stała wersja) | tylko w CI: job `db` uruchamia `supabase start` na jednorazowej bazie; lokalnie brak Dockera; bez klucza secret i `service_role` |
-| HTTP smoke | `npm run smoke` (własny skrypt Node) | Node 22 w CI, 24 lokalnie | 37 kroków (14 logowania + 23 pokoju; z `SMOKE_OAUTH=1` jeszcze 2): logowanie, start i powrót OAuth, pokój, wejście gościa, otwarcie linku bez ciasteczka i bez nowego gracza, powrót na nick; CI na lokalnym Supabase i produkcja po pushu; zostawia pokoje w bazie produkcyjnej |
+| DB (uprawnienia, funkcje) | Vitest, projekt `db`: integracja przez REST/RPC (supabase-js) kluczem publishable, jako gość i jako zalogowany host; role nie idą przez pgTAP, bo ten potrzebuje Dockera także przy `--db-url` (checked: 2026-10-10) | Supabase CLI 2.120.0 w CI (stała wersja) | tylko w CI: job `db` uruchamia `supabase start` na jednorazowej bazie; lokalnie brak Dockera; bez klucza secret i `service_role` |
+| DB, widok twórcy (katalog, granty, publikacja, resztki po rundzie) | pgTAP (`supabase test db`, pliki `supabase/tests/*.test.sql`) jako właściciel bazy (`postgres`) (checked: 2026-10-14) | Supabase CLI 2.120.0 w CI (stała wersja) | tylko w CI: krok joba `db` po Vitest na tej samej jednorazowej bazie, także po czerwonym Vitest; lokalnie potrzebuje Dockera, a z `--linked` trafiłby w produkcję, więc `supabase test` pyta (`.claude/settings.json`); jedyny wyjątek od „tylko klucz publishable” (§6.2) |
+| HTTP smoke | `npm run smoke` (własny skrypt Node) | Node 22 w CI, 24 lokalnie | 46 kroków (14 logowania + 24 pokoju + 8 rundy; z `SMOKE_OAUTH=1` jeszcze 2; z `SMOKE_ROUND=0` 8 kroków rundy pominiętych, więc 38): logowanie, start i powrót OAuth, pokój, wejście gościa, otwarcie linku bez ciasteczka i bez nowego gracza, powrót na nick, nick z U+FE0F zajęty, runda (start, odmowa wejścia po starcie, 3 głosy, odsłona z liczbami, głos po odsłonie, powrót z linku); CI na lokalnym Supabase i produkcja po pushu; zostawia pokoje w bazie produkcyjnej |
 | sonda live-sync | `npm run live-probe` | Node 24 lokalnie | ręcznie, na produkcji; nie w CI |
-| e2e | Playwright Test (checked: 2026-10-11) | 1.64.0 | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju; tylko w CI (job `e2e`, lokalny Supabase z Realtime), bo lokalnie `.dev.vars` wskazuje na produkcję i konfiguracja odmawia startu; dziś szkielet w lobby (M3L4), runda z Phase 3; uruchamianie i ograniczenia: `context/foundation/test-stack.md` |
+| e2e | Playwright Test (checked: 2026-10-11) | 1.64.0 | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju; tylko w CI (job `e2e`, lokalny Supabase z Realtime), bo lokalnie `.dev.vars` wskazuje na produkcję i konfiguracja odmawia startu; dziś lobby (M3L4) i runda 3 graczy bez pomiaru czasu (`round.spec.ts`, S-02); czas i zerwane połączenie w rundzie z Phase 3; uruchamianie i ograniczenia: `context/foundation/test-stack.md` |
 | accessibility | none yet | — | lint `jsx-a11y` w `npm run lint`; kontrast sprawdzany ręcznie przy zmianach UI |
 | (optional) AI-native | agent rozgrywa rundę w przeglądarce (Claude in Chrome — checked: 2026-10-08) | n/a | When NOT to use: zamiast testów deterministycznych; do pomiaru 2 s; na produkcji z prawdziwymi graczami |
 | agent hooks | hooki Claude Code w `.claude/settings.json`, skrypty Node w `.claude/hooks/` (checked: 2026-10-11) | Claude Code (hooki `PostToolUse`, `Stop`) | dowód: `npm run test:hooks` (`tests/hooks/`, lokalnie i w CI); When NOT to use: jako zamiennik CI albo do wolnych testów bazy i smoke |
@@ -118,8 +119,8 @@ wdrożenia tej fazy; wcześniej jest `planned`.
 | lint (z kontrolą literałów UI) + `astro check` + build | local + CI | required | błędy składni i typów, kolory spoza tokenów |
 | HTTP smoke | CI (lokalny Supabase) + produkcja po pushu | required | zepsute logowanie, wejście do pokoju, konfiguracja środowiska |
 | unit (`npm test`) | local + CI | required | regresje reguł w kodzie TS (dziś: czytelne odmowy na drodze gościa) |
-| integracja bazy (`npm run test:db`: uprawnienia ról, reguła nicku) | CI only (job `db`; lokalnie brak Dockera) | required w sensie reguły PR z `AGENTS.md`: zmiany bazy i pokoju są scalane tylko na zielonym CI, także `db`; technicznie bramka zatrzyma wdrożenie dopiero po §3 Phase 4 | regresje uprawnień ról i reguły nicku; znane dziury F1 i F4 jako oczekiwane porażki do naprawy w S-02 |
-| e2e na rundzie z kilkoma graczami | CI | required after §3 Phase 3 | zepsuta runda widziana przez graczy |
+| integracja bazy (`npm run test:db`: uprawnienia ról, reguła nicku, reguły rundy, anonimowość) + pgTAP (`supabase test db`: widok twórcy) | CI only (job `db`; lokalnie brak Dockera) | required w sensie reguły PR z `AGENTS.md`: zmiany bazy i pokoju są scalane tylko na zielonym CI, także `db`; technicznie bramka zatrzyma wdrożenie dopiero po §3 Phase 4 | regresje uprawnień ról, reguły nicku i reguł rundy; para „kto na kogo” albo liczby przed odsłoną w odpowiedzi; urna logowana, z grantem, w publikacji albo z resztkami po rundzie; znane dziury F1 i F4 domknięte w S-02 |
+| e2e na rundzie z kilkoma graczami | CI (job `e2e`) | required od 2026-10-14 (S-02, `round.spec.ts`) w sensie reguły PR z `AGENTS.md`; technicznie bramka zatrzyma wdrożenie dopiero po §3 Phase 4 | zepsuta runda widziana przez graczy: inne pytanie albo inna odsłona na którymś ekranie, liczby niezgodne z głosami |
 | czerwone CI zatrzymuje wdrożenie | GitHub → Cloudflare | required after §3 Phase 4 | dziś Workers Builds wdraża `main` mimo czerwonego CI |
 | hooki agenta: po edycji ESLint pliku, literały UI i powiązane testy unit; na koniec tury (tylko gdy zmienił się kod) ESLint zmienionych plików, literały UI, testy unit i `astro check`, z jednym odesłaniem agenta | local (agent loop) | required od 2026-10-11 (M3L3; właściciel przyspieszył wiersz „recommended after §3 Phase 4”) | błędy lintu, typów i testów unit w chwili edycji, zanim agent odda turę; nie łapie zachowania w przeglądarce ani uprawnień bazy |
 | sonda live-sync | produkcja, ręcznie | optional (przed prawdziwym wieczorem) | budżet 2 s w prawdziwej sieci |
@@ -144,20 +145,29 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
 
 - **Location**: `tests/db/**/*.test.ts` (projekt `db`). Wzory:
   - `canary.test.ts`: jedna odmowa i jedna kontrola pozytywna;
-  - `roles.test.ts`: role gościa i hosta, znane dziury F1;
-  - `nicks.test.ts`: reguła nicku z tabeli par, znane dziury F4.
+  - `roles.test.ts`: role gościa i hosta (F1, domknięte w S-02);
+  - `nicks.test.ts`: reguła nicku z tabeli par (F4, domknięte w S-02);
+  - `round-rules.test.ts`: reguły rundy z ręcznie rozpisanym scenariuszem (głosy i oczekiwane liczby wpisane w teście);
+  - `round-anonymity.test.ts`: anonimowość przez drzwi ról (wzorzec w §6.3).
+- **Widok twórcy** (pgTAP): `supabase/tests/*.test.sql`, czyli to, czego klucz publishable nie widzi (katalog, granty, publikacja, resztki). Wzór: `round_creator_view.test.sql`.
+  - Kontrola pozytywna pierwsza w pliku.
+  - Asercje przez funkcje pgTAP, które przy brakującym obiekcie dają `not ok`, a nie błąd kończący plik: `table_privs_are`, `hasnt_column`, `to_regclass(…)` zamiast `::regclass`, wywołania przez `lives_ok` albo przez helper, który zwraca błąd jako tekst.
+  - Role gry przez `set local role` i `request.jwt.claims` (helper `call_as`), hosty wstawione wprost do `auth.users`. Cały plik kończy się `rollback`.
+  - Liczy tylko swoje pokoje i rundy, bo wcześniej na tej samej bazie biegł zestaw Vitest.
 - **Helpers** (`tests/db/support/`):
   - `clients.ts`: `anonClient()` (gość bez sesji), `newHost()` (rejestracja, od razu z sesją) oraz `newLinkToken` i `newPlayerToken` (te same generatory co Worker);
   - `rooms.ts`: `seedRoom`, `seedGuest`, `readOwnRoom`, `hostLobbyNicks`. Seedują prawdziwymi drzwiami: pokój przez `create_room` jako host, gość przez `join_room` jako `anon`. Przy błędzie rzucają, więc używaj ich tylko w `beforeAll`;
-  - `nick-pairs.ts`: tabela par nicków (same dane). `node tests/db/support/print-nick-pairs.ts` wypisuje ją do porównania przez człowieka z `context/archive/2026-10-10-testing-lobby-foundation/research.md` §3.1.
+  - `nick-pairs.ts`: tabela par nicków (same dane). `node tests/db/support/print-nick-pairs.ts` wypisuje ją do porównania przez człowieka z `context/archive/2026-10-10-testing-lobby-foundation/research.md` §3.1;
+  - `rounds.ts`: funkcje rundy drzwiami ról. `seedStartGame`, `seedVote`, `seedReveal` rzucają (tylko `beforeAll`); `startGame`, `castVote`, `revealRound`, `roomLobby`, `roomLink`, `joinRoom` zwracają `{ data, error }`. Do tego stałe zbiorów kluczy (`*_KEYS`) i `keysOf`.
 - **Oracle**: z researchu fazy (PRD Access Control, decyzje właściciela, pliki Unicode), nigdy z implementacji. `private.normalize_nick` nie jest przyznana `anon`, więc testy nicku idą przez `join_room` jako gość.
 - **Roles**: tylko klucz publishable (`sb_publishable_…`), jako `anon` albo jako host po `signUp`. Nigdy klucz secret ani `service_role`, także do seedowania: omija uprawnienia i daje fałszywą zieleń.
+  - Jedyny wyjątek to pgTAP (widok twórcy): czyta bazę jako właściciel. Rundę gra jednak jako role gry (`set local role`, `request.jwt.claims`), a odmowy ról sprawdza dalej Vitest.
 - **Refusal**: odmowa to konkretny wynik, nigdy „jakiś błąd”.
   - Brak grantu albo nieudane `with check`: `error.code` równe `42501`.
   - Gdy funkcja jest przyznana, a coś w jej środku nie, rola też dostaje `42501`, tylko z innym komunikatem. Test, że odmówiła konkretna funkcja, sprawdza więc także, że komunikat ją nazywa (G2 w `roles.test.ts`).
   - Cicha RLS (`using`) zwraca 0 wierszy bez błędu. Sprawdzaj skutek: właściciel czyta ponownie, `room_link` daje ten sam status, lista graczy się nie zmienia.
 - **Positive control**: każdy plik ma test, w którym rola robi coś dozwolonego i to działa. Bez niego zły adres albo brak sesji wyglądałyby jak odmowa wszędzie.
-- **Known hole**: `it.fails` z prawdziwym oczekiwaniem z wyroczni i nazwą zaczynającą się od „znana dziura <F> → <zmiana>: ” (dziś F1 i F4 → S-02).
+- **Known hole**: `it.fails` z prawdziwym oczekiwaniem z wyroczni i nazwą zaczynającą się od „znana dziura <F> → <zmiana>: ” (F1 i F4 domknęła S-02; dziś żadnej).
   - Nigdy test, który zapisuje dziurę jako dozwolone zachowanie. Nigdy `skip` ani `todo`, bo milczą w wyniku.
   - Gdy naprawa przyjdzie, test zrobi się czerwony. Zdejmij znacznik, nigdy nie usuwaj testu.
 - **Preconditions**: `test.fails` odwraca każdy błąd, nie tylko asercję: awaria sieci albo padnięte seedowanie też dałyby „oczekiwaną porażkę”. Dlatego:
@@ -167,11 +177,11 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   - jedyne, co może zawieść, to końcowe `expect`;
   - gdy wyrocznia oczekuje danych, a nie odmowy błędem: jeśli końcowe wywołanie zwróciło `error` (awaria, a nie odpowiedź funkcji), ciało robi `return` przed `expect`. Test wtedy przechodzi i `test.fails` pokazuje go na czerwono, zamiast liczyć awarię jako oczekiwaną porażkę;
   - asercja sprawdza tylko pola z wyroczni (`toMatchObject`, nie `toEqual`), żeby po naprawie test zrobił się czerwony, nawet gdy odpowiedź dostanie nowe pole.
-- **Sign-up limit**: lokalny Supabase przyjmuje 30 rejestracji i logowań na 5 minut z jednego IP (`sign_in_sign_ups` w `supabase/config.toml`). Jeden przebieg zakłada dziś 7 kont: `canary` 0, `roles` 6, `nicks` 1.
+- **Sign-up limit**: lokalny Supabase przyjmuje 30 rejestracji i logowań na 5 minut z jednego IP (`sign_in_sign_ups` w `supabase/config.toml`). Jeden przebieg zakłada dziś 10 kont: `canary` 0, `roles` 6, `nicks` 1, `round-anonymity` 1, `round-rules` 2. pgTAP nie rejestruje kont (hosty wstawia wprost do `auth.users`).
   - Nowy plik: jeden host na plik.
   - Host ma najwyżej jeden otwarty pokój, więc kolejny pokój tego samego hosta zakładaj przez `seedRoom(host, { confirmClose: true })`; zamyka on poprzedni.
   - Pliki biegną po kolei (`fileParallelism: false`).
-- **Run**: tylko w CI, w jobie `db`. Job uruchamia `supabase start`, zapisuje `API_URL` i `PUBLISHABLE_KEY` jako `TEST_SUPABASE_URL` i `TEST_SUPABASE_KEY`, a potem `npm run test:db -- --reporter=verbose`, więc log wymienia z nazwy każdą znaną dziurę. Lokalnie nie ma Dockera.
+- **Run**: tylko w CI, w jobie `db`. Job uruchamia `supabase start`, zapisuje `API_URL` i `PUBLISHABLE_KEY` jako `TEST_SUPABASE_URL` i `TEST_SUPABASE_KEY`, a potem `npm run test:db -- --reporter=verbose`, więc log wymienia z nazwy każdą znaną dziurę. Po nim `supabase test db` (pgTAP) na tej samej bazie, także po czerwonym Vitest (`if: success() || failure()`), więc jeden przebieg pokazuje oba zestawy. Lokalnie nie ma Dockera.
   - Bezpiecznik (`tests/db/support/env.ts`, wołany w `globalSetup`) przerywa przebieg przed pierwszym żądaniem, gdy brakuje zmiennych, adres nie jest `127.0.0.1` ani `localhost` albo klucz nie zaczyna się od `sb_publishable_`.
   - Poluzowanie bezpiecznika wymaga w tej samej zmianie reguły `ask` dla `Bash(npm run test:db*)` w `.claude/settings.json` (lessons.md, wpis 1), bo zestaw zakłada konta i pokoje.
 - **Invisible characters**: w źródle tylko jako ucieczki `\u{…}`, nigdy dosłownie. Edytor albo formatter może je zgubić, a przegląd ich nie zobaczy.
@@ -179,32 +189,62 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   1. Tymczasowy commit na gałęzi psuje dokładnie jedną rzecz (tymczasowa migracja albo edycja strony). Opis commita wymienia testy, które mają zaświecić na czerwono.
   2. Push gałęzi i porównanie CI z listą. Inny czerwony test albo przewidziany, który został zielony, znaczy, że test nie pilnuje tego, co deklaruje: zatrzymaj się i wyjaśnij przyczynę.
   3. `git revert` tego commita, push, CI znów zielone.
-  4. Nigdy `npx supabase db push` tymczasowej migracji. Na końcu `git diff main...HEAD -- supabase/migrations` jest pusty.
+  4. Nigdy `npx supabase db push` tymczasowej migracji. Na końcu `git diff main...HEAD -- supabase/migrations` nie pokazuje tymczasowej migracji: jest pusty albo zawiera tylko migracje samej zmiany.
+  - Strażnicy rundy (S-02), po jednym alarmie na strażnika:
+    - (a) tymczasowa migracja zmienia `private.ballot_boxes` na logowaną: ma zaświecić tylko asercja pgTAP „private.ballot_boxes is unlogged”;
+    - (b) `cast_vote` zwraca dodatkowo liczbę głosów celu: ma zaświecić tylko „cast_vote answers exactly { ok: true }, to a guest and to the host” w `round-anonymity.test.ts`, bo dokładny zbiór kluczy odpowiedzi głosu sprawdza tylko ten test (`round-rules.test.ts` używa `toMatchObject`).
 
 ### 6.3 Adding an anonymity check
 
-- TBD — see §3 Phase 2 (wzorzec: po rundzie żaden kanał nie pozwala połączyć głosującego z celem głosu).
+Cel (ryzyko #1): po rundzie żadna rola i żaden kanał nie łączy głosującego z celem głosu, a przed odsłoną nikt nie widzi liczb. Dwie warstwy, obie tylko w CI (job `db`).
+
+- **Location**:
+  - `tests/db/round-anonymity.test.ts` (Vitest): drzwiami ról, kluczem publishable, jako gość i jako host (§6.2);
+  - `supabase/tests/round_creator_view.test.sql` (pgTAP): widok twórcy, czyli to, czego klucz publishable nie widzi.
+- **Oracle**: PRD Non-Goals i NFR anonimowości, AGENTS.md Hard Rules, decyzja D1 (urna, która znika: `context/changes/first-live-round/research.md`). Nigdy implementacja.
+- **Exact key sets** (Vitest): odpowiedź i stan sprawdzane pełnym zbiorem kluczy (`keysOf` i stałe `*_KEYS` z `tests/db/support/rounds.ts`, `toEqual`), nie „polami, które znamy”. Nowy klucz w odpowiedzi to droga wycieku pary albo liczby przed odsłoną.
+  - Przyjęty głos to dokładnie `{ ok: true }`. Odmowa to dane `{ ok: false, reason }` bez `error`, bo błąd Postgresa niósłby `details` z wartościami wiersza.
+  - `round` w trakcie głosowania ma tylko klucze głosowania, bez liczb, widziane jako gość, który zagłosował, gość, który nie, i host.
+  - Lista „kto zagłosował” idzie w kolejności miejsc, nie oddania. Scenariusz celowo głosuje w innej kolejności niż miejsca.
+  - Po odsłonie tylko klucze odsłony, a każdy wynik to dokładnie `nick` i `votes`.
+  - Dokładny zbiór kluczy odpowiedzi głosu sprawdza tylko jeden test (próbny alarm (b) w §6.2). Inne pliki sprawdzają przyjęty głos przez `toMatchObject`.
+- **`private` niewystawiony**: REST na każdą tabelę rundy, ze schematem `private` i bez, jako gość i jako host, daje konkretny kod (`PGRST106`, `PGRST205`) i `data` równe `null`. Strażnik nie zakłada rundy, więc nie zależy od funkcji rundy.
+- **Porzucona runda**: pokój zamknięty w trakcie rundy („Nowa gra” z potwierdzeniem) zwraca `closed` i żadnych liczb.
+- **pgTAP (widok twórcy)**:
+  - tabele urny (`ballot_boxes`, `round_voters`) nielogowane: `relpersistence = 'u'`;
+  - każda tabela rundy bez uprawnień dla `anon` i `authenticated`, poza publikacją `supabase_realtime`, bez kolumn czasu, `serial` i `identity`; `round_results` bez kolumny głosującego; `authenticated` bez `usage` na `private`;
+  - brak resztek: 0 wierszy urny po odsłonie, po porzuceniu rundy i po sprzątaniu gier rozpoczętych ponad 12 h temu (`private.close_stale_games()` wołane wprost; harmonogram sprawdzany wierszem w `cron.job`, bez czekania);
+  - pisanie asercji: §6.2, „Widok twórcy”.
+- **Anti-pattern**: test samych kolumn tabeli; rola, która omija uprawnienia (klucz secret w Vitest); asercja „brak liczby X” zamiast pełnego zbioru kluczy.
 
 ### 6.4 Adding an e2e multi-player test
 
-Dziś szkielet w lobby (M3L4, 2026-10-11); odsłona rundy dojdzie w §3 Phase 3 na tym samym wzorcu (kilku graczy w jednym pokoju widzi tę samą odsłonę).
+Dziś lobby (M3L4, 2026-10-11) i jedna runda 3 graczy (S-02, 2026-10-14). Pomiar czasu i zerwane połączenie w rundzie dojdą w §3 Phase 3 na tym samym wzorcu.
 
 - **Location**: `tests/e2e/*.spec.ts` (Playwright, `playwright.config.ts`). Wzory:
   - `seed.spec.ts`: host widzi nowego gościa bez odświeżania (dzwonek);
-  - `lobby-connection-drop.spec.ts`: ekran, któremu padło połączenie, po jego powrocie sam pokazuje, kto wszedł w międzyczasie.
+  - `lobby-connection-drop.spec.ts`: ekran, któremu padło połączenie, po jego powrocie sam pokazuje, kto wszedł w międzyczasie;
+  - `round.spec.ts`: host i 2 gości grają rundę; to samo pytanie i ta sama odsłona na 3 ekranach, liczby zgodne z głosami.
 - **Run**: tylko w CI, w jobie `e2e` (lokalny Supabase z Realtime, konto hosta zakładane w jobie). Lokalnie działa tylko `npx playwright test --list`.
   - Bezpiecznik (`tests/e2e/support/env.ts`, wołany w `playwright.config.ts`) przerywa przed buildem, gdy `.dev.vars` nie wskazuje na `127.0.0.1` ani `localhost` albo klucz nie zaczyna się od `sb_publishable_`. Build wkleja `.dev.vars` do serwera, więc to ten plik decyduje, gdzie trafiają pokoje.
   - Poluzowanie bezpiecznika wymaga w tej samej zmianie reguły `ask` dla `Bash(npx playwright test*)` (lessons.md, wpis 1).
 - **Players**: host to `page` z zapisaną sesją (projekt `setup`). Każdy gość to osobny kontekst z `newGuestContext(browser)`: zwykły `browser.newContext()` dziedziczy sesję hosta. Kroki w `tests/e2e/support/room.ts`:
-  - `openRoom`: pokój przez endpoint za „Załóż grę” (z `confirm_close=1`), potem ekran hosta i jego pierwsze pobranie listy;
+  - `openRoom`: pokój przez endpoint za „Załóż grę” (z `confirm_close=1`), potem ekran hosta i jego pierwsze pobranie listy; zwraca też nick hosta (`hostNick`);
   - `joinRoom`: formularz gościa z ponowieniem, bo tekst wpisany przed hydratacją ginie;
   - `playerRow`: wiersz gracza w liście „Gracze”.
+- **Round**: kroki w `tests/e2e/support/round.ts`, każdy przez ekran, po roli i dostępnej nazwie:
+  - `startGame`: „Zacznij grę”, gdy przycisk jest aktywny (co najmniej 3 graczy);
+  - `roundQuestion`: nagłówek „Kto z nas najprawdopodobniej …?”. Tekst z ekranu hosta porównany z ekranami gości. „Nie udało się wczytać pytania.” nie pasuje do wzorca, więc też jest porażką;
+  - `castVote`: radio z nickiem albo „Wstrzymuję się”, potem „Zagłosuj”. `voteConfirmation` to „Głos oddany”: sprawdzaj go tylko przed ostatnim głosem, bo ostatni głos sam odsłania wynik i potwierdzenie może zniknąć, zanim test je zobaczy;
+  - `expectReveal`: tabela w regionie „Wynik” (wiersz gracza, ostatnia komórka), liczba wierszy (nikt nie zniknął ani nie przybył), to samo pytanie i „Wstrzymało się: N”. Tabela jest w obu widokach („Koło” i „Paski”), więc przełącznik nie jest potrzebny.
+  - Wyrocznia: liczby rozpisane ręcznie w specu z głosów testu, nigdy liczone.
+  - Przejście fazy na cudzym ekranie czeka `ROUND_UPDATE_MS` (10 s: dzwonek, ogranicznik pobierania i wolny runner). To mniej niż `LOBBY_POLL_MS`, więc test nie czeka celowo na odpytywanie, ale też nie mierzy dzwonka (to robi seed). Spec rundy woła `test.slow()`, bo 3 przeglądarki nie mieszczą się w 30 s.
 - **Bell vs poll**: ekran sam pobiera listę co `LOBBY_POLL_MS` (15 s), więc „lista się zmieniła” niczego nie dowodzi, jeśli test trwał dłużej. Test dzwonka albo powrotu połączenia:
   1. czeka na pierwsze pobranie listy (`nextListFetch`, czekanie zaczyna się przed `goto`), zanim ktoś wejdzie;
   2. mierzy czas od załadowania ekranu i sprawdza, że jest krótszy niż `LOBBY_POLL_MS`.
 - **Dropped connection**: `sleepableRealtime(page)` (`tests/e2e/support/realtime.ts`) przed wejściem do pokoju. `sleep()` gubi wiadomości serwera, `wake()` zamyka gniazdo, a klient sam łączy się ponownie. Przed asercją test sprawdza, że dzwonek zadzwonił (host widzi nowego gracza) i że uśpiony ekran go zgubił (`missed() > 0`).
 - **Serial**: `workers: 1`, bo jeden host ma najwyżej jeden otwarty pokój. Nicki z `uniqueNick` (najwyżej 20 znaków).
-- **Cleanup**: test zamyka konteksty gości. Pokoje i gracze zostają w bazie, bo do S-13 nie ma czym ich usunąć; baza joba jest jednorazowa. Zestaw przechodzi dwa razy z rzędu na jednej bazie (`--repeat-each=2`, 2026-10-11).
+- **Cleanup**: test zamyka konteksty gości. Pokoje, gracze i liczby odsłoniętych rund zostają w bazie, bo do S-13 nie ma czym ich usunąć; baza joba jest jednorazowa. Zestaw przechodzi dwa razy z rzędu na jednej bazie (`--repeat-each=2`, 2026-10-11).
 - **No 2 s here**: budżet 2 s z PRD mierzy sonda na produkcji, nie e2e (§2, #2: pomiar 2 s na lokalnym serwerze to antywzorzec).
 - **Break-check**: jak w §6.2, tymczasowy commit na gałęzi (edycja ekranu albo endpointu) z listą testów, które mają zaświecić na czerwono. Próbne alarmy z 2026-10-11 trafiły dokładnie:
   - dzwonek po wejściu gościa wyłączony (`join.ts`): oba testy czerwone, seed na „host widzi gościa”, `lobby-connection-drop` na warunku wstępnym „host widzi C”;
@@ -212,12 +252,17 @@ Dziś szkielet w lobby (M3L4, 2026-10-11); odsłona rundy dojdzie w §3 Phase 3 
 
 ### 6.5 Adding a smoke step
 
-- **Location**: `scripts/smoke.mjs` (lista kroków; kroki pokoju po krokach logowania).
+- **Location**: `scripts/smoke.mjs` (lista kroków; kroki pokoju po krokach logowania, a w nich kroki rundy z `roundSteps()` między lobby a zamknięciem pokoju).
 - **Run locally**: `npm run smoke` przy działającym serwerze; potrzebuje `.dev.vars` z `SMOKE_EMAIL` / `SMOKE_PASSWORD`; pyta przed uruchomieniem, bo zostawia pokoje w bazie produkcyjnej.
 - **Production**: `BASE_URL=https://most-likely-to.charlesonthewave.workers.dev npm run smoke` po każdym pushu na `main`.
+  - `SMOKE_ROUND=0` pomija dokładnie kroki rundy i wypisuje je jako `SKIP`: produkcja ze starym Workerem między `npx supabase db push` a scaleniem (wdrożenie „baza, potem kod”). Też pyta (reguła `ask` dla `SMOKE_ROUND=* npm*smoke*`).
+- **JSON steps**: `request(path, { method: "POST", json, cookies, readBody: true })` wysyła treść JSON z `Content-Type: application/json` i `Origin` równym `BASE_URL`, tak jak ekran pokoju. Bez nich endpointy rundy odpowiadają 415 albo 403 (`src/lib/rooms/json-route.ts`). Akcje rundy idą przez `act(action, body, jar)`.
+  - Odpowiedź sprawdzana całym tekstem (`body: /^\{"ok":true\}$/`, odmowa `/^\{"error":"<kod>"\}$/`), więc dodatkowy klucz w odpowiedzi (np. cel albo liczba przy głosie) zaświeci krok.
+  - Stan odsłony sprawdza `body` z osobnymi warunkami (`(?=.*…)`) na fazę, wyniki w kolejności miejsc, wstrzymania i liczbę głosów, więc kolejność kluczy w odpowiedzi nie ma znaczenia.
+- **No pairs in the output**: nazwa kroku i nic, co skrypt wypisuje, nie mówi, kto na kogo głosował („Ola votes”, nigdy „Ola votes for …”). Cel głosu jest tylko w treści żądania.
 - **Expectations**: trzeci element kroku to obiekt oczekiwań albo funkcja, gdy wartość znana jest dopiero po wcześniejszych krokach (np. id pokoju). Klucze (`status`, `location`, `exact`, `contains`, `body`, `cookie`, `noCookie`, `httpOnly`) opisuje komentarz nad pętlą porównań. Przy porażce skrypt wypisuje oczekiwanie, także wyrażenie dla `body`.
 - **No cookie**: `noCookie: "<tekst>"` znaczy, że żadne ciasteczko ustawione w tym kroku nie ma tego tekstu w nazwie. Liczą się tylko ciasteczka ustawione przez ten krok, a nie te, które zostały w słoiku. Krok z kilkoma żądaniami zbiera ciasteczka wszystkich odpowiedzi. Wzór: `openLinkThreeTimes` (otwarcie linku trzy razy nie ustawia `mlt_player_`).
-- **Jars**: każdy gracz ma własny słoik ciasteczek (`hostJar`, `olaJar`, `new Map()` dla jednorazowego gościa).
+- **Jars**: każdy gracz ma własny słoik ciasteczek (`hostJar`, `olaJar`, `secondGuestJar` dla drugiego gościa, który głosuje w rundzie, `new Map()` dla jednorazowego gościa).
 - **Break-check**: nowy krok, który pilnuje zakazu, sprawdź raz próbnym alarmem jak w §6.2 (tymczasowa edycja strony zamiast migracji).
 
 ### 6.6 Per-rollout-phase notes
