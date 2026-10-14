@@ -789,13 +789,13 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 
 #### Automated
 
-- [ ] 1.1 Lokalnie zielone: `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build`
+- [x] 1.1 Lokalnie zielone: `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build`
 - [ ] 1.2 CI na szkicu PR: `ci`, `smoke` i `e2e` zielone
 - [ ] 1.3 CI `db`: stare 53 testy bez zmian (40 zielonych, 13 oczekiwanych porażek); testy z `round-rules.test.ts` i `round-anonymity.test.ts` czerwone z powodu wpisanego w opisie commita (brak funkcji rundy, widoczny w logu `--reporter=verbose`), poza strażnikami wypisanymi tam jako zielone od początku; krok pgTAP uruchomiony, kontrola pozytywna zielona, każda asercja rundy osobno `not ok`
 
 #### Manual
 
-- [ ] 1.4 Karol akceptuje brzmienie dopisków w PRD i AGENTS.md
+- [x] 1.4 Karol akceptuje brzmienie dopisków w PRD i AGENTS.md
 
 ### Phase 2: Baza: urna, stany gry, domknięcie F1/F4
 

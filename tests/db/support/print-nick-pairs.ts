@@ -1,7 +1,8 @@
 import { NICK_PAIRS, codePoints } from "./nick-pairs.ts";
 
-// Prints the nick pairs straight from the test's data, for the side-by-side check against research.md §3.1 (plan,
-// Phase 3): generated, never copied by hand, or the check proves nothing. Plain node, no database:
+// Prints the nick pairs straight from the test's data, for the side-by-side check against
+// context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1 (plan.md there, Faza 3): generated, never
+// copied by hand, or the check proves nothing. Plain node, no database:
 //   node tests/db/support/print-nick-pairs.ts
 // The .ts extension in the import is what lets node run this file without a build step.
 

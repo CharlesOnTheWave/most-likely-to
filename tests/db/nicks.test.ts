@@ -4,9 +4,10 @@ import { NICK_PAIRS, nickLabel } from "./support/nick-pairs";
 import { hostLobbyNicks, seedGuest, seedRoom, type OwnRoom } from "./support/rooms";
 
 // Nicks on the guest's way in (#6) through the guest's door: join_room as anon with the publishable key, past the
-// Worker. Oracle: the pair table of research.md §3.1, kept in support/nick-pairs.ts (Unicode sources, S-01 decisions),
-// never private.normalize_nick, which anon cannot call anyway. The table guards both ways: look-alikes get nick_taken
-// and visibly different nicks join, so an over-eager fix in S-02 turns red too.
+// Worker. Oracle: the pair table of context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1, kept in
+// support/nick-pairs.ts (Unicode sources, S-01 decisions), never private.normalize_nick, which anon cannot call anyway.
+// The table guards both ways: look-alikes get nick_taken and visibly different nicks join, so an over-eager fix in
+// S-02 turns red too.
 //
 // Known holes (F4, fixed by S-02) are test.fails with the oracle's expectation. test.fails passes on any failure, a
 // crashed seed or a network error too, so, as in roles.test.ts: preconditions (the host, a fresh room, the taken nick)
@@ -53,7 +54,7 @@ function joined(room: OwnRoom) {
 
 // Each pair in a room of its own, so a probe that got in (a known hole today) cannot change the next pair. The test
 // name shows the code points, so the log reads like the research table; the number matches print-nick-pairs.ts.
-describe("nick pairs: what looks the same is the same nick (research.md §3.1)", () => {
+describe("nick pairs: what looks the same is the same nick (context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1)", () => {
   for (const [index, pair] of NICK_PAIRS.entries()) {
     describe(`pair ${index + 1}`, () => {
       let room: OwnRoom;
