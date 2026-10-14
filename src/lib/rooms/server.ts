@@ -185,21 +185,19 @@ export async function roomLobby(
   return parsed.ok ? { ok: true, lobby: parsed.value } : unexpectedShape("room_lobby", parsed.field, roomId);
 }
 
-// What a screen shows instead of a question the base does not have (the database checks only the id's format): the
-// round goes on, and the log says which id.
-export const UNKNOWN_QUESTION_TEXT = "(nie udało się wczytać pytania)";
 const QUESTION_ID_PATTERN = /^[a-z0-9-]+-[0-9]{3}$/;
 
 // The room's state for its screen: the round gets its question's text from the base, on the server only
-// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera").
+// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"). A question the base does not have (the
+// database checks only the id's format) goes out as null: the round goes on, the screen says it could not load the
+// question, and the log says which id.
 export function roomView(lobby: LobbyState, roomId: string): RoomView {
   const { round } = lobby;
   if (round === null) return { ...lobby, round: null };
-  let question = questionText(round.question_id);
+  const question = questionText(round.question_id);
   if (question === null) {
     const code = QUESTION_ID_PATTERN.test(round.question_id) ? round.question_id : undefined;
     logEvent("error", { op: "question_text", step: "unknown_question", roomId, code });
-    question = UNKNOWN_QUESTION_TEXT;
   }
   return { ...lobby, round: { ...round, question } };
 }

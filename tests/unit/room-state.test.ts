@@ -165,9 +165,19 @@ describe("parseRoomView", () => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
 
+  // A question the base does not have comes as null (src/lib/rooms/server.ts, roomView): the screen says it could not
+  // load the question, and the round goes on.
+  it.each([
+    { why: "a round open for votes", state: withRound(VOTING, { ...VOTING_ROUND, question: null }) },
+    { why: "a revealed round", state: withRound(REVEALED, { ...REVEALED_ROUND, question: null }) },
+  ])("accepts $why whose question the base does not have", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: true, value: state });
+  });
+
   it.each([
     { why: "missing", state: VOTING },
     { why: "not a text", state: withRound(VOTING, { ...VOTING_ROUND, question: 1 }) },
+    { why: "an object", state: withRound(VOTING, { ...VOTING_ROUND, question: { text: QUESTION } }) },
   ])("names round.question when it is $why", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: false, field: "round.question" });
   });

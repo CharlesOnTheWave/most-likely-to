@@ -1,7 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
-import RoomLobby from "@/components/room/RoomLobby";
+import RoomScreen from "@/components/room/RoomScreen";
 import RoomMessage from "@/components/room/RoomMessage.astro";
 import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
@@ -60,7 +60,7 @@ if (page.kind === "outside") {
   <AppHeader />
   <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
     {page.kind === "lobby" && (
-      <RoomLobby roomId={page.roomId} initial={page.lobby} linkUrl={page.linkUrl} realtime={realtime} client:load />
+      <RoomScreen roomId={page.roomId} initial={page.lobby} linkUrl={page.linkUrl} realtime={realtime} client:load />
     )}
     {page.kind === "outside" && <RoomMessage title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />}
     {page.kind === "error" && (

@@ -2,6 +2,8 @@
 // the browser.
 
 export const NICK_MAX_LENGTH = 20;
+// US-01: the host and at least 2 guests, the host votes too. start_game has the final word; the screen only says it.
+export const MIN_PLAYERS = 3;
 
 // lobby → playing (start_game) → closed ("Nowa gra" or the sweep of abandoned games).
 export type RoomStatus = "lobby" | "playing" | "closed";
@@ -48,8 +50,10 @@ export interface LobbyState {
 }
 
 // What the room screen gets: the round with its question's text, which the Worker adds from the question base. The
-// text is the ending after "Kto z nas najprawdopodobniej" (src/data/questions.ts), plain text for the screen.
-export type RoundView = RoundState & { question: string };
+// text is the ending after "Kto z nas najprawdopodobniej" (src/data/questions.ts), plain text for the screen. null
+// when the base does not have the round's question (the Worker logs which id): the screen then says it could not load
+// the question instead of building a sentence around a placeholder.
+export type RoundView = RoundState & { question: string | null };
 
 export interface RoomView extends LobbyState {
   round: RoundView | null;
@@ -155,7 +159,8 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   return { ok: true, value: { status, role, me, players: players.value, round: round.value } };
 }
 
-// The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state plus the round's question.
+// The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state plus the round's question,
+// a text or null for a question the base does not have.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   const lobby = parseLobbyState(value);
   if (!lobby.ok) return lobby;
@@ -164,7 +169,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
 
   const rawRound = isRecord(value) ? value.round : null;
   const question = isRecord(rawRound) ? rawRound.question : undefined;
-  if (typeof question !== "string") return fail("round.question");
+  if (typeof question !== "string" && question !== null) return fail("round.question");
   return { ok: true, value: { ...lobby.value, round: { ...round, question } } };
 }
 

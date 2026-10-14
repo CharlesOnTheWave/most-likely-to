@@ -6,15 +6,16 @@ import Landing from "@/components/room/Landing.astro";
 import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
 import RoomCard from "@/components/room/RoomCard.astro";
-import RoomLobby from "@/components/room/RoomLobby";
 import RoomMessage from "@/components/room/RoomMessage.astro";
+import RoomScreen from "@/components/room/RoomScreen";
 // Server only (lessons.md): the islands get just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import type { LobbyPlayer } from "@/lib/rooms/shared";
+import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 
 // Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
-// no Realtime, no polling. Local only; a production build answers an empty 404.
+// no Realtime, no polling, no reports; the round's buttons only answer "ok" on this page (RoomScreen's preview). Local
+// only; a production build answers an empty 404.
 // (Status instead of an early `return`, which crashes typescript-eslint's no-misused-promises in .astro files.)
 const isDev = import.meta.env.DEV;
 if (!isDev) {
@@ -33,6 +34,10 @@ const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
 const LINK_URL = `https://most-likely-to.charlesonthewave.workers.dev/j/${LINK_TOKEN}`;
 const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true }];
+const twoPlayers: LobbyPlayer[] = [
+  { nick: "Ola", host: true },
+  { nick: "Bartek", host: false },
+];
 const fewPlayers: LobbyPlayer[] = [
   { nick: "Ola", host: true },
   { nick: "Bartek", host: false },
@@ -55,6 +60,126 @@ const guestView: LobbyPlayer[] = [
   { nick: "Kasia 🎉", host: false },
   { nick: "Zosia", host: false },
 ];
+
+// The round: five players in seat order, the host first (Ola); the guest's screens are Bartek's.
+const roundPlayers: LobbyPlayer[] = [
+  { nick: "Ola", host: true },
+  { nick: "Bartek", host: false },
+  { nick: "Kasia 🎉", host: false },
+  { nick: "Zosia", host: false },
+  { nick: "Kuba", host: false },
+];
+// Twenty players (the most a room is planned for): five nicks of 20 characters, the widest letters, emoji.
+const twentyPlayers: LobbyPlayer[] = [
+  "Ola",
+  "Najdłuższy nick 20zn",
+  "Kasia 🎉",
+  "Bartłomiej Kowalczyk",
+  "Zosia",
+  "Kuba",
+  "Małgorzata Wiśniewsk",
+  "🦄 Jednorożec",
+  "Igor",
+  "Marta",
+  "Przemysław Grzegorz",
+  "Ania 🍕",
+  "Szczepan Brzęczyszcz",
+  "Tomek",
+  "Ewa",
+  "WWWWWWWWWWWWWWWWWWWW",
+  "Jan",
+  "Łukasz 🎮",
+  "Natalia",
+  "Krzysztof",
+].map((nick, index) => ({ nick, host: index === 0 }));
+
+// Sample questions: the ending after "Kto z nas najprawdopodobniej", as the Worker sends it; the long one is the
+// longest in the base.
+const QUESTION = "spóźniłby się na własne urodziny";
+const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, żeby się pochwalić";
+const QUESTION_ID = "na-co-dzien-001";
+
+function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
+  return { status: "lobby", role, me, players, round: null };
+}
+
+function voting(
+  role: "host" | "guest",
+  me: string,
+  players: LobbyPlayer[],
+  voted: string[],
+  question: string | null = QUESTION,
+): RoomView {
+  return {
+    status: "playing",
+    role,
+    me,
+    players,
+    round: { number: 1, question_id: QUESTION_ID, phase: "voting", voted, me_voted: voted.includes(me), question },
+  };
+}
+
+// results: [nick, votes] in seat order, every player of the round; ballots = votes + abstentions.
+function revealed(
+  role: "host" | "guest",
+  me: string,
+  players: LobbyPlayer[],
+  results: [string, number][],
+  abstained: number,
+  question: string | null = QUESTION,
+): RoomView {
+  const votes = results.reduce((sum, [, count]) => sum + count, 0);
+  return {
+    status: "playing",
+    role,
+    me,
+    players,
+    round: {
+      number: 1,
+      question_id: QUESTION_ID,
+      phase: "revealed",
+      results: results.map(([nick, count]) => ({ nick, votes: count })),
+      abstained,
+      ballots: votes + abstained,
+      question,
+    },
+  };
+}
+
+// Ola 2, Kasia 2 (a tie, in seat order), three zeros, one abstention: 5 ballots from 5 players.
+const fiveResults: [string, number][] = [
+  ["Ola", 2],
+  ["Bartek", 0],
+  ["Kasia 🎉", 2],
+  ["Zosia", 0],
+  ["Kuba", 0],
+];
+// Decision D3: the host revealed after a single vote.
+const oneVote: [string, number][] = [
+  ["Ola", 0],
+  ["Bartek", 0],
+  ["Kasia 🎉", 1],
+  ["Zosia", 0],
+  ["Kuba", 0],
+];
+const noVotes: [string, number][] = roundPlayers.map(({ nick }) => [nick, 0]);
+// 17 votes and 3 abstentions from 20 players: ties at 3, 2 and 1, and zeros.
+const twentyCounts = [3, 2, 0, 3, 1, 0, 2, 1, 0, 0, 1, 0, 0, 2, 0, 1, 0, 0, 1, 0];
+const twentyResults: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, twentyCounts[index]]);
+// 20 players, only 5 got votes (15 votes, 5 abstentions): Karol's example of a readable pie.
+const fewOfTwentyCounts = [5, 0, 0, 4, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0];
+const fewOfTwenty: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, fewOfTwentyCounts[index]]);
+// 20 players, 11 got votes (16 votes, 4 abstentions): a pie of 11 slices.
+const elevenOfTwentyCounts = [3, 2, 0, 2, 1, 0, 1, 1, 0, 0, 1, 0, 1, 2, 0, 1, 0, 0, 1, 0];
+const elevenOfTwenty: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, elevenOfTwentyCounts[index]]);
+// Every vote for one player: the pie is a full circle.
+const allForOne: [string, number][] = [
+  ["Ola", 0],
+  ["Bartek", 0],
+  ["Kasia 🎉", 4],
+  ["Zosia", 0],
+  ["Kuba", 0],
+];
 ---
 
 {isDev && (
@@ -63,9 +188,11 @@ const guestView: LobbyPlayer[] = [
       <h1 class="text-2xl font-semibold">Stany pokoju</h1>
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
-        graczy stoją w miejscu. Hover i focus-visible sprawdzasz na stanach 2, 9 i 14: najedź myszą na pola i przyciski
-        albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a
-        „Wyloguj” w nagłówku naprawdę wylogowuje.
+        graczy stoją w miejscu. Hover i focus-visible sprawdzasz na stanach 2, 9, 14, 25, 28 i 45f: najedź myszą na pola
+        i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy
+        pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”)
+        niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, a start i odsłona zostają w stanie wysyłania.
+        Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -123,7 +250,7 @@ const guestView: LobbyPlayer[] = [
           <section id="new-open-room" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">5. Z otwartym pokojem</h2>
             <div class="flex flex-col gap-6">
-              <OpenRoomNotice roomId={ROOM_ID} players={4} />
+              <OpenRoomNotice roomId={ROOM_ID} players={4} status="lobby" />
               <RoomCard titleAs="h2" {...newGameCard}>
                 <NewGameForm
                   categories={categories}
@@ -135,10 +262,25 @@ const guestView: LobbyPlayer[] = [
             </div>
           </section>
 
+          <section id="new-open-game" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">5b. Z grą w toku</h2>
+            <div class="flex flex-col gap-6">
+              <OpenRoomNotice roomId={ROOM_ID} players={5} status="playing" />
+              <RoomCard titleAs="h2" {...newGameCard}>
+                <NewGameForm
+                  categories={categories}
+                  roomToClose={{ players: 5 }}
+                  preview={{ idPrefix: "new-open-game" }}
+                  client:load
+                />
+              </RoomCard>
+            </div>
+          </section>
+
           <section id="new-confirm-close" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">6. Potwierdzenie: zamknięcie pokoju z gośćmi</h2>
             <div class="flex flex-col gap-6">
-              <OpenRoomNotice roomId={ROOM_ID} players={4} />
+              <OpenRoomNotice roomId={ROOM_ID} players={4} status="lobby" />
               <RoomCard titleAs="h2" {...newGameCard}>
                 <NewGameForm
                   categories={categories}
@@ -227,9 +369,9 @@ const guestView: LobbyPlayer[] = [
         <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
           <section id="lobby-host-1" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">14. Host, 1 gracz · hover · focus-visible</h2>
-            <RoomLobby
+            <RoomScreen
               roomId={ROOM_ID}
-              initial={{ status: "lobby", role: "host", me: "Ola", players: hostAlone, round: null }}
+              initial={lobby("host", "Ola", hostAlone)}
               linkUrl={LINK_URL}
               realtime={null}
               preview={{ idPrefix: "lobby-host-1" }}
@@ -239,9 +381,9 @@ const guestView: LobbyPlayer[] = [
 
           <section id="lobby-host-8" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">15. Host, 8 graczy (nick 20 znaków, emotka)</h2>
-            <RoomLobby
+            <RoomScreen
               roomId={ROOM_ID}
-              initial={{ status: "lobby", role: "host", me: "Ola", players: eightPlayers, round: null }}
+              initial={lobby("host", "Ola", eightPlayers)}
               linkUrl={LINK_URL}
               realtime={null}
               preview={{ idPrefix: "lobby-host-8" }}
@@ -251,9 +393,9 @@ const guestView: LobbyPlayer[] = [
 
           <section id="lobby-copied" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">16. Skopiowano</h2>
-            <RoomLobby
+            <RoomScreen
               roomId={ROOM_ID}
-              initial={{ status: "lobby", role: "host", me: "Ola", players: fewPlayers, round: null }}
+              initial={lobby("host", "Ola", fewPlayers)}
               linkUrl={LINK_URL}
               realtime={null}
               preview={{ idPrefix: "lobby-copied", copied: true }}
@@ -263,9 +405,9 @@ const guestView: LobbyPlayer[] = [
 
           <section id="lobby-refresh-failed" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">17. Błąd odświeżania listy</h2>
-            <RoomLobby
+            <RoomScreen
               roomId={ROOM_ID}
-              initial={{ status: "lobby", role: "host", me: "Ola", players: fewPlayers, round: null }}
+              initial={lobby("host", "Ola", fewPlayers)}
               linkUrl={LINK_URL}
               realtime={null}
               preview={{ idPrefix: "lobby-refresh-failed", refreshFailed: true }}
@@ -275,9 +417,9 @@ const guestView: LobbyPlayer[] = [
 
           <section id="lobby-no-link" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">18. Host: link się nie wczytał</h2>
-            <RoomLobby
+            <RoomScreen
               roomId={ROOM_ID}
-              initial={{ status: "lobby", role: "host", me: "Ola", players: hostAlone, round: null }}
+              initial={lobby("host", "Ola", hostAlone)}
               linkUrl={null}
               realtime={null}
               preview={{ idPrefix: "lobby-no-link" }}
@@ -287,9 +429,9 @@ const guestView: LobbyPlayer[] = [
 
           <section id="lobby-guest" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">19. Gość</h2>
-            <RoomLobby
+            <RoomScreen
               roomId={ROOM_ID}
-              initial={{ status: "lobby", role: "guest", me: "Ola", players: guestView, round: null }}
+              initial={lobby("guest", "Ola", guestView)}
               realtime={null}
               preview={{ idPrefix: "lobby-guest" }}
               client:load
@@ -298,7 +440,7 @@ const guestView: LobbyPlayer[] = [
 
           <section id="lobby-closed-host" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">20. Pokój zamknięty: host</h2>
-            <RoomLobby
+            <RoomScreen
               roomId={ROOM_ID}
               initial={{ status: "closed", role: "host", me: "Ola", players: fewPlayers, round: null }}
               realtime={null}
@@ -309,7 +451,7 @@ const guestView: LobbyPlayer[] = [
 
           <section id="lobby-closed-guest" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">21. Pokój zamknięty: gość</h2>
-            <RoomLobby
+            <RoomScreen
               roomId={ROOM_ID}
               initial={{ status: "closed", role: "guest", me: "Ola", players: guestView, round: null }}
               realtime={null}
@@ -329,6 +471,393 @@ const guestView: LobbyPlayer[] = [
               titleAs="h2"
               title="Nie udało się otworzyć pokoju."
               text={roomErrorMessage("service_unavailable")}
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: start (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="start-off" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">24. Host: „Zacznij grę” nieaktywne (2 graczy)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", twoPlayers)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "start-off" }}
+              client:load
+            />
+          </section>
+
+          <section id="start-on" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              25. Host: „Zacznij grę” aktywne (3 graczy) · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", fewPlayers)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "start-on" }}
+              client:load
+            />
+          </section>
+
+          <section id="start-pending" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">26. Host: start wysłany</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", fewPlayers)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "start-pending", starting: true }}
+              client:load
+            />
+          </section>
+
+          <section id="start-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">27. Host: start odrzucony</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", fewPlayers)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "start-error", startError: roomErrorMessage("no_questions") }}
+              client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: głosowanie (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="vote-guest-before" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">28. Gość: przed głosem · hover · focus-visible</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-before" }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-chosen" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">29. Gość: wybrana osoba</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-chosen", choice: "Kasia 🎉" }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-missing" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">30. Gość: „Zagłosuj” bez wyboru</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-missing", missingChoice: true }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-pending" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">31. Gość: wysyłanie głosu</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-pending", choice: "Bartek", voting: true }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">32. Gość: głos nie doszedł</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"])}
+              realtime={null}
+              preview={{
+                idPrefix: "vote-guest-error",
+                choice: "Kasia 🎉",
+                voteError: roomErrorMessage("service_unavailable"),
+              }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-voted" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">33. Gość: po głosie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-voted", myVote: { target: "Kasia 🎉" } }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-abstained" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">34. Gość: po wstrzymaniu się</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-abstained", myVote: { target: null } }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-guest-reloaded" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">35. Gość: po głosie i odświeżeniu strony</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-guest-reloaded" }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-host-before" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">36. Host: przed głosem, z „Odsłoń wynik”</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-host-before" }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-host-voted" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">37. Host: po głosie, z „Odsłoń wynik”</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-host-voted", myVote: { target: "Bartek" } }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-host-revealing" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">38. Host: odsłanianie wyniku</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-host-revealing", myVote: { target: "Bartek" }, revealing: true }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-host-confirm" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">38a. Host: „Odsłoń wynik” pyta drugi raz</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "vote-host-confirm", confirmingReveal: true }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-unknown-question" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">39. Pytanie, którego nie ma w bazie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola"], null)}
+              realtime={null}
+              preview={{ idPrefix: "vote-unknown-question" }}
+              client:load
+            />
+          </section>
+
+          <section id="vote-20" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              40. 20 graczy (długie nicki, emotki), długie pytanie
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting(
+                "guest",
+                "WWWWWWWWWWWWWWWWWWWW",
+                twentyPlayers,
+                ["Ola", "Kasia 🎉", "Bartłomiej Kowalczyk", "🦄 Jednorożec", "Szczepan Brzęczyszcz", "Natalia"],
+                LONG_QUESTION,
+              )}
+              realtime={null}
+              preview={{ idPrefix: "vote-20" }}
+              client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: odsłona (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="reveal-guest" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">41. Gość: remis, zera i wstrzymanie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-host" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">42. Host: „Kolejne pytania wkrótce” i „Nowa gra”</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-host" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-one-vote" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">43. Odsłona po 1 głosie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, oneVote, 0)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-one-vote" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-all-abstained" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">44. Wszyscy się wstrzymali</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, noVotes, 5)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-all-abstained" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-20" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              45. 20 graczy (długie nicki, emotki), długie pytanie
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", twentyPlayers, twentyResults, 3, LONG_QUESTION)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-20" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-pie-5" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">45a. Koło: 5 graczy (domyślnie)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-pie-5" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-pie-20-few" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">45b. Koło: 20 graczy, głosy dostało 5</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", twentyPlayers, fewOfTwenty, 5)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-pie-20-few" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-bars-20" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">45c. Paski: 20 graczy, głosy dostało 11 (wybrane)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Tomek", twentyPlayers, elevenOfTwenty, 4)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-bars-20", resultView: "bars" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-pie-20-many" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              45d. Koło: 20 graczy, głosy dostało 11 (domyślnie)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Tomek", twentyPlayers, elevenOfTwenty, 4)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-pie-20-many" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-single" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">45e. Wszystkie głosy na jedną osobę (pełne koło)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, allForOne, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-single" }}
+              client:load
+            />
+          </section>
+
+          <section id="reveal-toggle-focus" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              45f. Przełącznik „Koło” / „Paski” · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reveal-toggle-focus" }}
+              client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Połączenie na żywo</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="live-broken-lobby" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">46. Lobby gościa: połączenie przerwane</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("guest", "Ola", guestView)}
+              realtime={null}
+              preview={{ idPrefix: "live-broken-lobby", liveBroken: true }}
+              client:load
+            />
+          </section>
+
+          <section id="live-broken-vote" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              47. Głosowanie: połączenie przerwane i błąd odświeżania
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "live-broken-vote", liveBroken: true, refreshFailed: true }}
+              client:load
             />
           </section>
         </div>
