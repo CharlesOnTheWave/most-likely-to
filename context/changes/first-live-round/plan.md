@@ -814,26 +814,26 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 
 #### Automated
 
-- [x] 3.1 Nowe testy jednostkowe zielone: `npm test` (log, room-state, draw, room-errors, client-events)
-- [x] 3.2 `npm run lint`, `npx astro check`, `npm run build` zielone
-- [ ] 3.3 CI zielone (także `db` i pgTAP, `smoke` i `e2e` lobby)
+- [x] 3.1 Nowe testy jednostkowe zielone: `npm test` (log, room-state, draw, room-errors, client-events) — 90e3b7c
+- [x] 3.2 `npm run lint`, `npx astro check`, `npm run build` zielone — 90e3b7c
+- [x] 3.3 CI zielone (także `db` i pgTAP, `smoke` i `e2e` lobby) — 90e3b7c
 
 #### Manual
 
-- [x] 3.4 Przegląd: żaden nowy `console.*` poza helperem z listą pól; cel głosu nigdzie w URL ani w logu
+- [x] 3.4 Przegląd: żaden nowy `console.*` poza helperem z listą pól; cel głosu nigdzie w URL ani w logu — 90e3b7c
 
 ### Phase 4: Ekrany rundy
 
 #### Automated
 
-- [ ] 4.1 `npm test` zielone (limiter, results)
-- [ ] 4.2 `npm run lint` (z kontrolą literałów UI), `npx astro check`, `npm run build` zielone
+- [x] 4.1 `npm test` zielone (limiter, results)
+- [x] 4.2 `npm run lint` (z kontrolą literałów UI), `npx astro check`, `npm run build` zielone
 - [ ] 4.3 CI zielone
 
 #### Manual
 
-- [ ] 4.4 Karol ocenia zrzuty wszystkich nowych stanów `/dev/room-states` (telefon i komputer) i akceptuje albo zgłasza poprawki
-- [ ] 4.5 Fokus i czytnik ekranu: przyciski głosowania osiągalne klawiaturą, zmiana fazy ogłaszana
+- [x] 4.4 Karol ocenia zrzuty wszystkich nowych stanów `/dev/room-states` (telefon i komputer) i akceptuje albo zgłasza poprawki
+- [x] 4.5 Fokus i czytnik ekranu: przyciski głosowania osiągalne klawiaturą, zmiana fazy ogłaszana
 
 ### Phase 5: Test w przeglądarce i smoke z rundą
 
