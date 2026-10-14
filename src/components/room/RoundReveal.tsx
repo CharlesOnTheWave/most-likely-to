@@ -196,9 +196,7 @@ export default function RoundReveal({
                         </span>
                       </span>
                     </td>
-                    <td className={cn("px-3 py-2.5 text-right tabular-nums", isTop && "font-semibold")}>
-                      {row.votes + 1}
-                    </td>
+                    <td className={cn("px-3 py-2.5 text-right tabular-nums", isTop && "font-semibold")}>{row.votes}</td>
                   </tr>
                 );
               })}
