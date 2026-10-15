@@ -569,13 +569,13 @@ Przegląd implementacji, wdrożenie „baza, smoke na starym kodzie, scalenie, s
 
 #### Automated
 
-- [x] 1.1 Lokalna bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 CI `db`: czerwone wyłącznie nowe testy S-03 (lista w opisie commita), testy S-02 zielone, pgTAP dochodzi do końca pliku (`not ok`, nie przerwanie)
-- [ ] 1.3 CI `ci`, `smoke`, `e2e` zielone
+- [x] 1.1 Lokalna bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 5f3e40c
+- [x] 1.2 CI `db`: czerwone wyłącznie nowe testy S-03 (lista w opisie commita), testy S-02 zielone, pgTAP dochodzi do końca pliku (`not ok`, nie przerwanie) — 5f3e40c
+- [x] 1.3 CI `ci`, `smoke`, `e2e` zielone — 5f3e40c
 
 #### Manual
 
-- [ ] 1.4 Karol przejrzał po ludzku listę nowych strażników (nazwy testów w opisie PR)
+- [x] 1.4 Karol przejrzał po ludzku listę nowych strażników (nazwy testów w opisie PR) — 5f3e40c
 
 ### Phase 2: Baza: kolejne pytania, pominięcie, koniec gry
 
