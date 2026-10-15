@@ -294,6 +294,10 @@ Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wiecz�
   - Testy powstały przed kodem rundy i świeciły na czerwono, zanim pojawiła się migracja. Dziś: baza 122 testy Vitest bez oczekiwanych porażek (13 znanych dziur F1 i F4 domkniętych), pgTAP 65 asercji widoku twórcy, unit 252, e2e 4 testy (runda 3 graczy ok. 4 s, bez ponowień), smoke 46 kroków.
   - Trzy próbne alarmy trafiły dokładnie (§6.2 i §6.4): urna logowana zaświeciła tylko pgTAP, głos z liczbą tylko test dokładnego `{ ok: true }`, ekran odsłony z liczbą +1 tylko e2e rundy. Głos z liczbą nie ruszył smoke ani e2e, bo Worker oddaje własną odpowiedź, więc odpowiedź bazy pilnuje tylko test anonimowości.
   - Przegląd implementacji znalazł dziurę, której nie widział żaden test: awaria bazy czyści nielogowaną urnę, więc głosy oddane po niej nie liczyły się w odsłonie (ustalenie F1 przeglądu S-02, `reviews/impl-review.md` w folderze zmiany). Najpierw czerwony test pgTAP, potem poprawka w tej samej, jeszcze niewgranej migracji. Wdrożenie „baza, potem kod”: smoke ze starym Workerem (`SMOKE_ROUND=0`) 38 kroków, po scaleniu 46. Ręczna runda Karola (laptop, telefon, incognito) bez uwag, odsłona na telefonie w ciągu sekund (na oko, bez pomiaru 2 s). Czytnika ekranu nie uruchomiono (F7 odłożone w `follow-ups/review-fixes.md`).
+- **S-03** (`full-game-evening`, poza fazami §3, 2026-10-15, na produkcji tego samego dnia):
+  - Testy bazy powstały przed migracją i świeciły na czerwono tylko z braku funkcji wieczoru. Dziś: baza 175 testów Vitest, pgTAP 105 asercji, unit 336, e2e 5 testów (wieczór 3 graczy ok. 11 s, bez ponowień), smoke 53 kroki.
+  - Trzy próbne alarmy trafiły dokładnie (§6.2 i §6.4). Urnę pominiętej rundy widzi tylko pgTAP. Dzwonek po „Następne pytanie” złapał e2e dopiero po przeładowaniu ekranu gościa tuż przed ruchem hosta. Bez tego odpytywanie trafiało w okno 10 s w około 2 przypadkach na 3.
+  - Wdrożenie „baza, potem kod”: smoke ze starym Workerem (`SMOKE_GAME=0`) zielony, po scaleniu 53/53. Ręczny wieczór Karola bez błędów. Czytnik ekranu świadomie pominięty (§7).
 
 ## 7. What We Deliberately Don't Test
 
@@ -302,6 +306,7 @@ się ich, dopóki nie zmieni się założenie.
 
 - **Treść i jakość pytań** — czy pytanie jest dobre i śmieszne, ocenia ręcznie twórca gry. Format bazy pytań i stałe numery pytań NIE są wykluczone. Re-evaluate if pytania zaczną trafiać do bazy bez ręcznego przeglądu (propozycje gości, generowanie). (Source: Phase 2 interview Q5.)
 - **Awaria dostawców logowania i uśpienie Supabase** — wysoki wpływ × niskie prawdopodobieństwo; zamiast testu lista kontrolna przed prawdziwym wieczorem (obudzenie projektu, próbne logowanie). Re-evaluate if pojawi się monitoring albo płatny plan. (Source: brief zaakceptowany 2026-10-08, kontrola challengera.)
+- **Gra z czytnikiem ekranu (TalkBack, VoiceOver)** — PRD nie wymaga dostępności dla czytnika, a w ekipie nikt z niego nie korzysta. Kod ogłoszeń zostaje i pilnują go testy jednostkowe (`tests/unit/announce.test.ts`: każda zmiana ekranu ma własny komunikat) oraz lint `jsx-a11y`. Nikt nie słyszał ich w prawdziwym czytniku. Re-evaluate if do gry dołączy ktoś z czytnikiem albo ktoś zgłosi, że ekran jest nieczytelny. (Source: decyzja Karola 2026-10-15, F7 przeglądu S-02.)
 
 ## 8. Freshness Ledger
 

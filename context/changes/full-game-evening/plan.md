@@ -507,6 +507,7 @@ Przegląd implementacji, wdrożenie „baza, smoke na starym kodzie, scalenie, s
 
 - Karol rozgrywa wieczór (laptop host + telefon + incognito), co najmniej 3 pytania: odsłona → „Następne pytanie” z nowym pytaniem na 3 ekranach; pominięcie w trakcie głosowania z notką na telefonie, który zagłosował; „Zakończ grę” → „Koniec wieczoru” na 3 ekranach
 - Czytnik ekranu na telefonie (TalkBack albo VoiceOver): słychać nowe pytanie z numerem, pominięcie, odsłonę i koniec wieczoru; tabela wyniku czytelna (F7)
+  - Decyzja Karola (15.10): bez tego sprawdzenia. PRD nie wymaga dostępności dla czytnika, a w ekipie nikt z niego nie korzysta. Kod ogłoszeń zostaje (testy `tests/unit/announce.test.ts`, lint `jsx-a11y`), a wykluczenie zapisuje `context/foundation/test-plan.md` §7. Dlatego 6.6 zostaje nieodhaczone.
 - `/10x-impl-review` zakończone, ustalenia rozstrzygnięte z Karolem
 
 **Implementation Note**: Każde polecenie zmieniające stan zdalny (push, `db push`, smoke) wymaga pytania (AGENTS.md); scala wyłącznie Karol.
@@ -622,13 +623,13 @@ Przegląd implementacji, wdrożenie „baza, smoke na starym kodzie, scalenie, s
 
 #### Automated
 
-- [ ] 6.1 `npx supabase db push` zakończone bez błędu
-- [ ] 6.2 Smoke na produkcji ze starym Workerem (`SMOKE_GAME=0`) zielony
-- [ ] 6.3 Workers Builds po scaleniu zielone
-- [ ] 6.4 Smoke na produkcji pełny zielony
+- [x] 6.1 `npx supabase db push` zakończone bez błędu — 8e76b01
+- [x] 6.2 Smoke na produkcji ze starym Workerem (`SMOKE_GAME=0`) zielony — 8e76b01
+- [x] 6.3 Workers Builds po scaleniu zielone — 95ca6cc
+- [x] 6.4 Smoke na produkcji pełny zielony — 95ca6cc
 
 #### Manual
 
-- [ ] 6.5 Karol rozgrywa wieczór (laptop host + telefon + incognito), co najmniej 3 pytania: odsłona → „Następne pytanie” z nowym pytaniem na 3 ekranach; pominięcie w trakcie głosowania z notką na telefonie, który zagłosował; „Zakończ grę” → „Koniec wieczoru” na 3 ekranach
+- [x] 6.5 Karol rozgrywa wieczór (laptop host + telefon + incognito), co najmniej 3 pytania: odsłona → „Następne pytanie” z nowym pytaniem na 3 ekranach; pominięcie w trakcie głosowania z notką na telefonie, który zagłosował; „Zakończ grę” → „Koniec wieczoru” na 3 ekranach — 95ca6cc
 - [ ] 6.6 Czytnik ekranu na telefonie (TalkBack albo VoiceOver): słychać nowe pytanie z numerem, pominięcie, odsłonę i koniec wieczoru; tabela wyniku czytelna (F7)
-- [ ] 6.7 `/10x-impl-review` zakończone, ustalenia rozstrzygnięte z Karolem
+- [x] 6.7 `/10x-impl-review` zakończone, ustalenia rozstrzygnięte z Karolem — 8e76b01
