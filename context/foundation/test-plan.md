@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-14
+> Last updated: 2026-10-15
 
 ## 1. Strategy
 
@@ -76,7 +76,7 @@ orchestrator updates Status as artifacts appear on disk.
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|---|---|---|---|---|---|
 | 1 | Fundament testów i zabezpieczenie lobby | Postawić pierwszy runner i udowodnić w istniejącym lobby, że role dostają odmowę tam, gdzie PRD zabrania, a identycznie wyglądające nicki są odrzucane | #4, #6 | unit + integration (DB) | complete | testing-lobby-foundation |
-| 2 | Anonimowość i reguły rundy | Udowodnić, że po rundzie nie da się odtworzyć „kto na kogo”, a runda spełnia reguły PRD; testy powstają przed kodem głosowania S-02 | #1, #3 | unit + integration (DB) | planned | first-live-round |
+| 2 | Anonimowość i reguły rundy | Udowodnić, że po rundzie nie da się odtworzyć „kto na kogo”, a runda spełnia reguły PRD; testy powstają przed kodem głosowania S-02 | #1, #3 | unit + integration (DB) | complete | first-live-round |
 | 3 | Odsłona na żywo w przeglądarkach | Udowodnić, że każdy ekran dostaje tę samą odsłonę w budżecie czasu, a sygnały zmiany nie zjadają limitu żądań | #2, #7 | e2e + unit + AI-native exploratory | not started | — |
 | 4 | Bramki, które naprawdę zatrzymują | Udowodnić, że zepsute zachowanie z §2 zapala bramkę na czerwono, a czerwona bramka zatrzymuje produkcję | #5 | gates + post-edit-hook | not started | — |
 
@@ -275,9 +275,10 @@ Dziś lobby (M3L4, 2026-10-11) i jedna runda 3 graczy (S-02, 2026-10-14). Pomiar
   - Runner stoi, a testy bazy biegną tylko w CI (job `db`): 53 testy, 40 zielonych i 13 oczekiwanych porażek (4 × „znana dziura F1 → S-02”, 9 × „znana dziura F4 → S-02”). Te 13 to kryteria akceptacji migracji S-02. Nick z 10 000 znaków dostaje dziś `invalid_nick`, więc to zwykły strażnik, a nie znana dziura.
   - Próbne alarmy trafiły dokładnie. Tymczasowa migracja otworzyła 3 uprawnienia i zaświeciła 3 przewidziane testy (kanarek, odczyt cudzego pokoju z H6, G2). Ciasteczko gracza na stronie linku zaświeciło 1 przewidziany krok smoke. Samo `42501` nie mówi, kto odmówił, dlatego G2 sprawdza też nazwę funkcji w komunikacie.
   - `supabase/setup-cli` z wersją `latest` pyta API GitHuba i czasem pada na „rate limit exceeded”, zanim ruszy jakikolwiek test. Supabase CLI jest więc przypięty (2.120.0) w jobach `smoke` i `db` i podbijany ręcznie.
-- **Phase 2** (`first-live-round`, S-02, 2026-10-14):
-  - Testy powstały przed kodem rundy i świeciły na czerwono, zanim pojawiła się migracja. Dziś: baza 117 testów Vitest bez oczekiwanych porażek (13 znanych dziur F1 i F4 domkniętych), pgTAP 56 asercji widoku twórcy, unit 252, e2e 4 testy (runda 3 graczy ok. 4 s, bez ponowień), smoke 46 kroków.
+- **Phase 2** (`first-live-round`, S-02, 2026-10-14, na produkcji 2026-10-15):
+  - Testy powstały przed kodem rundy i świeciły na czerwono, zanim pojawiła się migracja. Dziś: baza 122 testy Vitest bez oczekiwanych porażek (13 znanych dziur F1 i F4 domkniętych), pgTAP 65 asercji widoku twórcy, unit 252, e2e 4 testy (runda 3 graczy ok. 4 s, bez ponowień), smoke 46 kroków.
   - Trzy próbne alarmy trafiły dokładnie (§6.2 i §6.4): urna logowana zaświeciła tylko pgTAP, głos z liczbą tylko test dokładnego `{ ok: true }`, ekran odsłony z liczbą +1 tylko e2e rundy. Głos z liczbą nie ruszył smoke ani e2e, bo Worker oddaje własną odpowiedź, więc odpowiedź bazy pilnuje tylko test anonimowości.
+  - Przegląd implementacji znalazł dziurę, której nie widział żaden test: awaria bazy czyści nielogowaną urnę, więc głosy oddane po niej nie liczyły się w odsłonie (ustalenie F1 przeglądu S-02, `reviews/impl-review.md` w folderze zmiany). Najpierw czerwony test pgTAP, potem poprawka w tej samej, jeszcze niewgranej migracji. Wdrożenie „baza, potem kod”: smoke ze starym Workerem (`SMOKE_ROUND=0`) 38 kroków, po scaleniu 46. Ręczna runda Karola (laptop, telefon, incognito) bez uwag, odsłona na telefonie w ciągu sekund (na oko, bez pomiaru 2 s). Czytnika ekranu nie uruchomiono (F7 odłożone w `follow-ups/review-fixes.md`).
 
 ## 7. What We Deliberately Don't Test
 

@@ -158,4 +158,4 @@ Sprawdzone i bez uwag:
 - **Location**: plan.md Progress 4.5; commit b5a753e
 - **Detail**: Kryterium 4.5 to „Fokus i czytnik ekranu: przyciski głosowania osiągalne klawiaturą, zmiana fazy ogłaszana”. Opis commita p4 mówi: klawiatura sprawdzona, ogłoszenia przez region `aria-live`, „czytnika ekranu nie uruchamiano, zostaje do rundy w fazie 6”. Ogłoszenie zmiany fazy jest więc zbudowane, ale nikt go nie usłyszał.
 - **Fix**: W ręcznej rundzie 6.5 włączyć na telefonie czytnik ekranu (Android: TalkBack, iPhone: VoiceOver) na czas odsłony i sprawdzić, że ją ogłasza.
-- **Decision**: MOVED TO 6.5 — Karol sprawdza czytnik ekranu w ręcznej rundzie (`follow-ups/review-fixes.md`)
+- **Decision**: MOVED TO 6.5 — Karol sprawdza czytnik ekranu w ręcznej rundzie (`follow-ups/review-fixes.md`); 15.10 runda 6.5 odbyła się bez czytnika → DEFERRED do ręcznej rundy S-03 (`follow-ups/review-fixes.md`)
