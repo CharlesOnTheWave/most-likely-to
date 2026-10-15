@@ -136,7 +136,8 @@ create table private.round_results (
 
 -- The urn while the round is open: counts per target player id and the abstentions, with no voter. Unlogged: never in
 -- the WAL, so neither a replica, logical decoding nor a backup holds a round in progress, and it cannot be published.
--- A crash empties it, and the round in progress loses its votes (accepted in D1).
+-- A crash empties it, and the round in progress loses the votes cast so far (accepted in D1); cast_vote sets it up
+-- again.
 create unlogged table private.ballot_boxes (
   round_id uuid primary key references private.rounds (id) on delete cascade,
   tally jsonb not null default '{}',
@@ -687,6 +688,10 @@ begin
   end if;
 
   insert into private.round_voters (round_id, player_id) values (v_round, v_voter);
+
+  -- A crash empties the unlogged urn but keeps the logged round in voting: the votes cast before it are lost (D1), and
+  -- the first vote after it sets the urn up again, so every later vote counts.
+  insert into private.ballot_boxes (round_id) values (v_round) on conflict (round_id) do nothing;
 
   if v_target is null then
     update private.ballot_boxes b set abstained = b.abstained + 1 where b.round_id = v_round;
