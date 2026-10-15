@@ -195,6 +195,9 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   - Strażnicy rundy (S-02), po jednym alarmie na strażnika. Próbne alarmy z 2026-10-14 trafiły dokładnie:
     - (a) tymczasowa migracja zmienia `private.ballot_boxes` na logowaną: czerwona tylko asercja pgTAP „private.ballot_boxes is unlogged” (1 z 56); Vitest, smoke i e2e zielone;
     - (b) `cast_vote` zwraca dodatkowo liczbę głosów celu: czerwony tylko „cast_vote answers exactly { ok: true }, to a guest and to the host” w `round-anonymity.test.ts` (1 ze 117), bo dokładny zbiór kluczy odpowiedzi głosu sprawdza tylko ten test (`round-rules.test.ts` używa `toMatchObject`). Smoke i e2e zostały zielone, bo Worker oddaje własne `{ ok: true }`: kształt odpowiedzi samej bazy pilnuje tylko ten test.
+  - Strażnicy wieczoru (S-03), po jednym alarmie na strażnika. Przewidywania sprawdzone najpierw lokalnie (pgTAP i scenariusze Vitest odegrane w SQL na PGlite); próbne alarmy z 2026-10-15 trafiły dokładnie:
+    - (a) tymczasowa migracja: `cast_vote` nie sprawdza numeru pytania: czerwone 3 testy w `game-rules.test.ts` (spóźniony głos z pytania 1, spóźniony głos z pominiętego pytania 2 i odsłona pytania 3, w której spóźniony głos dał Oli 1 i 2 karty zamiast 1) oraz krok smoke „a vote sent from question 1 is refused at question 2” (200 zamiast 409); pgTAP 105/105, e2e i `ci` zielone;
+    - (b) tymczasowa migracja: `skip_round` nie usuwa urny pominiętej rundy: czerwone tylko asercje pgTAP 56 i 57 (po 1 wierszu w `ballot_boxes` i `round_voters` rundy 2); Vitest 175/175, smoke i e2e zielone. Żadna odpowiedź ani ekran nie czyta urny pominiętej rundy, więc taką resztkę widzi tylko pgTAP (widok twórcy).
   - Tymczasową migrację zakładaj z `npx supabase migration new <nazwa> < /dev/null`: bez tego polecenie czeka na treść SQL ze standardowego wejścia.
 
 ### 6.3 Adding an anonymity check
@@ -260,6 +263,7 @@ Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wiecz�
   - dzwonek po wejściu gościa wyłączony (`join.ts`): oba testy czerwone, seed na „host widzi gościa”, `lobby-connection-drop` na warunku wstępnym „host widzi C”;
   - lista pobierana tylko przy pierwszym połączeniu kanału, nie po powrocie (`RoomLobby.tsx`): czerwony tylko `lobby-connection-drop`, na asercji końcowej.
 - Próbny alarm z 2026-10-14 (S-02) też trafił dokładnie: komórka z liczbą głosów w tabeli odsłony pokazuje `votes + 1` (`RoundReveal.tsx`). Czerwony tylko `round.spec.ts`, we wszystkich 3 próbach na „votes of <gość A>” (oczekiwane 2, ekran pokazał 3). Smoke (czyta API, nie ekran), baza i reszta e2e zielone.
+- Próbny alarm (c) z 2026-10-15 (S-03) też trafił dokładnie: `next.ts` bez dzwonka po „Następne pytanie” (import `ringLobby` usunięty razem z wywołaniem, inaczej czerwony byłby też lint). Czerwony tylko `game.spec.ts`, we wszystkich 3 próbach na kroku gościa B (przeładowany ekran po 10 s miał dalej pytanie 1). `round.spec.ts`, seed, `lobby-connection-drop`, smoke (bez Realtime, odpowiedź `next` dalej `{"ok":true}`), baza i `ci` zielone.
 
 ### 6.5 Adding a smoke step
 
