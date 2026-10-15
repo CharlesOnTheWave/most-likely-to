@@ -38,11 +38,13 @@ let hostA: Host;
 let hostB: Host;
 // Host B's lobby of two players. It stays a lobby until the last test of the file.
 let roomB: OwnRoom;
+// Host B's guest: a player with a valid token, but of another room.
+let zosia: SeededGuest;
 
 beforeAll(async () => {
   [hostA, hostB] = await Promise.all([newHost(), newHost()]);
   roomB = await seedRoom(hostB, { nick: "Hania" });
-  await seedGuest(roomB.linkToken, "Zosia");
+  zosia = await seedGuest(roomB.linkToken, "Zosia");
 });
 
 // Host A starts and the round plays out once, in order, in beforeAll: four votes plus every refused try between them.
@@ -60,6 +62,9 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
   let kubaForStranger: Answer;
   let kubaForOtherRoom: Answer;
   let kubaAbstains: Answer;
+  let hostBForOla: Answer;
+  let zosiaForOla: Answer;
+  let noTokenForOla: Answer;
   let hostView: Answer;
   let guestView: Answer;
 
@@ -69,6 +74,11 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
     bartek = await seedGuest(room.linkToken, "Bartek");
     kuba = await seedGuest(room.linkToken, "Kuba");
     await seedStartGame(hostA, room.id, QUESTION_ID);
+
+    // Strangers first, while the round is open: a vote of theirs that counted would show up as Ola's in the reveal.
+    hostBForOla = await castVote(hostB.client, room.id, "Ola");
+    zosiaForOla = await castVote(anon, room.id, "Ola", zosia.playerToken);
+    noTokenForOla = await castVote(anon, room.id, "Ola");
 
     hostForOla = await castVote(hostA.client, room.id, "Ola");
     // Second tries go to Bartek, so a second vote that counted would show up as Bartek's vote in the reveal.
@@ -119,8 +129,19 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
     expect(answer()).toMatchObject({ error: null, data: { ok: false, reason: "unknown_target" } });
   });
 
+  // cast_vote is open to anon, so the room check lives inside it (PRD Access Control, test-plan §2 #4): a stranger to
+  // the room learns nothing about it and votes for no one.
+  it.each([
+    { stranger: "host B, by its session", answer: () => hostBForOla },
+    { stranger: "Zosia, host B's guest, by her token", answer: () => zosiaForOla },
+    { stranger: "a guest with no token", answer: () => noTokenForOla },
+  ])("a vote by $stranger gets room_unknown", ({ answer }) => {
+    expect(answer()).toMatchObject({ error: null, data: { ok: false, reason: "room_unknown" } });
+  });
+
   // Ola 3 (the host's, her own, Bartek's), everyone else 0, one abstention, four ballots. The refused tries count
-  // nothing: Bartek, the target of both second votes, stays at 0. Everyone sees the same reveal.
+  // nothing: Bartek, the target of both second votes, stays at 0, and the strangers' votes for Ola add nothing to her
+  // 3. Everyone sees the same reveal.
   it.each([
     { viewer: "the host", lobby: () => hostView },
     { viewer: "a guest", lobby: () => guestView },

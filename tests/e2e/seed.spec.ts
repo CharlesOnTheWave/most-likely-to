@@ -1,6 +1,6 @@
 // Seed test — the pattern every generated E2E test copies.
 // risk: test-plan.md #2, lobby part only: a player who joins shows up on the screens already in the room, without a
-// reload, through the room's bell (Realtime). The reveal, the rest of #2, does not exist yet (S-02); no spec covers it.
+// reload, through the room's bell (Realtime). The round and its reveal are round.spec.ts's.
 import { test, expect } from "@playwright/test";
 import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
 import { joinRoom, newGuestContext, openRoom, playerRow, uniqueNick } from "./support/room";

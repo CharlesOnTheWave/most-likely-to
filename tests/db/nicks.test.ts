@@ -128,4 +128,15 @@ describe("length and blank nicks: a clear invalid_nick", () => {
       expect(answer).toMatchObject(INVALID_NICK);
     },
   );
+
+  // Empty once compared (D5, W2): the shown nick keeps variation selectors and tags, the compared one drops them, so a
+  // nick of nothing else would be a blank row on every screen. VARIATION SELECTOR-16 and TAG LATIN SMALL LETTER G.
+  it.each(["\u{FE0F}", "\u{E0067}"].map((nick) => ({ label: nickLabel(nick), nick })))(
+    "$label alone compares as empty and gets invalid_nick",
+    async ({ nick }) => {
+      const answer = await tryJoin(room.linkToken, nick);
+
+      expect(answer).toMatchObject(INVALID_NICK);
+    },
+  );
 });

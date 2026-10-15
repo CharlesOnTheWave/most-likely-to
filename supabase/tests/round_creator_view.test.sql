@@ -17,7 +17,7 @@
 
 begin;
 
-select plan(56);
+select plan(65);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -199,6 +199,46 @@ exception when others then
 end;
 $$;
 
+-- What a crash does to one room's round: the unlogged urn tables lose their rows and the logged round stays in voting.
+-- A real crash empties both tables whole; this file deletes only its own room's rows.
+create function pg_temp.crash_urn(p_key text) returns text language plpgsql as $$
+declare
+  v_ids text[] := pg_temp.rounds_of(p_key);
+begin
+  if coalesce(cardinality(v_ids), 0) = 0 then
+    return 'no round was started in this room';
+  end if;
+  execute 'delete from private.ballot_boxes b where b.round_id::text = any($1)' using v_ids;
+  execute 'delete from private.round_voters v where v.round_id::text = any($1)' using v_ids;
+  return 'emptied';
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
+-- The room's revealed result as one line: every counted player by nick, then the abstentions and the ballots.
+create function pg_temp.results_of(p_key text) returns text language plpgsql as $$
+declare
+  v_ids text[] := pg_temp.rounds_of(p_key);
+  v_results text;
+begin
+  if coalesce(cardinality(v_ids), 0) = 0 then
+    return 'no round was started in this room';
+  end if;
+  execute $q$
+    select string_agg(p.nick || ' ' || rr.votes, ', ' order by p.nick)
+      || ' | abstained ' || max(r.abstained) || ' | ballots ' || max(r.ballots)
+    from private.rounds r
+    join private.round_results rr on rr.round_id = r.id
+    join public.players p on p.id = rr.player_id
+    where r.id::text = any($1)
+  $q$ into v_results using v_ids;
+  return coalesce(v_results, 'no results');
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
 -- Whether a private table is in the Realtime publication, which would send its rows to every subscriber.
 create function pg_temp.publication_of(p_table text) returns text language sql as $$
   select case
@@ -355,6 +395,29 @@ select is(
 );
 select is(pg_temp.urn_rows('ballot_boxes', 'abandoned'), '0', 'after Nowa gra, no private.ballot_boxes row is left');
 select is(pg_temp.urn_rows('round_voters', 'abandoned'), '0', 'after Nowa gra, no private.round_voters row is left');
+
+-- A crash mid-round loses the votes cast before it, and only those -------------------------------------------------
+
+-- The urn is unlogged, so a crash empties it while the logged round stays in voting. The votes cast before the crash
+-- are lost and their voters may vote again (D1, plan Migration Notes); every vote after it must count. Oracle written
+-- out from the votes after the crash: Ola for Bartek, Bartek abstains, the host for Ola.
+select isnt(
+  pg_temp.open_room('crashed', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
+);
+select is(pg_temp.host_starts('crashed'), 'ok', 'start_game as the host starts the round to crash');
+select is(pg_temp.guest_votes('crashed', 'Ola', 'Ola'), 'ok', 'cast_vote as Ola before the crash is accepted');
+select is(pg_temp.crash_urn('crashed'), 'emptied', 'setup: a crash empties the urn of the round in progress');
+select is(
+  pg_temp.guest_votes('crashed', 'Ola', 'Bartek'), 'ok', 'after the crash, Ola, whose vote it lost, votes again'
+);
+select is(pg_temp.guest_votes('crashed', 'Bartek', null), 'ok', 'after the crash, Bartek abstains');
+select is(pg_temp.host_votes('crashed', 'Ola'), 'ok', 'after the crash, the host votes, the last of 3');
+select is(pg_temp.round_phase('crashed'), 'revealed', 'the last vote after the crash revealed the round');
+select is(
+  pg_temp.results_of('crashed'),
+  'Bartek 1, Host 0, Ola 1 | abstained 1 | ballots 3',
+  'the reveal after a crash counts every vote cast after it'
+);
 
 -- The hourly sweep closes games started over 12 hours ago, and only those -------------------------------------------
 
