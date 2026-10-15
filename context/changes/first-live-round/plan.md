@@ -852,14 +852,14 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 
 #### Automated
 
-- [x] 6.1 `npx supabase db push` zakończone bez błędu
-- [x] 6.2 Smoke na produkcji ze starym Workerem (`SMOKE_ROUND=0`) zielony
-- [x] 6.3 Workers Builds po scaleniu zielone
-- [x] 6.4 Smoke na produkcji z rundą zielony
+- [x] 6.1 `npx supabase db push` zakończone bez błędu — 1ea3edf
+- [x] 6.2 Smoke na produkcji ze starym Workerem (`SMOKE_ROUND=0`) zielony — 1ea3edf
+- [x] 6.3 Workers Builds po scaleniu zielone — 1ea3edf
+- [x] 6.4 Smoke na produkcji z rundą zielony — 1ea3edf
 
 #### Manual
 
-- [x] 6.5 Karol rozgrywa rundę: laptop (host) + telefon + okno incognito
-- [x] 6.6 W trakcie tej rundy: odświeżenie telefonu pokazuje „Głos oddany”; ponowne otwarcie linku z Discorda wraca do pokoju; czwarte okno bez ciasteczka dostaje „Gra już trwa”
-- [x] 6.7 `/10x-impl-review` zakończone, ustalenia rozstrzygnięte z Karolem
+- [x] 6.5 Karol rozgrywa rundę: laptop (host) + telefon + okno incognito — 1ea3edf
+- [x] 6.6 W trakcie tej rundy: odświeżenie telefonu pokazuje „Głos oddany”; ponowne otwarcie linku z Discorda wraca do pokoju; czwarte okno bez ciasteczka dostaje „Gra już trwa” — 1ea3edf
+- [x] 6.7 `/10x-impl-review` zakończone, ustalenia rozstrzygnięte z Karolem — 1ea3edf
 - [ ] 6.8 Dzień po wdrożeniu: panel Supabase (Integrations → Cron) pokazuje udane przebiegi `close-stale-games`
