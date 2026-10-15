@@ -45,7 +45,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                   | —                | FR-005, FR-015, Access Control (twórca gry)               | done     |
 | S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | done |
 | S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                             | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | done     |
-| S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                            | S-02             | FR-006, FR-015                                            | in-progress |
+| S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                            | S-02             | FR-006, FR-015                                            | done        |
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                    | S-02             | US-01, FR-011                                             | proposed |
 | S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                       | —                | FR-001                                                    | done |
 | S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                             | S-02             | FR-012                                                    | proposed |
@@ -146,7 +146,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Zamienia jedną rundę w wieczór z 10 pytaniami, czyli główne kryterium sukcesu; przypadkowe „koniec gry” zabiłoby wieczór, stąd potwierdzenie.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-04: Powrót po odświeżeniu
 
@@ -340,3 +340,4 @@ _Brak: to pierwszy kamień milowy._
 - **S-01: Host tworzy pokój, wybiera kategorie (przy każdej osobno decyduje, czy dołączyć jej pytania 18+) i dostaje link do wklejenia na Discordzie; gość otwiera link na telefonie, wpisuje nick (zajęty nick jest odrzucany) i trafia do pokoju, a host widzi dołączających na żywo.** — Archived 2026-10-08 → `context/archive/2026-10-07-room-lobby/`. Lesson: —.
 - **S-05: Host loguje się jednym kliknięciem przez zewnętrznego dostawcę, bez rejestracji i hasła; ten sam e-mail oznacza tego samego hosta także przy zapasowej drodze logowania.** — Archived 2026-10-08 → `context/archive/2026-10-04-one-click-host-login/`. Lesson: —.
 - **S-02: Host klika „start”; wszyscy w pokoju widzą to samo pytanie z wybranych kategorii (18+ tylko z tych, w których host je dołączył), każdy wskazuje jedną osobę z listy nicków (także siebie) albo się wstrzymuje, wszyscy widzą, kto już zagłosował, a po ostatnim głosie lub przewinięciu przez prowadzącego widzą odsłonę: ile głosów dostała każda osoba.** — Archived 2026-10-15 → `context/archive/2026-10-13-first-live-round/`. Lesson: —.
+- **S-03: Prowadzący przechodzi do kolejnego pytania (bez powtórek w tej grze), może pominąć rundę (jej głosy przepadają i nie liczą się do jakości pytania) i kończy grę po potwierdzeniu; po ostatnim pytaniu ekipa widzi koniec wieczoru bez punktacji.** — Archived 2026-10-15 → `context/archive/2026-10-15-full-game-evening/`. Lesson: —.
