@@ -597,13 +597,13 @@ Przegląd implementacji, wdrożenie „baza, smoke na starym kodzie, scalenie, s
 
 #### Automated
 
-- [x] 4.1 Lokalna bramka zielona z testami ogłoszeń i notki: `npm run lint` (z literałami UI), `npx astro check`, `npm test`, `npm run build`
-- [ ] 4.2 CI zielone (`ci`, `db`, `smoke`, `e2e`)
+- [x] 4.1 Lokalna bramka zielona z testami ogłoszeń i notki: `npm run lint` (z literałami UI), `npx astro check`, `npm test`, `npm run build` — ba71ece
+- [x] 4.2 CI zielone (`ci`, `db`, `smoke`, `e2e`) — ba71ece
 
 #### Manual
 
-- [x] 4.3 Zrzuty nowych stanów z `/dev/room-states` ocenione przez Karola (laptop jako całe okno, telefon w prawdziwej wielkości)
-- [x] 4.4 Klawiatura: „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie” i „Anuluj” osiągalne, fokus po potwierdzeniu nie ginie; regiony `aria-live` mają teksty z numerem pytania, pominięciem i końcem (czytnik w fazie 6)
+- [x] 4.3 Zrzuty nowych stanów z `/dev/room-states` ocenione przez Karola (laptop jako całe okno, telefon w prawdziwej wielkości) — ba71ece
+- [x] 4.4 Klawiatura: „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie” i „Anuluj” osiągalne, fokus po potwierdzeniu nie ginie; regiony `aria-live` mają teksty z numerem pytania, pominięciem i końcem (czytnik w fazie 6) — ba71ece
 
 ### Phase 5: Test w przeglądarce, smoke z wieczorem, próbne alarmy
 

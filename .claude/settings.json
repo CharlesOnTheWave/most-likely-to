@@ -46,6 +46,7 @@
       "Bash(BASE_URL=* npm*smoke*)",
       "Bash(SMOKE_OAUTH=* npm*smoke*)",
       "Bash(SMOKE_ROUND=* npm*smoke*)",
+      "Bash(SMOKE_GAME=* npm*smoke*)",
       "Bash(node scripts/smoke*)",
       "Bash(node ./scripts/smoke*)",
       "Bash(node *smoke.mjs*)"
