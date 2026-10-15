@@ -72,8 +72,8 @@ jobs:
       - if: always()
         run: supabase stop --no-backup
 
-  # Database rules through REST/RPC as a guest and as a host (tests/db), on a throwaway local stack. A job of its own:
-  # its own red signal, in parallel with smoke.
+  # Database rules through REST/RPC as a guest and as a host (tests/db), then the owner's view (supabase/tests, pgTAP),
+  # on a throwaway local stack. A job of its own: its own red signal, in parallel with smoke.
   db:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -95,8 +95,14 @@ jobs:
           supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
           source supabase.env
           printf 'TEST_SUPABASE_URL=%s\nTEST_SUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" >> "$GITHUB_ENV"
-      # Verbose: the log names every test, so each known hole ("znana dziura … → S-02") shows up, not only a count.
+      # Verbose: the log names every test, so a known hole ("znana dziura … → …"), when there is one, shows up by name.
       - run: npm run test:db -- --reporter=verbose
+      # The creator's view (supabase/tests, pgTAP): catalog, grants, publication and rows left behind, read as the
+      # database owner on this same throwaway stack, which the publishable key cannot see. Also after a red Vitest step,
+      # so one run shows both sets.
+      - name: Database owner's view (pgTAP)
+        if: success() || failure()
+        run: supabase test db
       - if: always()
         run: supabase stop --no-backup
 

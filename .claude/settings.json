@@ -31,6 +31,8 @@
       "Bash(npx wrangler delete)",
       "Bash(npx wrangler delete *)",
       "Bash(npx supabase db *)",
+      "Bash(npx supabase test*)",
+      "Bash(supabase test*)",
       "Bash(npx supabase migration up*)",
       "Bash(npx supabase migration down*)",
       "Bash(npx supabase migration repair*)",
@@ -43,6 +45,7 @@
       "Bash(npm *smoke*)",
       "Bash(BASE_URL=* npm*smoke*)",
       "Bash(SMOKE_OAUTH=* npm*smoke*)",
+      "Bash(SMOKE_ROUND=* npm*smoke*)",
       "Bash(node scripts/smoke*)",
       "Bash(node ./scripts/smoke*)",
       "Bash(node *smoke.mjs*)"

@@ -1,19 +1,21 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
-import RoomLobby from "@/components/room/RoomLobby";
+import RoomScreen from "@/components/room/RoomScreen";
 import RoomMessage from "@/components/room/RoomMessage.astro";
+import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import { hostLinkToken, roomLobby } from "@/lib/rooms/server";
-import type { LobbyState } from "@/lib/rooms/shared";
+import { hostLinkToken, roomLobby, roomView } from "@/lib/rooms/server";
+import type { RoomView } from "@/lib/rooms/shared";
 import { playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
-// The room for its host (session) or a player (the cookie from joining). Anyone else, a malformed id and a room that
-// does not exist get the same 404, so the page does not tell which rooms exist. The island keeps the list live: the
-// publishable key reaches it as props, only for the room's Realtime channel (AGENTS.md); null means polling only.
+// The room for its host (session) or a player (the cookie from joining), in the lobby or with a game in play; the
+// island gets the room's state with the round's question as text (RoomView). Anyone else, a malformed id and a room
+// that does not exist get the same 404, so the page does not tell which rooms exist. The island keeps the state live:
+// the publishable key reaches it as props, only for the room's Realtime channel (AGENTS.md); null means polling only.
 type Page =
-  | { kind: "lobby"; roomId: string; lobby: LobbyState; linkUrl: string | null }
+  | { kind: "lobby"; roomId: string; lobby: RoomView; linkUrl: string | null }
   | { kind: "outside" }
   | { kind: "error"; reason: string };
 
@@ -22,17 +24,27 @@ async function loadPage(roomId: string): Promise<Page> {
   const supabase = createClient(Astro.request.headers, Astro.cookies);
   if (!supabase) return { kind: "error", reason: "service_unavailable" };
 
-  const result = await roomLobby(supabase, roomId, Astro.cookies.get(playerCookieName(roomId))?.value);
+  const playerToken = Astro.cookies.get(playerCookieName(roomId))?.value;
+  const result = await roomLobby(supabase, roomId, playerToken);
   if (!result.ok) return { kind: "error", reason: result.reason };
-  if (!result.lobby) return { kind: "outside" };
+  if (!result.lobby) {
+    // As in GET /api/rooms/<id>/lobby (audit L3): the flags tell a stranger from a host or a guest who lost the way in.
+    logEvent("warn", {
+      route: "/r/[id]",
+      roomId,
+      hasUser: Boolean(Astro.locals.user),
+      hasPlayerCookie: playerToken !== undefined,
+    });
+    return { kind: "outside" };
+  }
 
-  // Only the host reads the link code (RLS on rooms), and only while the room is open.
+  // Only the host reads the link code (RLS on rooms), and only in the lobby: a game in play takes no one new.
   let linkUrl: string | null = null;
   if (result.lobby.role === "host" && result.lobby.status === "lobby") {
     const link = await hostLinkToken(supabase, roomId);
     if (link.ok && link.linkToken) linkUrl = `${Astro.url.origin}/j/${link.linkToken}`;
   }
-  return { kind: "lobby", roomId, lobby: result.lobby, linkUrl };
+  return { kind: "lobby", roomId, lobby: roomView(result.lobby, roomId), linkUrl };
 }
 
 const page = await loadPage(Astro.params.id ?? "");
@@ -48,7 +60,7 @@ if (page.kind === "outside") {
   <AppHeader />
   <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
     {page.kind === "lobby" && (
-      <RoomLobby roomId={page.roomId} initial={page.lobby} linkUrl={page.linkUrl} realtime={realtime} client:load />
+      <RoomScreen roomId={page.roomId} initial={page.lobby} linkUrl={page.linkUrl} realtime={realtime} client:load />
     )}
     {page.kind === "outside" && <RoomMessage title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />}
     {page.kind === "error" && (

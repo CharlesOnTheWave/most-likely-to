@@ -8,6 +8,8 @@ const ROOM_PATH = /^\/r\/([0-9a-f-]{36})$/;
 
 export interface OpenRoom {
   id: string;
+  // The host's own nick in the room's list (the round's specs need it for the host's row in the reveal).
+  hostNick: string;
   // The guests' link, as the host's screen shows it.
   link: string;
   // Taken just before the host's screen loads, so `Date.now() - openedAt` is never shorter than the time since the
@@ -27,8 +29,9 @@ export function uniqueNick(prefix: string): string {
 // at its first poll, so a bell rung before that moment could not be told from the fetch.
 export async function openRoom(page: Page, baseURL: string | undefined): Promise<OpenRoom> {
   if (!baseURL) throw new Error("baseURL is not set (playwright.config.ts)");
+  const hostNick = uniqueNick("Host");
   const response = await page.request.post("/api/rooms", {
-    form: { nick: uniqueNick("Host"), category: CATEGORIES[0].id, confirm_close: "1" },
+    form: { nick: hostNick, category: CATEGORIES[0].id, confirm_close: "1" },
     // Astro refuses a form POST from another origin.
     headers: { Origin: baseURL },
   });
@@ -42,7 +45,7 @@ export async function openRoom(page: Page, baseURL: string | undefined): Promise
   await page.goto(`/r/${roomId}`);
   await subscribed;
   const link = await page.getByRole("textbox", { name: "Link dla graczy" }).inputValue();
-  return { id: roomId, link, openedAt };
+  return { id: roomId, hostNick, link, openedAt };
 }
 
 // The screen's next successful fetch of the room's list. Before the first poll, the only fetch is the one a screen makes
