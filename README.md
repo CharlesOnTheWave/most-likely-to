@@ -190,7 +190,8 @@ Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or
 `scripts/smoke.mjs` is a dependency-free Node script that walks two flows over HTTP:
 
 - **auth**: wrong and correct password, protected page, sign-out, the Discord and Google sign-in start and the callback errors (`SMOKE_OAUTH=1` also follows Supabase on to discord.com and accounts.google.com; that needs both providers enabled, so CI runs without it);
-- **rooms**: the signed-in host is sent away from `/auth/signin`, creates a room and sees the guest link; guests join through the link, a nick that differs only by a trailing space or a zero-width character is taken while another letter case joins, the lobby is closed to anyone without the room's cookie, a new game asks before closing a room with guests, and old and unknown links answer 410 and 404.
+- **rooms**: the signed-in host is sent away from `/auth/signin`, creates a room and sees the guest link; guests join through the link, a nick that differs only by a trailing space, a zero-width character or a variation selector (U+FE0F) is taken while another letter case joins, the lobby is closed to anyone without the room's cookie, a new game asks before closing a room with guests, and old and unknown links answer 410 and 404;
+- **round** (inside the rooms flow): the host starts the game, a guest who comes late gets `game_started`, two guests and the host vote, the room's state shows the reveal with counts that match the votes, a vote after the reveal gets `round_revealed`, and the room's link takes a guest with its cookie back into the game. `SMOKE_ROUND=0` skips these steps and lists them as `SKIP`: production between `npx supabase db push` and the merge, when the Worker has no round yet.
 
 Run it against the dev server or the production preview after dependency upgrades:
 
@@ -212,11 +213,12 @@ The live-sync spike (F-01) proved the technique the room screens use: the server
 
 ## CI
 
-GitHub Actions runs three jobs on every push and PR to `main`:
+GitHub Actions runs four jobs on every push and PR to `main`:
 
-- **ci** — lint, `astro check`, unit tests (`npm test`) and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
+- **ci** — lint, `astro check`, unit tests (`npm test`), the agent hooks' tests (`npm run test:hooks`) and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
 - **smoke** — starts a local Supabase via the Supabase CLI, which applies every migration in `supabase/migrations/` to a fresh database, and takes its `API_URL` and `PUBLISHABLE_KEY` (`sb_publishable_…`, as in production). It then creates the smoke test account there with a plain sign-up, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. Realtime is not started, so the room screens fall back to polling. No secrets required.
-- **db** — starts its own local Supabase the same way, passes its `API_URL` and `PUBLISHABLE_KEY` to the tests as `TEST_SUPABASE_URL` and `TEST_SUPABASE_KEY` and runs `npm run test:db`: the database grants, policies and functions through REST/RPC as a guest and as a signed-in host. Known holes show in the log as expected failures ("znana dziura … → S-02"). Runs in parallel with smoke. No secrets required.
+- **db** — starts its own local Supabase the same way, passes its `API_URL` and `PUBLISHABLE_KEY` to the tests as `TEST_SUPABASE_URL` and `TEST_SUPABASE_KEY` and runs `npm run test:db`: the database grants, policies and functions through REST/RPC as a guest and as a signed-in host. A known hole, when there is one, shows in the log as an expected failure ("znana dziura … → …"). Then `supabase test db` (pgTAP, `supabase/tests/`) reads the same database as its owner: catalog, grants, publication and the rows a round leaves behind. Runs in parallel with smoke. No secrets required.
+- **e2e** — starts its own local Supabase with Realtime, signs up a host account there, builds and runs `npx playwright test` (`tests/e2e/`): several players in one room in real browsers. No secrets required.
 
 ## Database migrations
 

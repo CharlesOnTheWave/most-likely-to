@@ -1,9 +1,9 @@
 ---
 change_id: first-live-round
 title: Pierwsza runda na żywo (S-02) z testami anonimowości i reguł rundy (faza 2)
-status: implementing
+status: impl_reviewed
 created: 2026-10-13
-updated: 2026-10-14
+updated: 2026-10-15
 archived_at: null
 ---
 

@@ -839,14 +839,14 @@ Przegląd implementacji, a potem wdrożenie w kolejności „baza, smoke na star
 
 #### Automated
 
-- [x] 5.1 CI `e2e` zielone z `round.spec.ts`
-- [x] 5.2 CI `smoke` zielone z krokami rundy i FE0F
-- [ ] 5.3 Próbne alarmy (a) i (b) zaświeciły dokładnie przewidziane testy, a po `git revert` CI znów zielone
-- [x] 5.4 `git diff main...HEAD -- supabase/migrations` zawiera wyłącznie migracje `*_first_live_round.sql` i `*_close_stale_games.sql`
+- [x] 5.1 CI `e2e` zielone z `round.spec.ts` — 009ad52
+- [x] 5.2 CI `smoke` zielone z krokami rundy i FE0F — 009ad52
+- [x] 5.3 Próbne alarmy (a) i (b) zaświeciły dokładnie przewidziane testy, a po `git revert` CI znów zielone — 009ad52
+- [x] 5.4 `git diff main...HEAD -- supabase/migrations` zawiera wyłącznie migracje `*_first_live_round.sql` i `*_close_stale_games.sql` — 009ad52
 
 #### Manual
 
-- [ ] 5.5 Wynik próbnych alarmów opisany w PR (który test, na czym zaświecił)
+- [x] 5.5 Wynik próbnych alarmów opisany w PR (który test, na czym zaświecił) — 009ad52
 
 ### Phase 6: Przegląd i wdrożenie
 

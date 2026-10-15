@@ -95,7 +95,7 @@ jobs:
           supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=' > supabase.env
           source supabase.env
           printf 'TEST_SUPABASE_URL=%s\nTEST_SUPABASE_KEY=%s\n' "$API_URL" "$PUBLISHABLE_KEY" >> "$GITHUB_ENV"
-      # Verbose: the log names every test, so each known hole ("znana dziura … → S-02") shows up, not only a count.
+      # Verbose: the log names every test, so a known hole ("znana dziura … → …"), when there is one, shows up by name.
       - run: npm run test:db -- --reporter=verbose
       # The creator's view (supabase/tests, pgTAP): catalog, grants, publication and rows left behind, read as the
       # database owner on this same throwaway stack, which the publishable key cannot see. Also after a red Vitest step,
