@@ -279,7 +279,8 @@ Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wiecz�
 - **Question number**: głos, „Następne pytanie” i pominięcie niosą `round` jak ekran pokoju (`act("vote", { target, round }, jar)`). Głosy kroków rundy idą bez `round`, jak ekran wczytany przed S-03, więc smoke pilnuje też okna wdrożenia; spóźniony głos wysyła numer poprzedniego pytania i dostaje `round_over`.
 - **Expectations**: trzeci element kroku to obiekt oczekiwań albo funkcja, gdy wartość znana jest dopiero po wcześniejszych krokach (np. id pokoju). Klucze (`status`, `location`, `exact`, `contains`, `body`, `cookie`, `noCookie`, `httpOnly`) opisuje komentarz nad pętlą porównań. Przy porażce skrypt wypisuje oczekiwanie, także wyrażenie dla `body`.
 - **No cookie**: `noCookie: "<tekst>"` znaczy, że żadne ciasteczko ustawione w tym kroku nie ma tego tekstu w nazwie. Liczą się tylko ciasteczka ustawione przez ten krok, a nie te, które zostały w słoiku. Krok z kilkoma żądaniami zbiera ciasteczka wszystkich odpowiedzi. Wzór: `openLinkThreeTimes` (otwarcie linku trzy razy nie ustawia `mlt_player_`).
-- **Jars**: każdy gracz ma własny słoik ciasteczek (`hostJar`, `olaJar`, `secondGuestJar` dla drugiego gościa, który głosuje w rundzie i wysyła spóźniony głos, `new Map()` dla jednorazowego gościa).- **Break-check**: nowy krok, który pilnuje zakazu, sprawdź raz próbnym alarmem jak w §6.2 (tymczasowa edycja strony zamiast migracji).
+- **Jars**: każdy gracz ma własny słoik ciasteczek (`hostJar`, `olaJar`, `secondGuestJar` dla drugiego gościa, który głosuje w rundzie i wysyła spóźniony głos, `new Map()` dla jednorazowego gościa).
+- **Break-check**: nowy krok, który pilnuje zakazu, sprawdź raz próbnym alarmem jak w §6.2 (tymczasowa edycja strony zamiast migracji).
 
 ### 6.6 Per-rollout-phase notes
 

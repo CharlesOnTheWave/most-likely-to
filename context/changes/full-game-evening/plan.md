@@ -609,14 +609,14 @@ Przegląd implementacji, wdrożenie „baza, smoke na starym kodzie, scalenie, s
 
 #### Automated
 
-- [x] 5.1 CI `e2e` zielone z `game.spec.ts`
-- [x] 5.2 CI `smoke` zielone z krokami S-03
-- [x] 5.3 Próbne alarmy (a), (b) i (c) zaświeciły dokładnie przewidziane testy, a po `git revert` CI znów zielone
-- [x] 5.4 `git diff main...HEAD -- supabase/migrations` zawiera wyłącznie `*_full_game_evening.sql`
+- [x] 5.1 CI `e2e` zielone z `game.spec.ts` — 7c444ca
+- [x] 5.2 CI `smoke` zielone z krokami S-03 — 7c444ca
+- [x] 5.3 Próbne alarmy (a), (b) i (c) zaświeciły dokładnie przewidziane testy, a po `git revert` CI znów zielone — 7c444ca
+- [x] 5.4 `git diff main...HEAD -- supabase/migrations` zawiera wyłącznie `*_full_game_evening.sql` — 7c444ca
 
 #### Manual
 
-- [ ] 5.5 Wynik próbnych alarmów opisany w PR (który test, na czym zaświecił)
+- [x] 5.5 Wynik próbnych alarmów opisany w PR (który test, na czym zaświecił) — 7c444ca
 
 ### Phase 6: Przegląd i wdrożenie
 
