@@ -46,7 +46,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect(`/?error=${encodeURIComponent(result.reason)}`);
   }
 
-  // Guests of the closed room see "gra zamknięta" right away instead of at their next poll.
+  // Guests of the closed room see "Koniec wieczoru" right away instead of at their next poll.
   if (result.closedRoomId) {
     await ringLobby(context.locals, supabase, result.closedRoomId);
   }

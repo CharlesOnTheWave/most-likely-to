@@ -209,3 +209,9 @@ export function nickLength(nick: string): number {
 export function playerCountLabel(count: number): string {
   return count === 1 ? "1 gracz" : `${count} graczy`;
 }
+
+// The round's question as one sentence, for its heading and the screen reader. React renders it as text, never as HTML
+// (lessons.md). null: the base did not have the round's question, so the sentence says only that.
+export function questionSentence(question: string | null): string {
+  return question === null ? "Nie udało się wczytać pytania." : `Kto z nas najprawdopodobniej ${question}?`;
+}
