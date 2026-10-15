@@ -202,7 +202,7 @@ Cel (ryzyko #1): po rundzie żadna rola i żaden kanał nie łączy głosująceg
 - **Location**:
   - `tests/db/round-anonymity.test.ts` (Vitest): drzwiami ról, kluczem publishable, jako gość i jako host (§6.2);
   - `supabase/tests/round_creator_view.test.sql` (pgTAP): widok twórcy, czyli to, czego klucz publishable nie widzi.
-- **Oracle**: PRD Non-Goals i NFR anonimowości, AGENTS.md Hard Rules, decyzja D1 (urna, która znika: `context/changes/first-live-round/research.md`). Nigdy implementacja.
+- **Oracle**: PRD Non-Goals i NFR anonimowości, AGENTS.md Hard Rules, decyzja D1 (urna, która znika: `context/archive/2026-10-13-first-live-round/research.md`). Nigdy implementacja.
 - **Exact key sets** (Vitest): odpowiedź i stan sprawdzane pełnym zbiorem kluczy (`keysOf` i stałe `*_KEYS` z `tests/db/support/rounds.ts`, `toEqual`), nie „polami, które znamy”. Nowy klucz w odpowiedzi to droga wycieku pary albo liczby przed odsłoną.
   - Przyjęty głos to dokładnie `{ ok: true }`. Odmowa to dane `{ ok: false, reason }` bez `error`, bo błąd Postgresa niósłby `details` z wartościami wiersza.
   - `round` w trakcie głosowania ma tylko klucze głosowania, bez liczb, widziane jako gość, który zagłosował, gość, który nie, i host.
