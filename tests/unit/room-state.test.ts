@@ -5,8 +5,8 @@ import { parseLobbyState, parseRoomView } from "@/lib/rooms/shared";
 // text). Every new state goes through one parser that names the field that did not pass (audit P6, L4): a database and
 // a Worker out of step must give a log line that says which field, not "an unexpected shape", and an island must not
 // render a shape it does not know. The fixtures are written by hand from the round's contract
-// (context/changes/first-live-round/plan.md, Faza 1 #4; tests/db/support/rounds.ts, the exact key sets), never from the
-// parser.
+// (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4; tests/db/support/rounds.ts, the exact key sets),
+// never from the parser.
 
 const PLAYERS = [
   { nick: "Ola", host: true },

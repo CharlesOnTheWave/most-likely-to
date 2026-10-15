@@ -14,8 +14,8 @@ const GUEST_REFUSALS = [
   "game_started",
 ];
 
-// The round's codes as the plan lists them (context/changes/first-live-round/plan.md, Faza 3 #4), written out by hand:
-// a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
+// The round's codes as the plan lists them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4), written
+// out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",

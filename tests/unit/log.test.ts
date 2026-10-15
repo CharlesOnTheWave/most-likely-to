@@ -5,8 +5,8 @@ import { allowedFields, logEvent } from "@/lib/log";
 // Every log line of the Worker goes through one helper with a list of the keys it may write (plan T6, audit §6 step 2).
 // A nick, a player token, a link code, a vote's target or the request's URL must never reach Workers Logs (AGENTS.md,
 // Hard Rules; PRD: "kto na kogo" never recoverable), so the helper drops every key that is not on the list, whatever
-// the caller passes. The oracle is the plan's list (context/changes/first-live-round/plan.md, Faza 3 #1) plus the two
-// flags of the L3 line (#6), not the module's own list.
+// the caller passes. The oracle is the plan's list (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #1)
+// plus the two flags of the L3 line (#6), not the module's own list.
 const ALLOWED = [
   "op",
   "route",

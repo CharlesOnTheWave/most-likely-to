@@ -1,7 +1,7 @@
 ---
 change_id: full-game-evening
 title: Pełny wieczór (S-03): kolejne pytania, pominięcie rundy i koniec gry
-status: planned
+status: implementing
 created: 2026-10-15
 updated: 2026-10-15
 archived_at: null
