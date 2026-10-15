@@ -581,16 +581,16 @@ Przegląd implementacji, wdrożenie „baza, smoke na starym kodzie, scalenie, s
 
 #### Automated
 
-- [ ] 2.1 CI `db`: Vitest i pgTAP zielone w całości (S-02 i S-03)
-- [ ] 2.2 CI `smoke` i `e2e` zielone na starym kodzie Workera
-- [ ] 2.3 `git diff main...HEAD -- supabase/migrations` zawiera wyłącznie `*_full_game_evening.sql`
+- [x] 2.1 CI `db`: Vitest i pgTAP zielone w całości (S-02 i S-03) — ecb290d
+- [x] 2.2 CI `smoke` i `e2e` zielone na starym kodzie Workera — ecb290d
+- [x] 2.3 `git diff main...HEAD -- supabase/migrations` zawiera wyłącznie `*_full_game_evening.sql` — ecb290d
 
 ### Phase 3: Serwer wieczoru
 
 #### Automated
 
-- [ ] 3.1 `npm test` zielone z nowymi testami (pula, parser, kody odmów, F6)
-- [ ] 3.2 Lokalna bramka zielona: `npm run lint`, `npx astro check`, `npm run build`
+- [x] 3.1 `npm test` zielone z nowymi testami (pula, parser, kody odmów, F6)
+- [x] 3.2 Lokalna bramka zielona: `npm run lint`, `npx astro check`, `npm run build`
 - [ ] 3.3 CI zielone (`ci`, `db`, `smoke`, `e2e`)
 
 ### Phase 4: Ekrany wieczoru

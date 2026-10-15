@@ -2,13 +2,13 @@ import type { APIContext } from "astro";
 import { logEvent } from "@/lib/log";
 import type { ActionResult, RoomFailure } from "@/lib/rooms/server";
 
-// What the JSON routes of the room screen share: the start, vote and reveal actions (src/pages/api/rooms/[id]/*.ts),
-// the room's state and the screens' reports (src/pages/api/client-events.ts). Every answer is JSON and never cached;
-// an error is a code from src/lib/rooms/errors.ts, never free text.
+// What the JSON routes of the room screen share: the game's actions (start, vote, reveal, next, skip, end;
+// src/pages/api/rooms/[id]/*.ts), the room's state and the screens' reports (src/pages/api/client-events.ts). Every
+// answer is JSON and never cached; an error is a code from src/lib/rooms/errors.ts, never free text.
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
-// A vote is ~100 characters; anything much longer is not our screen.
+// In bytes. A vote is ~100; anything much longer is not our screen.
 const MAX_BODY_LENGTH = 4096;
 
 // Someone outside the room (no session and no cookie of the room, another host's room, no such room): the same 404 as
@@ -36,20 +36,56 @@ export function refuseForeignPost(context: APIContext, op: string): Response | n
   return null;
 }
 
-// The request's JSON body, or a 400 to send back. Only the error's name is logged, never the body.
-export async function readJsonBody(
-  context: APIContext,
-  op: string,
-): Promise<{ ok: true; body: unknown } | { ok: false; response: Response }> {
+export type JsonBody = { ok: true; body: unknown } | { ok: false; response: Response };
+
+// The body as text, read up to limit bytes; null as soon as it has more, without reading the rest. A chunked body has
+// no Content-Length, so the count is the only limit it meets.
+async function readLimited(request: Request, limit: number): Promise<string | null> {
+  if (request.body === null) return "";
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > limit) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+// The request's JSON body, or a 400 to send back. A body over the limit is refused before it is read (F6 of the S-02
+// review): by its Content-Length when it declares one, else after the first byte past the limit. Only the error's
+// name is logged, never the body.
+export async function readJsonRequest(request: Request, op: string): Promise<JsonBody> {
   const invalid = { ok: false as const, response: jsonAnswer({ error: "invalid_body" }, 400) };
-  let text: string;
+  const declared = request.headers.get("Content-Length");
+  if (declared !== null && !/^\d{1,10}$/.test(declared)) {
+    logEvent("warn", { op, step: "body", status: 400, code: "bad_length" });
+    return invalid;
+  }
+  if (declared !== null && Number(declared) > MAX_BODY_LENGTH) {
+    logEvent("warn", { op, step: "body", status: 400, code: "too_large" });
+    return invalid;
+  }
+  let text: string | null;
   try {
-    text = await context.request.text();
+    text = await readLimited(request, MAX_BODY_LENGTH);
   } catch (error) {
     logEvent("warn", { op, step: "body", status: 400, errName: error instanceof Error ? error.name : "unknown" });
     return invalid;
   }
-  if (text.length > MAX_BODY_LENGTH) {
+  if (text === null) {
     logEvent("warn", { op, step: "body", status: 400, code: "too_large" });
     return invalid;
   }
@@ -60,6 +96,19 @@ export async function readJsonBody(
     logEvent("warn", { op, step: "body", status: 400, errName: error instanceof Error ? error.name : "unknown" });
     return invalid;
   }
+}
+
+export function readJsonBody(context: APIContext, op: string): Promise<JsonBody> {
+  return readJsonRequest(context.request, op);
+}
+
+// The number of the question on the player's screen, from a game action's body: a whole number from 1, null when the
+// body has no round (a screen loaded before S-03 votes without one), undefined when it is there but not a number of a
+// round. next and skip need one; a vote takes either.
+export function bodyRound(body: unknown): number | null | undefined {
+  if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "round")) return null;
+  const { round } = body as Record<string, unknown>;
+  return typeof round === "number" && Number.isSafeInteger(round) && round >= 1 ? round : undefined;
 }
 
 function statusFor(reason: string): number {

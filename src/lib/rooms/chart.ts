@@ -1,9 +1,10 @@
 import { sortResults } from "@/lib/rooms/results";
 import type { RoundResult } from "@/lib/rooms/shared";
 
-// The reveal's two views (Karol's decision after the screenshot review of Faza 4, context/changes/first-live-round):
-// "Koło", a pie with one slice per player who got votes, and "Paski", a bar behind each row of the result's table. The
-// table is the accessible data in both; these are only shapes for the eye. Safe in the browser.
+// The reveal's two views (Karol's decision after the screenshot review of Faza 4,
+// context/archive/2026-10-13-first-live-round): "Koło", a pie with one slice per player who got votes, and "Paski", a
+// bar behind each row of the result's table. The table is the accessible data in both; these are only shapes for the
+// eye. Safe in the browser.
 
 export type ResultView = "pie" | "bars";
 

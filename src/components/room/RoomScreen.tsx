@@ -28,7 +28,7 @@ interface Props {
   preview?: ScreenPreview;
 }
 
-type Phase = "lobby" | "voting" | "revealed" | "closed";
+type Phase = "lobby" | "voting" | "revealed" | "skipped" | "closed";
 
 function phaseOf(view: RoomView): Phase {
   if (view.status === "closed") return "closed";
@@ -105,6 +105,15 @@ export default function RoomScreen({ roomId, initial, linkUrl, realtime, preview
         onStart={start}
         preview={preview}
       />
+    );
+  } else if (view.round.phase === "skipped") {
+    // The last question of the pool was skipped, so no round follows it. Faza 4 of context/changes/full-game-evening/
+    // plan.md gives this state its own screen, with "Zakończ grę" for the host.
+    const Title = titleAs;
+    content = (
+      <section className="flex flex-col items-center gap-4 py-12 text-center">
+        <Title className="text-2xl font-semibold text-balance">Host pominął pytanie.</Title>
+      </section>
     );
   } else if (view.round.phase === "voting") {
     content = (

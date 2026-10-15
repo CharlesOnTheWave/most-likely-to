@@ -2,8 +2,8 @@
 // screen shows the Polish text from this map, so text typed into `?error=` never reaches the screen (same as
 // src/lib/auth-errors.ts).
 
-// The refusals of the round's actions (start, vote, reveal) and of joining a game in play, each with its own text
-// (audit G2). tests/unit/room-errors.test.ts checks this list against the plan.
+// The refusals of the game's actions (start, vote, reveal, next, skip, end) and of joining a game in play, each with
+// its own text (audit G2). tests/unit/room-errors.test.ts checks this list against the plans.
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -13,6 +13,8 @@ export const ROUND_REFUSALS = [
   "round_revealed",
   "unknown_target",
   "no_round",
+  "round_over",
+  "round_in_progress",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -36,6 +38,8 @@ const MESSAGES: Record<string, string> = {
   round_revealed: "Wynik jest już odsłonięty. Głosowanie się skończyło.",
   unknown_target: "Tej osoby nie ma w grze. Wybierz kogoś z listy.",
   no_round: "Teraz nie trwa żadna runda.",
+  round_over: "To pytanie już się zmieniło.",
+  round_in_progress: "Głosowanie jeszcze trwa. Najpierw odsłoń wynik.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";
