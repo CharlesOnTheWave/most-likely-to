@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { actionAnswer, bodyRound, OUTSIDE_ROOM, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-route";
-import { hostRoomCategories, nextRound } from "@/lib/rooms/server";
+import { hostRoomCategories, nextRound, ringLobby } from "@/lib/rooms/server";
 import { UUID_PATTERN } from "@/lib/rooms/tokens";
 import { shuffledQuestions } from "@/lib/rounds/draw";
 import { createClient } from "@/lib/supabase";
@@ -36,5 +36,6 @@ export const POST: APIRoute = async (context) => {
   if (!room.selection) return actionAnswer(OP, roomId, OUTSIDE_ROOM);
 
   const result = await nextRound(supabase, roomId, round, shuffledQuestions(room.selection, Math.random));
+  if (result.ok) await ringLobby(context.locals, supabase, roomId);
   return actionAnswer(OP, roomId, result);
 };
