@@ -1,6 +1,7 @@
-// Round steps shared by the E2E specs: the host starts the game, a player votes, a screen's reveal is read. Every step
-// goes through the screen, by role and accessible name, as a player would (src/components/room/RoundVoting.tsx,
-// RoundReveal.tsx).
+// Round steps shared by the E2E specs: the host starts the game, a player votes, a screen's reveal is read, and the
+// host moves the evening on (the next question, a skip, the end). Every step goes through the screen, by role and
+// accessible name, as a player would (src/components/room/RoundVoting.tsx, RoundReveal.tsx, HostActions.tsx,
+// RoomScreen.tsx).
 
 import { expect, type Locator, type Page } from "@playwright/test";
 
@@ -64,4 +65,46 @@ export async function expectReveal(page: Page, expected: ExpectedReveal): Promis
     await expect(votes, `votes of ${nick}`).toHaveText(String(count));
   }
   await expect(page.getByText(`Wstrzymało się: ${String(expected.abstained)}`, { exact: true })).toBeVisible();
+}
+
+// A screen on a question's vote with nothing chosen and nothing cast: "Zagłosuj" is there and no radio is checked, so
+// no choice and no "Głos oddany" carried over from the question before. Waits for the vote's view first.
+export async function expectFreshVote(page: Page): Promise<void> {
+  await expect(page.getByRole("button", { name: "Zagłosuj", exact: true })).toBeVisible({ timeout: ROUND_UPDATE_MS });
+  await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
+}
+
+// The host's "Następne pytanie" after a reveal: one press, nothing is lost.
+export async function nextQuestion(host: Page): Promise<void> {
+  await host.getByRole("button", { name: "Następne pytanie", exact: true }).click();
+}
+
+// The host's "Pomiń pytanie" while the question is voting. Its votes are lost, so it asks first: the first press turns
+// the same button into "Na pewno pominąć? Głosy przepadną (zagłosowało N z M)" with "Anuluj" next to it, and the second
+// press skips.
+export async function skipQuestion(host: Page): Promise<void> {
+  await host.getByRole("button", { name: "Pomiń pytanie", exact: true }).click();
+  await expect(host.getByRole("button", { name: "Anuluj", exact: true })).toBeVisible();
+  await host.getByRole("button", { name: /^Na pewno pominąć\? Głosy przepadną \(zagłosowało \d+ z \d+\)$/ }).click();
+}
+
+// The host's "Zakończ grę", while voting or after a reveal. It ends the evening for everyone, so it asks first, as
+// skipQuestion does.
+export async function endGame(host: Page): Promise<void> {
+  await host.getByRole("button", { name: "Zakończ grę", exact: true }).click();
+  await expect(host.getByRole("button", { name: "Anuluj", exact: true })).toBeVisible();
+  await host
+    .getByRole("button", { name: "Na pewno zakończyć grę? Wszyscy zobaczą koniec wieczoru", exact: true })
+    .click();
+}
+
+// The note above the question on every screen of the round that follows a skip, for the whole round. A note, not an
+// alert: the screen's announcement already says the skip with the new question.
+export function skipNotice(page: Page): Locator {
+  return page.getByRole("note").filter({ hasText: "Host pominął poprzednie pytanie." });
+}
+
+// The screen's title once the game is over ("Zakończ grę"), the same for the host and every guest.
+export function eveningEnd(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Koniec wieczoru", exact: true });
 }
