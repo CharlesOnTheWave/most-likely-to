@@ -2,9 +2,9 @@ import type { ParseResult } from "@/lib/rooms/shared";
 import { UUID_PATTERN } from "@/lib/rooms/tokens";
 
 // What a player's screen may report to POST /api/client-events (decision D4 in
-// context/changes/first-live-round/research.md; audit L1, L2, L4): only these events and states and a room's id. The
-// endpoint is public, so nothing free-form gets through: a message or any other field could carry a nick or a vote's
-// target into the log. Server side; a screen imports only the types.
+// context/archive/2026-10-13-first-live-round/research.md; audit L1, L2, L4): only these events and states and a room's
+// id. The endpoint is public, so nothing free-form gets through: a message or any other field could carry a nick or a
+// vote's target into the log. Server side; a screen imports only the types.
 export const CLIENT_EVENTS = ["realtime_status", "refresh_failed", "island_crash"] as const;
 // The channel's states other than SUBSCRIBED, and a failed refresh by HTTP class or the network.
 export const CLIENT_STATES = ["CHANNEL_ERROR", "TIMED_OUT", "CLOSED", "http_4xx", "http_5xx", "network"] as const;

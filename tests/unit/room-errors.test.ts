@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ROUND_REFUSALS, roomErrorMessage } from "@/lib/rooms/errors";
 
-// Every refusal on a guest's way in (src/pages/api/rooms/join.ts) and of a round's action (start, vote, reveal) must
-// say what went wrong. A code renamed on one side would leave the player with the generic "something went wrong"
-// (test-plan #6; audit G2). The Polish texts are not copied here: the test checks that each refusal has its own text,
-// not what the text says.
+// Every refusal on a guest's way in (src/pages/api/rooms/join.ts) and of a game's action (start, vote, reveal, next,
+// skip, end) must say what went wrong. A code renamed on one side would leave the player with the generic "something
+// went wrong" (test-plan #6; audit G2). The Polish texts are not copied here: the test checks that each refusal has its
+// own text, not what the text says.
 const GUEST_REFUSALS = [
   "invalid_nick",
   "nick_taken",
@@ -14,8 +14,10 @@ const GUEST_REFUSALS = [
   "game_started",
 ];
 
-// The round's codes as the plan lists them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4), written
-// out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
+// The round's codes as the plans list them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4, and
+// context/changes/full-game-evening/plan.md, Faza 3 #4: round_over for a question that changed under the screen,
+// round_in_progress for "Następne pytanie" while the round is voting), written out by hand: a code dropped from
+// ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -25,6 +27,8 @@ const PLANNED_ROUND_REFUSALS = [
   "round_revealed",
   "unknown_target",
   "no_round",
+  "round_over",
+  "round_in_progress",
 ];
 
 const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];

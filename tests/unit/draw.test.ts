@@ -1,12 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { CATEGORIES, QUESTIONS } from "@/data/questions";
-import { drawFrom, drawQuestion, questionText, type QuestionBase, type QuestionSelection } from "@/lib/rounds/draw";
+import {
+  drawFrom,
+  drawQuestion,
+  questionPool,
+  questionText,
+  shuffledPool,
+  shuffledQuestions,
+  type QuestionBase,
+  type QuestionSelection,
+} from "@/lib/rounds/draw";
 
-// The round's question (test-plan #3). Oracle: PRD FR-015 and US-01 ("Pytanie pochodzi tylko z wybranych kategorii
-// (pytania 18+ tylko z tych, w których host je dołączył)"), FR-005 (18+ is decided per chosen category) and
-// context/archive/2026-10-07-room-lobby/follow-ups/review-fixes.md:16 (the categories stored in the database are
-// filtered through CATEGORIES: a host can store any name over RPC). The expected sets are written by hand, never
-// computed with the draw's own filter.
+// The round's question and the game's pool (test-plan #3). Oracle: PRD FR-015 and US-01 ("Pytanie pochodzi tylko z
+// wybranych kategorii (pytania 18+ tylko z tych, w których host je dołączył)"), FR-005 (18+ is decided per chosen
+// category) and context/archive/2026-10-07-room-lobby/follow-ups/review-fixes.md:16 (the categories stored in the
+// database are filtered through CATEGORIES: a host can store any name over RPC). The expected sets are written by hand,
+// never computed with the draw's own filter. The pool in random order: decision D1 of
+// context/changes/full-game-evening/research.md (the Worker sends the whole pool, in its own order, and the database
+// takes the first question not played yet).
 
 // Every value the injected random can give, on a grid fine enough to reach each question of a small pool.
 const GRID = Array.from({ length: 1000 }, (_, i) => i / 1000).concat([1 - Number.EPSILON]);
@@ -28,44 +39,62 @@ const BASE: QuestionBase = {
   },
 };
 
+// Each selection with its pool, written out by hand.
+const ALLOWED = [
+  { why: "a picked category without 18+", selection: { categories: ["a"], adultCategories: [] }, ids: ["a-001"] },
+  {
+    why: "a picked category with its 18+",
+    selection: { categories: ["a"], adultCategories: ["a"] },
+    ids: ["a-001", "a-002"],
+  },
+  {
+    why: "two categories, 18+ in one of them",
+    selection: { categories: ["a", "b"], adultCategories: ["a"] },
+    ids: ["a-001", "a-002", "b-001"],
+  },
+  {
+    why: "a category with no 18+ questions picked as 18+",
+    selection: { categories: ["c"], adultCategories: ["c"] },
+    ids: ["c-001"],
+  },
+  {
+    why: "18+ of a category that is not picked",
+    selection: { categories: ["b"], adultCategories: ["a"] },
+    ids: ["b-001"],
+  },
+  {
+    why: "unknown category names next to a known one",
+    selection: { categories: ["a", "nie-ma", "constructor", "__proto__"], adultCategories: ["nie-ma"] },
+    ids: ["a-001"],
+  },
+];
+
+const EMPTY = [
+  { why: "no category", selection: { categories: [], adultCategories: [] } },
+  { why: "only 18+ and no category", selection: { categories: [], adultCategories: ["a"] } },
+  { why: "only unknown names", selection: { categories: ["nie-ma", "constructor"], adultCategories: ["nie-ma"] } },
+  { why: "a name used by a question but not a category", selection: { categories: ["z"], adultCategories: ["z"] } },
+];
+
+// A repeatable stand-in for Math.random (mulberry32): each seed gives its own sequence in [0, 1).
+function seeded(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const SEEDS = Array.from({ length: 200 }, (_, seed) => seed);
+
 describe("drawFrom", () => {
-  it.each([
-    { why: "a picked category without 18+", selection: { categories: ["a"], adultCategories: [] }, ids: ["a-001"] },
-    {
-      why: "a picked category with its 18+",
-      selection: { categories: ["a"], adultCategories: ["a"] },
-      ids: ["a-001", "a-002"],
-    },
-    {
-      why: "two categories, 18+ in one of them",
-      selection: { categories: ["a", "b"], adultCategories: ["a"] },
-      ids: ["a-001", "a-002", "b-001"],
-    },
-    {
-      why: "a category with no 18+ questions picked as 18+",
-      selection: { categories: ["c"], adultCategories: ["c"] },
-      ids: ["c-001"],
-    },
-    {
-      why: "18+ of a category that is not picked",
-      selection: { categories: ["b"], adultCategories: ["a"] },
-      ids: ["b-001"],
-    },
-    {
-      why: "unknown category names next to a known one",
-      selection: { categories: ["a", "nie-ma", "constructor", "__proto__"], adultCategories: ["nie-ma"] },
-      ids: ["a-001"],
-    },
-  ])("draws only from the allowed questions: $why", ({ selection, ids }) => {
+  it.each(ALLOWED)("draws only from the allowed questions: $why", ({ selection, ids }) => {
     expect(drawable((random) => drawFrom(BASE, selection, random))).toEqual(new Set(ids));
   });
 
-  it.each([
-    { why: "no category", selection: { categories: [], adultCategories: [] } },
-    { why: "only 18+ and no category", selection: { categories: [], adultCategories: ["a"] } },
-    { why: "only unknown names", selection: { categories: ["nie-ma", "constructor"], adultCategories: ["nie-ma"] } },
-    { why: "a name used by a question but not a category", selection: { categories: ["z"], adultCategories: ["z"] } },
-  ])("gives null for an empty pool: $why", ({ selection }) => {
+  it.each(EMPTY)("gives null for an empty pool: $why", ({ selection }) => {
     expect(drawable((random) => drawFrom(BASE, selection, random))).toEqual(new Set([null]));
   });
 
@@ -73,6 +102,34 @@ describe("drawFrom", () => {
     const selection: QuestionSelection = { categories: ["a", "b"], adultCategories: [] };
 
     expect(["a-001", "b-001"]).toContain(drawFrom(BASE, selection, () => value));
+  });
+});
+
+// "Następne pytanie" and "Pomiń pytanie" send the whole pool, each question once, in an order of its own every time.
+describe("shuffledPool", () => {
+  it.each(ALLOWED)("gives each allowed question exactly once: $why", ({ selection, ids }) => {
+    for (const seed of SEEDS.slice(0, 20)) {
+      expect([...shuffledPool(BASE, selection, seeded(seed))].sort()).toEqual(ids);
+    }
+  });
+
+  it.each(EMPTY)("gives no question for an empty pool: $why", ({ selection }) => {
+    expect(shuffledPool(BASE, selection, seeded(1))).toEqual([]);
+  });
+
+  // a-001, a-002 and b-001 can stand in 3 · 2 · 1 = 6 orders; each one must be possible, or some question would never
+  // come up next.
+  it("can give every order of the pool", () => {
+    const selection: QuestionSelection = { categories: ["a", "b"], adultCategories: ["a"] };
+    const orders = new Set(SEEDS.map((seed) => shuffledPool(BASE, selection, seeded(seed)).join(" ")));
+
+    expect(orders.size).toBe(6);
+  });
+
+  it.each([1, -0.5, Number.NaN])("still gives the whole pool when random gives %d", (value) => {
+    const selection: QuestionSelection = { categories: ["a", "b"], adultCategories: ["a"] };
+
+    expect([...shuffledPool(BASE, selection, () => value)].sort()).toEqual(["a-001", "a-002", "b-001"]);
   });
 });
 
@@ -119,6 +176,30 @@ describe("drawQuestion", () => {
 
   it("gives null when every picked name is unknown", () => {
     expect(drawQuestion({ categories: ["nie-ma", "constructor"], adultCategories: [] }, () => 0)).toBeNull();
+  });
+});
+
+// The real base, for the host's "are there questions left" and the Worker's candidates. Ids picked by hand from
+// src/data/questions.ts: przyszlosc-001 is ordinary, przyszlosc-011 is 18+.
+describe("questionPool and shuffledQuestions", () => {
+  it("keep 18+ out unless the host included it, and to the picked categories", () => {
+    const without = questionPool({ categories: ["przyszlosc"], adultCategories: [] });
+    const withAdult = questionPool({ categories: ["przyszlosc"], adultCategories: ["przyszlosc"] });
+
+    expect(without).toContain("przyszlosc-001");
+    expect(without).not.toContain("przyszlosc-011");
+    expect(withAdult).toContain("przyszlosc-011");
+    for (const id of withAdult) expect(QUESTIONS[id].category).toBe("przyszlosc");
+  });
+
+  it("shuffledQuestions gives the same questions as questionPool", () => {
+    const selection: QuestionSelection = { categories: ["imprezy", "przyszlosc"], adultCategories: ["przyszlosc"] };
+
+    expect([...shuffledQuestions(selection, seeded(7))].sort()).toEqual([...questionPool(selection)].sort());
+  });
+
+  it("gives an empty pool when every picked name is unknown", () => {
+    expect(questionPool({ categories: ["nie-ma", "constructor"], adultCategories: [] })).toEqual([]);
   });
 });
 

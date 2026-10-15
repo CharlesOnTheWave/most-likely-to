@@ -6,8 +6,8 @@ import { jsonAnswer, readJsonBody, refuseForeignPost } from "@/lib/rooms/json-ro
 const OP = "client";
 
 // A player's screen reports a broken live connection, a failed refresh or a crashed island (decision D4 in
-// context/changes/first-live-round/research.md; audit L1, L2, L4), so the owner finds it in Workers Logs. Open to
-// guests (no session needed), JSON from the app's own pages only. A valid report is one line {op, event, state,
+// context/archive/2026-10-13-first-live-round/research.md; audit L1, L2, L4), so the owner finds it in Workers Logs.
+// Open to guests (no session needed), JSON from the app's own pages only. A valid report is one line {op, event, state,
 // roomId} and a 204; anything else a 400, logged with the field that failed and never with the body. The screen limits
 // how often it reports (a visible tab, at most a few per event).
 export const POST: APIRoute = async (context) => {

@@ -5,7 +5,7 @@ export const NICK_MAX_LENGTH = 20;
 // US-01: the host and at least 2 guests, the host votes too. start_game has the final word; the screen only says it.
 export const MIN_PLAYERS = 3;
 
-// lobby → playing (start_game) → closed ("Nowa gra" or the sweep of abandoned games).
+// lobby → playing (start_game) → closed ("Zakończ grę", "Nowa gra" or the sweep of abandoned games).
 export type RoomStatus = "lobby" | "playing" | "closed";
 
 export interface LobbyPlayer {
@@ -13,14 +13,17 @@ export interface LobbyPlayer {
   host: boolean;
 }
 
-// The round's keys as room_lobby names them (context/changes/first-live-round/plan.md, Faza 1 #4). While it is open:
-// who has voted, in seat order (never the order of voting), and never a count.
+// The round's keys as room_lobby names them (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
+// context/changes/full-game-evening/plan.md, Faza 2 #4). The latest round of the game only. While it is open: who has
+// voted, in seat order (never the order of voting), never a count, and whether the round before it was skipped (public
+// to everyone, tied to no one's vote).
 export interface VotingRound {
   number: number;
   question_id: string;
   phase: "voting";
   voted: string[];
   me_voted: boolean;
+  after_skip: boolean;
 }
 
 export interface RoundResult {
@@ -38,7 +41,13 @@ export interface RevealedRound {
   ballots: number;
 }
 
-export type RoundState = VotingRound | RevealedRound;
+// Skipped while voting, with no question left to open after it: its votes are gone, so only its number and phase.
+export interface SkippedRound {
+  number: number;
+  phase: "skipped";
+}
+
+export type RoundState = VotingRound | RevealedRound | SkippedRound;
 
 // What room_lobby returns: nicks in join order, no ids, hashes or link code; a round only while a game is in play.
 export interface LobbyState {
@@ -52,11 +61,15 @@ export interface LobbyState {
 // What the room screen gets: the round with its question's text, which the Worker adds from the question base. The
 // text is the ending after "Kto z nas najprawdopodobniej" (src/data/questions.ts), plain text for the screen. null
 // when the base does not have the round's question (the Worker logs which id): the screen then says it could not load
-// the question instead of building a sentence around a placeholder.
-export type RoundView = RoundState & { question: string | null };
+// the question instead of building a sentence around a placeholder. A skipped round shows no question.
+export type RoundView = ((VotingRound | RevealedRound) & { question: string | null }) | SkippedRound;
 
+// questionsLeft: for the host once the latest round is revealed or skipped, whether the game's pool has a question not
+// played yet ("Następne pytanie" or "Pytania z wybranych kategorii się skończyły."); null in every other state, for a
+// guest, and when the Worker could not tell.
 export interface RoomView extends LobbyState {
   round: RoundView | null;
+  questionsLeft: boolean | null;
 }
 
 // A parser's answer: the value with only the contract's keys, or the field that did not pass (a dotted path without
@@ -104,37 +117,49 @@ function parseResults(value: unknown): ParseResult<RoundResult[]> {
 }
 
 // Copies only the contract's keys: a key the database might add by mistake (a count before the reveal) stays here.
+// A skipped round is the exception: any key next to its number and phase means its votes were not dropped (decision D3
+// of context/changes/full-game-evening/research.md), so the state is refused.
 function parseRound(value: Record<string, unknown>): ParseResult<RoundState> {
   const { number, question_id: questionId, phase } = value;
   if (typeof number !== "number" || !Number.isSafeInteger(number) || number < 1) return fail("round.number");
+  if (phase !== "voting" && phase !== "revealed" && phase !== "skipped") return fail("round.phase");
+  if (phase === "skipped") {
+    const extra = Object.keys(value).find((key) => key !== "number" && key !== "phase");
+    return extra === undefined ? { ok: true, value: { number, phase } } : fail(`round.${extra}`);
+  }
   if (typeof questionId !== "string") return fail("round.question_id");
 
   if (phase === "voting") {
     if (!isStringList(value.voted)) return fail("round.voted");
     if (typeof value.me_voted !== "boolean") return fail("round.me_voted");
-    return {
-      ok: true,
-      value: { number, question_id: questionId, phase, voted: [...value.voted], me_voted: value.me_voted },
-    };
-  }
-  if (phase === "revealed") {
-    const results = parseResults(value.results);
-    if (!results.ok) return results;
-    if (!isCount(value.abstained)) return fail("round.abstained");
-    if (!isCount(value.ballots)) return fail("round.ballots");
+    if (typeof value.after_skip !== "boolean") return fail("round.after_skip");
     return {
       ok: true,
       value: {
         number,
         question_id: questionId,
         phase,
-        results: results.value,
-        abstained: value.abstained,
-        ballots: value.ballots,
+        voted: [...value.voted],
+        me_voted: value.me_voted,
+        after_skip: value.after_skip,
       },
     };
   }
-  return fail("round.phase");
+  const results = parseResults(value.results);
+  if (!results.ok) return results;
+  if (!isCount(value.abstained)) return fail("round.abstained");
+  if (!isCount(value.ballots)) return fail("round.ballots");
+  return {
+    ok: true,
+    value: {
+      number,
+      question_id: questionId,
+      phase,
+      results: results.value,
+      abstained: value.abstained,
+      ballots: value.ballots,
+    },
+  };
 }
 
 // room_lobby's answer (src/lib/rooms/server.ts). A round only while a game is in play, and always one then.
@@ -160,17 +185,19 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
 }
 
 // The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state plus the round's question,
-// a text or null for a question the base does not have.
+// a text or null for a question the base does not have, and questionsLeft.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   const lobby = parseLobbyState(value);
   if (!lobby.ok) return lobby;
+  const questionsLeft = isRecord(value) ? value.questionsLeft : undefined;
+  if (typeof questionsLeft !== "boolean" && questionsLeft !== null) return fail("questionsLeft");
   const { round } = lobby.value;
-  if (round === null) return { ok: true, value: { ...lobby.value, round: null } };
+  if (round === null || round.phase === "skipped") return { ok: true, value: { ...lobby.value, round, questionsLeft } };
 
   const rawRound = isRecord(value) ? value.round : null;
   const question = isRecord(rawRound) ? rawRound.question : undefined;
   if (typeof question !== "string" && question !== null) return fail("round.question");
-  return { ok: true, value: { ...lobby.value, round: { ...round, question } } };
+  return { ok: true, value: { ...lobby.value, round: { ...round, question }, questionsLeft } };
 }
 
 // Length as the database counts it (characters, not UTF-16 units, so an emoji is one), after the part of the nick

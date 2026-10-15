@@ -100,7 +100,7 @@ const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, ż
 const QUESTION_ID = "na-co-dzien-001";
 
 function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
-  return { status: "lobby", role, me, players, round: null };
+  return { status: "lobby", role, me, players, round: null, questionsLeft: null };
 }
 
 function voting(
@@ -115,7 +115,16 @@ function voting(
     role,
     me,
     players,
-    round: { number: 1, question_id: QUESTION_ID, phase: "voting", voted, me_voted: voted.includes(me), question },
+    round: {
+      number: 1,
+      question_id: QUESTION_ID,
+      phase: "voting",
+      voted,
+      me_voted: voted.includes(me),
+      after_skip: false,
+      question,
+    },
+    questionsLeft: null,
   };
 }
 
@@ -143,6 +152,8 @@ function revealed(
       ballots: votes + abstained,
       question,
     },
+    // As for a host whose pool still has questions; S-03's screens show it (Faza 4).
+    questionsLeft: role === "host" ? true : null,
   };
 }
 
@@ -442,7 +453,14 @@ const allForOne: [string, number][] = [
             <h2 class="text-muted-foreground text-sm font-medium">20. Pokój zamknięty: host</h2>
             <RoomScreen
               roomId={ROOM_ID}
-              initial={{ status: "closed", role: "host", me: "Ola", players: fewPlayers, round: null }}
+              initial={{
+                status: "closed",
+                role: "host",
+                me: "Ola",
+                players: fewPlayers,
+                round: null,
+                questionsLeft: null,
+              }}
               realtime={null}
               preview={{ idPrefix: "lobby-closed-host" }}
               client:load
@@ -453,7 +471,14 @@ const allForOne: [string, number][] = [
             <h2 class="text-muted-foreground text-sm font-medium">21. Pokój zamknięty: gość</h2>
             <RoomScreen
               roomId={ROOM_ID}
-              initial={{ status: "closed", role: "guest", me: "Ola", players: guestView, round: null }}
+              initial={{
+                status: "closed",
+                role: "guest",
+                me: "Ola",
+                players: guestView,
+                round: null,
+                questionsLeft: null,
+              }}
               realtime={null}
               preview={{ idPrefix: "lobby-closed-guest" }}
               client:load
