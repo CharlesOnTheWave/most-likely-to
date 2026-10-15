@@ -133,7 +133,7 @@ Niesprawdzone:
   Wszystko to służy kryteriom planu (fokus po potwierdzeniu nie ginie, ogłoszenia testowalne bez DOM), a `round.spec.ts` zostało zielone. Ryzyko niskie.
 
 - **Fix**: Zostawić; klawiaturę („Odsłoń wynik”, „Pomiń”, „Zakończ”, „Następne pytanie”, „Anuluj”) sprawdzić jeszcze raz w ręcznym wieczorze 6.5.
-- **Decision**: ACCEPTED — bez zmian; klawiatura jeszcze raz w ręcznym wieczorze 6.5
+- **Decision**: ACCEPTED — bez zmian; w ręcznym wieczorze 6.5 klawiatury drugi raz nie sprawdzano, zostaje sprawdzenie z 4.4
 
 ### F8 — Próbny alarm (a) zaświecił więcej testów, niż przewidywał plan
 
