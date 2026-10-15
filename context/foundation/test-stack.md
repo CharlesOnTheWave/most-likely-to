@@ -13,7 +13,7 @@
 - web server command: npm run build && npm run preview -- --port $E2E_PORT; reuseExistingServer outside CI
 - auth setup project: setup (tests/e2e/auth.setup.ts), credentials from E2E_USERNAME / E2E_PASSWORD in the CI job's environment (the job signs the host up on its local Supabase)
 - storageState: playwright/.auth/user.json (gitignored)
-- seed: tests/e2e/seed.spec.ts — protects #2, lobby part only: a guest who joins shows up on the host's screen without a reload, through the room's bell (the reveal is unbuilt until S-02)
+- seed: tests/e2e/seed.spec.ts — protects #2, lobby part only: a guest who joins shows up on the host's screen without a reload, through the room's bell. The round (the same question and the same reveal on 3 screens) is tests/e2e/round.spec.ts
 - browser CLI: playwright-cli, command skill at .claude/skills/playwright-cli/SKILL.md
 - updated: 2026-10-11
 

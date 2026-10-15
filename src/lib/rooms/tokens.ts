@@ -6,6 +6,9 @@ import type { AstroCookieSetOptions } from "astro";
 export const LINK_TOKEN_PATTERN = /^[A-Za-z0-9_-]{22}$/;
 // Room ids in /r/<id>. Lowercase only, as Postgres prints them: the id is also the live-sync topic.
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// A guest's token as newPlayerToken makes it (the database checks the same pattern). cast_vote raises on any other
+// form, so a cookie that does not match is treated as no cookie.
+export const PLAYER_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 const PLAYER_COOKIE_MAX_AGE = 60 * 60 * 24;
 

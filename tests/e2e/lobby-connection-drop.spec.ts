@@ -1,5 +1,5 @@
 // risk: test-plan.md #2, lobby part — facet: a screen whose connection dropped (a phone that slept) catches up when the
-// connection returns, without a reload. The bell itself is covered by seed.spec.ts; the reveal is unbuilt (S-02).
+// connection returns, without a reload. The bell itself is covered by seed.spec.ts, the round by round.spec.ts.
 // seed: tests/e2e/seed.spec.ts
 import { test, expect } from "@playwright/test";
 import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";

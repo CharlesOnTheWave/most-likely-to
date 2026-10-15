@@ -5,6 +5,8 @@
 // that account and join them as guests; rooms and guests stay in the database (S-13 cleans up).
 // SMOKE_OAUTH=1 also follows Supabase one hop on to discord.com and accounts.google.com. That needs both providers
 // enabled in the Supabase project, so CI (local Supabase, no providers) runs without it.
+// SMOKE_ROUND=0 skips the round steps (and prints them as skipped): for production while it still runs a Worker
+// without the round, between `npx supabase db push` and the merge (context/changes/first-live-round/plan.md, Faza 6).
 
 const missing = ["SMOKE_EMAIL", "SMOKE_PASSWORD"].filter((name) => !process.env[name]);
 if (missing.length > 0) {
@@ -16,6 +18,7 @@ const BASE_URL = process.env.BASE_URL ?? "http://localhost:4321";
 const email = process.env.SMOKE_EMAIL;
 const password = process.env.SMOKE_PASSWORD;
 const OAUTH = process.env.SMOKE_OAUTH === "1";
+const ROUND = process.env.SMOKE_ROUND !== "0";
 const jar = new Map();
 
 function cookieHeader(cookies = jar) {
@@ -42,17 +45,27 @@ function storeCookies(response, cookies = jar) {
 }
 
 // `cookies`: a jar of its own (one per player in the room steps). `form`: an object, or [name, value] pairs for repeated
-// fields. `readBody`: also return the response text.
-async function request(path, { method = "GET", form, cookies = jar, readBody = false } = {}) {
+// fields. `json`: a value sent as a JSON body, as the room screen sends the round's actions (their routes want this
+// Content-Type and the app's Origin, src/lib/rooms/json-route.ts). `readBody`: also return the response text.
+async function request(path, { method = "GET", form, json, cookies = jar, readBody = false } = {}) {
+  let contentType;
+  let body;
+  if (form) {
+    contentType = "application/x-www-form-urlencoded";
+    body = new URLSearchParams(form).toString();
+  } else if (json !== undefined) {
+    contentType = "application/json";
+    body = JSON.stringify(json);
+  }
   const response = await fetch(BASE_URL + path, {
     method,
     redirect: "manual",
     headers: {
       Cookie: cookieHeader(cookies),
       Origin: BASE_URL,
-      ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+      ...(contentType ? { "Content-Type": contentType } : {}),
     },
-    body: form ? new URLSearchParams(form).toString() : undefined,
+    body,
   });
   const { set, httpOnly } = storeCookies(response, cookies);
   const result = { status: response.status, location: response.headers.get("location") ?? "", cookies: set, httpOnly };
@@ -181,8 +194,10 @@ const mask = (location) => location.replace(LINK_IN_LOCATION, "/j/<code>");
 const NICK_TAKEN = /^\/j\/[A-Za-z0-9_-]{22}\?error=nick_taken$/;
 // Filled in as the steps run. Never printed: the link code opens the room.
 const room = { id: "", link: "" };
-// Ola's jar: she checks the lobby again after the host closes the room. Every other guest gets a fresh jar.
+// Ola's jar: she votes in the round and checks the lobby again after the host closes the room. The second guest ("ola")
+// keeps a jar too, to vote. Every other guest gets a fresh jar.
 const olaJar = new Map();
+const secondGuestJar = new Map();
 
 function newRoom({ confirmClose }) {
   const form = [["nick", "Smoke host"], ...CATEGORY_IDS.map((id) => ["category", id])];
@@ -214,6 +229,54 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 
 // The room's own page; a function, because the id is known only once the room exists.
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
+
+// A round's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts), as JSON, the way the room screen sends it.
+function act(action, body, cookies) {
+  return request(`/api/rooms/${room.id}/${action}`, { method: "POST", json: body, cookies, readBody: true });
+}
+
+// An accepted action answers exactly this: a vote's answer carries no target and no count.
+const ACCEPTED = /^\{"ok":true\}$/;
+const GAME_STARTED = /^\/j\/[A-Za-z0-9_-]{22}\?error=game_started$/;
+// The reveal the votes below make, every player in seat order: Smoke host 0, Ola 1, ola 1; one abstention, three
+// ballots. Each part is checked on its own, so the order of the round's keys does not matter.
+const REVEALED = new RegExp(
+  [
+    '"phase":"revealed"',
+    '"results":\\[\\{"nick":"Smoke host","votes":0\\},\\{"nick":"Ola","votes":1\\},\\{"nick":"ola","votes":1\\}\\]',
+    '"abstained":1[,}]',
+    '"ballots":3[,}]',
+  ]
+    .map((part) => `(?=.*${part})`)
+    .join(""),
+);
+
+// S-02's round (context/changes/first-live-round/plan.md, Faza 5) in the room of the steps around it: the host, Ola
+// and the second guest. The votes: Ola for herself, the second guest abstains, and the host, last, for "ola" (not
+// Ola: case counts); the last vote reveals the round by itself. The targets live only in the request bodies: no step's
+// name and nothing the script prints says who voted for whom. With SMOKE_ROUND=0 each step keeps only its name and is
+// printed as skipped.
+function roundSteps() {
+  const round = [
+    ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
+    ["a new guest cannot join a game in play", () => join("Kuba", new Map()), { status: 302, location: GAME_STARTED }],
+    ["Ola votes", () => act("vote", { target: "Ola" }, olaJar), { status: 200, body: ACCEPTED }],
+    ["the second guest votes", () => act("vote", { target: null }, secondGuestJar), { status: 200, body: ACCEPTED }],
+    ["host votes last", () => act("vote", { target: "ola" }, hostJar), { status: 200, body: ACCEPTED }],
+    [
+      "room state shows the reveal with the votes' counts",
+      () => lobby(room.id, olaJar),
+      { status: 200, body: REVEALED },
+    ],
+    [
+      "a vote after the reveal is refused",
+      () => act("vote", { target: null }, olaJar),
+      { status: 409, body: /^\{"error":"round_revealed"\}$/ },
+    ],
+    ["link with Ola's cookie goes back to the room", () => request(`/j/${room.link}`, { cookies: olaJar }), thisRoom],
+  ];
+  return ROUND ? round : round.map(([name]) => [name, null, null]);
+}
 
 const roomSteps = [
   [
@@ -252,8 +315,9 @@ const roomSteps = [
   ["home renders for signed-in host", () => request("/", { cookies: hostJar }), { status: 200 }],
   // Guests. Opening the link only reads (Discord fetches it for its preview): however often, it sets no player cookie
   // and adds nobody to the room. Joining sets the cookie, and with it the lobby knows Ola again after a refresh. The
-  // nick stays taken, also by "Ola " (a trailing space) and "O\u200Bla" (a zero-width space), which look like it;
-  // "ola" is another nick, because case counts.
+  // nick stays taken, also by "Ola " (a trailing space), "O\u200Bla" (a zero-width space) and "Ola\u{FE0F}" (a
+  // variation selector, decision D5 in context/changes/first-live-round/research.md), which look like it; "ola" is
+  // another nick, because case counts.
   ["guest sees the join form", () => request(`/j/${room.link}`, { cookies: olaJar }), { status: 200 }],
   ["opening the link three times sets no player cookie", openLinkThreeTimes, { status: 200, noCookie: "mlt_player_" }],
   ["opening the link adds no player", () => lobby(room.id, hostJar), { status: 200, body: ONLY_ONE_PLAYER }],
@@ -271,8 +335,16 @@ const roomSteps = [
   ["same plain nick Ola again is taken", () => join("Ola", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a trailing space is taken", () => join("Ola ", new Map()), { status: 302, location: NICK_TAKEN }],
   ["nick with a zero-width space is taken", () => join("O\u200Bla", new Map()), { status: 302, location: NICK_TAKEN }],
-  ["same nick in another case joins", () => join("ola", new Map()), thisRoom],
+  [
+    "nick with a variation selector is taken",
+    () => join("Ola\u{FE0F}", new Map()),
+    { status: 302, location: NICK_TAKEN },
+  ],
+  ["same nick in another case joins", () => join("ola", secondGuestJar), thisRoom],
   ["lobby without the cookie is not found", () => lobby(room.id, new Map()), { status: 404 }],
+  // The round (S-02) in this room, with three players: the host, Ola and the second guest. Skipped with SMOKE_ROUND=0.
+  ...roundSteps(),
+  // "Nowa gra" closes the room, here with a game in play (or still in the lobby with SMOKE_ROUND=0).
   [
     "new game asks before closing a room with guests",
     () => newRoom({ confirmClose: false }),
@@ -305,7 +377,14 @@ function httpOnlyOk(actual, part) {
 }
 
 let failed = 0;
+let skipped = 0;
 for (const [name, run, expectation] of [...steps, ...roomSteps]) {
+  // A round step with SMOKE_ROUND=0.
+  if (run === null) {
+    skipped++;
+    console.log(`SKIP  ${name}  (SMOKE_ROUND=0)`);
+    continue;
+  }
   const actual = await run();
   // A function gives values known only after earlier steps (the room id).
   const expected = typeof expectation === "function" ? expectation() : expectation;
@@ -345,5 +424,6 @@ for (const [name, run, expectation] of [...steps, ...roomSteps]) {
   }
 }
 
-console.log(failed ? `\n${failed} step(s) failed` : "\nAll smoke steps passed");
+const skippedNote = skipped ? ` (${skipped} round step(s) skipped: SMOKE_ROUND=0)` : "";
+console.log(failed ? `\n${failed} step(s) failed${skippedNote}` : `\nAll smoke steps passed${skippedNote}`);
 process.exit(failed ? 1 : 0);

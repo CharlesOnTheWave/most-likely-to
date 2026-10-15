@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { QUESTIONS } from "@/data/questions";
 import { BELL_EVENT, topicFor, type LiveSyncState } from "@/lib/live-sync/shared";
+import { logEvent } from "@/lib/log";
 
-// The only import of the question base in this change: it stays on the server (lessons.md).
+// The F-01 prototype's questions (the round draws in src/lib/rounds/draw.ts). The base stays on the server (lessons.md).
 const PLAIN_QUESTIONS = Object.values(QUESTIONS).filter((entry) => !entry.adult);
 
 // F-01 caps a delivery at 5 s; the library default of 10 s would leave the host's request hanging.
@@ -15,10 +16,15 @@ export async function ringRoom(supabase: SupabaseClient, room: string, seq: numb
     const result = await channel.httpSend(BELL_EVENT, { seq }, { timeout: RING_TIMEOUT_MS });
     return { ok: result.success };
   } catch (error) {
-    // Any status other than 202, and a timeout, throw a plain Error without the status. Only the reason is logged:
-    // httpSend messages carry no key and no request data.
-    // eslint-disable-next-line no-console
-    console.error("live-sync ring failed:", error instanceof Error ? `${error.name}: ${error.message}` : String(error));
+    // Any status other than 202, and a timeout, throw a plain Error without the status. Its message is the Realtime
+    // server's reason (or the status text), with no key and no request data, so it stays as the line's code: a limit
+    // (429) and a rejected key (401) must not look the same (audit L6). The room is the topic's room id.
+    logEvent("error", {
+      op: "ring",
+      roomId: room,
+      errName: error instanceof Error ? error.name : "unknown",
+      code: error instanceof Error ? error.message : undefined,
+    });
     return { ok: false };
   } finally {
     await supabase.removeChannel(channel);

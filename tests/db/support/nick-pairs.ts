@@ -1,14 +1,17 @@
-// The nick pairs of research.md §3.1, the oracle of tests/db/nicks.test.ts: what looks the same is the same nick. The
-// expectations come from Unicode (DerivedCoreProperties.txt Default_Ignorable_Code_Point, PropList.txt White_Space,
-// UTS #51, Core Spec §5.21 and §23.4) and S-01's decisions, never from private.normalize_nick.
+// The nick pairs of context/archive/2026-10-10-testing-lobby-foundation/research.md §3.1, the oracle of
+// tests/db/nicks.test.ts: what looks the same is the same nick. The expectations come from Unicode
+// (DerivedCoreProperties.txt Default_Ignorable_Code_Point, PropList.txt White_Space, UTS #51, Core Spec §5.21 and
+// §23.4) and S-01's decisions, never from private.normalize_nick.
 //
 // No imports on purpose: print-nick-pairs.ts prints this data with plain node for the side-by-side check against the
-// research table (plan, Phase 3). Invisible characters only as \u{…} escapes, never literal: an editor or a formatter
-// can drop them, and a review cannot see them.
+// research table (context/archive/2026-10-10-testing-lobby-foundation/plan.md, Faza 3). Invisible characters only as
+// \u{…} escapes, never literal: an editor or a formatter can drop them, and a review cannot see them.
 //
-// Left out by decision (plan, What We're NOT Doing): pairs whose look depends on the emoji decision of the F4 fix
-// (U+2764 with and without FE0F, # with and without FE0F, the flag of Scotland and the black flag) and compatibility
-// forms (full width, ligatures). Spaces are escapes too: one at the end of a string is just as easy to miss.
+// The emoji pairs (U+2764 with and without FE0F, # with and without FE0F, the flag of Scotland and the black flag)
+// waited for the emoji decision of the F4 fix; decision D5 (W2) of context/changes/first-live-round/research.md added
+// them at the end, after pair 23, so the numbers of the research table stay. Compatibility forms (full width,
+// ligatures) stay out by decision (context/archive/2026-10-10-testing-lobby-foundation/plan.md, What We're NOT Doing).
+// Spaces are escapes too: one at the end of a string is just as easy to miss.
 
 export type NickOutcome = "nick_taken" | "joins";
 
@@ -20,7 +23,8 @@ export interface NickPair {
   readonly expected: NickOutcome;
   // Why, with its source.
   readonly why: string;
-  // F4: today the probe gets the other outcome. A test.fails until S-02 fixes the nick rule.
+  // A known hole: today the probe gets the other outcome, so the test is a test.fails until a fix. F4's pairs were,
+  // until S-02 fixed the nick rule; none is today.
   readonly knownHole: boolean;
 }
 
@@ -96,69 +100,69 @@ export const NICK_PAIRS: readonly NickPair[] = [
     why: "a + COMBINING ACUTE ACCENT is canonically equivalent to the composed letter (UAX #15)",
     knownHole: false,
   },
-  // F4: characters the rule misses today.
+  // F4: characters the rule missed until S-02 closed it (known holes until then).
   {
     taken: "Ola",
     probe: "Ola\u{FE0F}",
     expected: "nick_taken",
     why: "VARIATION SELECTOR-16 after a letter with no variation sequence: invisible and ignored (Core Spec §23.4)",
-    knownHole: true,
+    knownHole: false,
   },
   {
     taken: "Ola",
     probe: "O\u{FE0E}la",
     expected: "nick_taken",
     why: "VARIATION SELECTOR-15 after a letter with no variation sequence: invisible and ignored (Core Spec §23.4)",
-    knownHole: true,
+    knownHole: false,
   },
   {
     taken: "Ola",
     probe: "Ola\u{E0100}",
     expected: "nick_taken",
     why: "VARIATION SELECTOR-17 with no variation sequence: invisible and ignored (Core Spec §23.4)",
-    knownHole: true,
+    knownHole: false,
   },
   {
     taken: "Ola",
     probe: "Ola\u{E0041}",
     expected: "nick_taken",
     why: "TAG LATIN CAPITAL LETTER A, an invisible tag (Core Spec §5.21)",
-    knownHole: true,
+    knownHole: false,
   },
   {
     taken: "Ola",
     probe: "Ola\u{61C}",
     expected: "nick_taken",
     why: "ARABIC LETTER MARK, Default_Ignorable (DerivedCoreProperties.txt)",
-    knownHole: true,
+    knownHole: false,
   },
   {
     taken: "Ola",
     probe: "Ola\u{180F}",
     expected: "nick_taken",
     why: "MONGOLIAN FREE VARIATION SELECTOR FOUR, Default_Ignorable (DerivedCoreProperties.txt)",
-    knownHole: true,
+    knownHole: false,
   },
   {
     taken: "Ola",
     probe: "Ola\u{1BCA0}",
     expected: "nick_taken",
     why: "SHORTHAND FORMAT LETTER OVERLAP, Default_Ignorable (DerivedCoreProperties.txt)",
-    knownHole: true,
+    knownHole: false,
   },
   {
     taken: "Ola",
     probe: "Ola\u{1D173}",
     expected: "nick_taken",
     why: "MUSICAL SYMBOL BEGIN BEAM, Default_Ignorable (DerivedCoreProperties.txt)",
-    knownHole: true,
+    knownHole: false,
   },
   {
     taken: "Ola\u{1F600}",
     probe: "Ola\u{1F600}\u{FE0F}",
     expected: "nick_taken",
     why: "U+1F600 has no variation sequence with FE0F, so the selector changes nothing (UTS #51, emoji-variation-sequences.txt)",
-    knownHole: true,
+    knownHole: false,
   },
   // Visibly different nicks join: a guard against an over-eager fix (e.g. lowercase or NFKC plus stripped accents).
   {
@@ -188,6 +192,29 @@ export const NICK_PAIRS: readonly NickPair[] = [
     probe: "Ola",
     expected: "nick_taken",
     why: "the same nick: the room rejects a duplicate nick (PRD FR-002)",
+    knownHole: false,
+  },
+  // Decision D5 (W2) of context/changes/first-live-round/research.md: an emoji with and without its variation selector
+  // or tags is one nick, compared without them and shown as typed.
+  {
+    taken: "Ola\u{2764}",
+    probe: "Ola\u{2764}\u{FE0F}",
+    expected: "nick_taken",
+    why: "HEAVY BLACK HEART with and without VARIATION SELECTOR-16 is one nick (decision D5, W2)",
+    knownHole: false,
+  },
+  {
+    taken: "\u{1F3F4}",
+    probe: "\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}",
+    expected: "nick_taken",
+    why: "the flag of Scotland is the black flag plus invisible tags (UTS #51): one nick, accepted in decision D5 (W2)",
+    knownHole: false,
+  },
+  {
+    taken: "#",
+    probe: "#\u{FE0F}",
+    expected: "nick_taken",
+    why: "# with and without VARIATION SELECTOR-16 is one nick (decision D5, W2)",
     knownHole: false,
   },
 ];

@@ -4,7 +4,7 @@
 
 ## Hard Rules
 
-- Never persist, log or return a pairing of voter and voted-for player, in any form. Votes are anonymous by design (PRD Non-Goals).
+- Never persist, log or return a pairing of voter and voted-for player, in any form. Votes are anonymous by design (PRD Non-Goals). The in-progress state of a round lives only in unlogged `private` tables with no grants and is deleted at the reveal and whenever the round ends otherwise, including an hourly pg_cron sweep that closes games started more than 12 h ago; accepted boundary: the game's creator watching the database live (for a round abandoned without a reveal, up to about 13 h after the game started) or turning on extra logging (context/changes/first-live-round/research.md, D1; reviews/plan-review.md, F1).
 - Do not add points, leaderboards or round timers; they are PRD Non-Goals.
 - Ask the user before any command that publishes or changes remote or database state: `git push` (a push to `main` deploys to production), `npx wrangler deploy`, `npx wrangler rollback`, `npx wrangler versions deploy`, `npx wrangler delete`, `npx wrangler secret put`, `npx supabase db push`, `npx supabase db reset`.
 - Changes to `supabase/migrations/`, `src/lib/rooms/`, `src/pages/api/rooms/`, `src/pages/j/`, `src/pages/r/`, `tests/`, `vitest.config.ts` or `.github/workflows/` go only through a PR and are merged only on green CI, the `db` job included; never push them straight to `main`. Until test-plan §3 Phase 4, nothing else stops a red `db` from reaching production.
@@ -23,6 +23,7 @@ Before handing off a change, `npm run lint`, `npx astro check`, `npm test` and `
 
 - `npm test`: unit tests (Vitest, `tests/unit/`), local and CI.
 - `npm run test:db`: database tests (`tests/db/`) through REST/RPC as a guest and as a host. Local Supabase only, so in practice it runs only in the CI job `db` (no Docker locally); it refuses any URL but `127.0.0.1`/`localhost` and any key but `sb_publishable_…` before the first request.
+- `supabase test db` (pgTAP, `supabase/tests/`): the creator's view of the database (catalog, grants, publication, leftover rows), CI job `db` only. Locally it needs Docker, and with `--linked` it would run against production, so the command asks first (`.claude/settings.json`).
 - `npx playwright test`: E2E (Playwright, `tests/e2e/`), the real build in a browser with several players in one room, against local Supabase with Realtime. CI job `e2e` only: locally `playwright.config.ts` refuses before the build, because `.dev.vars` points at production (`npx playwright test --list` still works). Details: @context/foundation/test-stack.md.
 - `npm run test:hooks`: the agent hooks (`.claude/hooks/`, wired in `.claude/settings.json`) run against throwaway git repos with stub tools; local and CI. Change a hook together with its case in `tests/hooks/agent-hooks.test.ts`.
 - How to add a test (oracle, refusals, hooks, sign-up limit): @context/foundation/test-plan.md §6.

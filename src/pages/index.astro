@@ -15,7 +15,8 @@ const { user } = Astro.locals;
 const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
 const categories = CATEGORIES.map(({ id, name }) => ({ id, name }));
 
-// The host's open room, for "Wróć do pokoju" and for the question before "Nowa gra" closes it. If the database does not
+// The host's open room, in the lobby or with a game in play, for "Wróć do pokoju" and for the question before
+// "Nowa gra" closes it (create_room closes either and asks first when guests are in it). If the database does not
 // answer, the form still shows and creating the game reports the error.
 async function findOpenRoom() {
   const supabase = createClient(Astro.request.headers, Astro.cookies);
@@ -24,8 +25,10 @@ async function findOpenRoom() {
   if (!open.ok || !open.roomId) return null;
   const result = await roomLobby(supabase, open.roomId);
   if (!result.ok || !result.lobby) return null;
-  const { players } = result.lobby;
-  return { id: open.roomId, players: players.length, hasGuests: players.some((player) => !player.host) };
+  const { players, status } = result.lobby;
+  // hostOpenRoomId finds only a room in the lobby or with a game in play.
+  if (status === "closed") return null;
+  return { id: open.roomId, status, players: players.length, hasGuests: players.some((player) => !player.host) };
 }
 
 const openRoom = user ? await findOpenRoom() : null;
@@ -37,7 +40,7 @@ const roomToClose = openRoom?.hasGuests ? { players: openRoom.players } : null;
   <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
     {user ? (
       <>
-        {openRoom && <OpenRoomNotice roomId={openRoom.id} players={openRoom.players} />}
+        {openRoom && <OpenRoomNotice roomId={openRoom.id} players={openRoom.players} status={openRoom.status} />}
         <RoomCard
           title="Nowa gra"
           description="Wpisz swój nick i wybierz kategorie. Link dla graczy dostaniesz od razu."
