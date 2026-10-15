@@ -3,8 +3,8 @@ import { sortResults } from "@/lib/rooms/results";
 import type { RoundResult } from "@/lib/rooms/shared";
 
 // The order of the reveal: every player, most votes first, a tie in seat order (the order room_lobby gives the results
-// in), zeros at the bottom, also in seat order. Oracle: context/changes/first-live-round/plan.md, Desired End State 3
-// and Faza 4 #3 (the plan's interview). Every expected order is written out by hand as a list of nicks.
+// in), zeros at the bottom, also in seat order. Oracle: context/archive/2026-10-13-first-live-round/plan.md, Desired
+// End State 3 and Faza 4 #3 (the plan's interview). Every expected order is written out by hand as a list of nicks.
 
 function seats(...entries: [string, number][]): RoundResult[] {
   return entries.map(([nick, votes]) => ({ nick, votes }));

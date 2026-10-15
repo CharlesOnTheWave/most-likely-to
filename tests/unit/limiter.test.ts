@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFetchLimiter, type FetchLimiter } from "@/lib/live-sync/limiter";
 
 // The room screen's fetches of the room's state go through one limiter (risk #7 in context/foundation/test-plan.md;
-// T5 in context/changes/first-live-round/research.md). The channel is public, so anyone with the room's id can ring
-// its bell: a series of bells must give a bounded number of fetches, and the last bell must still end in a fetch (the
-// 2 s budget). The oracle is the contract in context/changes/first-live-round/plan.md, Faza 4 #1, worked out by hand:
+// T5 in context/archive/2026-10-13-first-live-round/research.md). The channel is public, so anyone with the room's id
+// can ring its bell: a series of bells must give a bounded number of fetches, and the last bell must still end in a
+// fetch (the 2 s budget). The oracle is the contract in context/archive/2026-10-13-first-live-round/plan.md, Faza 4 #1,
+// worked out by hand:
 //
 // - at most one fetch in flight and one waiting "for the end", at least 500 ms apart from start to start;
 // - a fetch is given up after 3 s, which frees its place;

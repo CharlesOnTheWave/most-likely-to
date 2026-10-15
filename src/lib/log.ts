@@ -1,8 +1,9 @@
 // The Worker's only way to write a log line (Workers Logs). Every line goes through a list of the keys it may carry:
 // any other key is dropped here, whatever the caller passes, so a nick, a player token, a link code, a vote's target or
-// the request's URL cannot slip into the log by mistake (AGENTS.md, Hard Rules; context/changes/first-live-round/
-// research.md, T6; context/audits/observability/2026-10-11_guest-join-live-lobby.md, §6 step 2). A value stays only as
-// a string, a finite number or a boolean, never an object that could hold one of those inside it.
+// the request's URL cannot slip into the log by mistake (AGENTS.md, Hard Rules;
+// context/archive/2026-10-13-first-live-round/research.md, T6;
+// context/audits/observability/2026-10-11_guest-join-live-lobby.md, §6 step 2). A value stays only as a string, a
+// finite number or a boolean, never an object that could hold one of those inside it.
 //
 // - op: what was attempted (a function or an action), route: the route pattern, never the URL; step: where it failed;
 // - roomId: a room's id, not personal data; status: an HTTP status; code: a SQLSTATE or another short reason;

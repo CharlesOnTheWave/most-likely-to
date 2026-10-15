@@ -5,12 +5,15 @@ import {
   OTHER_QUESTION_ID,
   QUESTION_ID,
   castVote,
+  endGame,
   joinRoom,
+  nextRound,
   revealRound,
   roomLink,
   roomLobby,
   seedStartGame,
   seedVote,
+  skipRound,
   startGame,
   type Answer,
 } from "./support/rounds";
@@ -18,15 +21,18 @@ import {
 // Round rules (#3) through the roles' own doors: RPC with the publishable key, as guests and as signed-in hosts, past
 // the Worker. Oracle: PRD FR-008 (one person or an abstention, the voter included), FR-009 (the reveal after the last
 // vote or when the host moves on, at any time), US-01 (at least 2 guests plus the voting host) and the decisions of
-// context/changes/first-live-round/research.md (D2: a vote is final; D3: no threshold for the reveal). Every expected
-// count is written out by hand from the scenario, never computed.
+// context/archive/2026-10-13-first-live-round/research.md (D2: a vote is final; D3: no threshold for the reveal).
+// Every expected count is written out by hand from the scenario, never computed.
+//
+// S-03 adds the evening's moves (next_round, skip_round, end_game): only the room's own host makes them (PRD Access
+// Control), checked here; the evening's own rules are tests/db/game-rules.test.ts's.
 //
 // A refusal is the function's answer { ok: false, reason }, never "some error"; a guest calling a host's function gets
 // 42501 naming the function (test-plan §6.2, G2).
 //
-// The round functions come from supabase/migrations/*_first_live_round.sql. Without them PostgREST answers each round
-// call with PGRST202 (no such function): a suite that starts a round in beforeAll is red as a whole, and every other
-// test here is red on its own probe.
+// The round functions come from supabase/migrations/*_first_live_round.sql, the evening's from
+// *_full_game_evening.sql. Without them PostgREST answers each such call with PGRST202 (no such function): a suite that
+// starts a round in beforeAll is red as a whole, and every other test here is red on its own probe.
 //
 // Two sign-ups per run, in beforeAll. One open room per host, so host A's rooms come one after another (confirm_close
 // closes the one before); Vitest runs the suites in order, each suite's beforeAll right before its tests.
@@ -200,15 +206,32 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
     expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "room_unknown" } });
   });
 
-  // Only the host starts and reveals: no grant to anon, so the function's name is checked, not only 42501 (G2).
+  // Only the host starts, reveals, moves on, skips and ends: no grant to anon, so the function's name is checked, not
+  // only 42501 (G2).
   it.each([
     { fn: "start_game", attempt: () => startGame(anon, room.id, OTHER_QUESTION_ID) },
     { fn: "reveal_round", attempt: () => revealRound(anon, room.id) },
+    { fn: "next_round", attempt: () => nextRound(anon, room.id, 1, [OTHER_QUESTION_ID]) },
+    { fn: "skip_round", attempt: () => skipRound(anon, room.id, 1, [OTHER_QUESTION_ID]) },
+    { fn: "end_game", attempt: () => endGame(anon, room.id) },
   ])("a guest calling $fn is refused permission on the function", async ({ fn, attempt }) => {
     const answer = await attempt();
 
     expect(answer.error?.code).toBe("42501");
     expect(answer.error?.message).toContain(`function ${fn}`);
+  });
+
+  // S-03: the evening's moves are host A's own as well. Round 1 is revealed, the round number is right and the
+  // candidate was never played, so the room is the only thing they can be refused for. end_game last, so a hole cannot
+  // close the room under the two before it.
+  it.each([
+    { fn: "next_round", attempt: () => nextRound(hostB.client, room.id, 1, [OTHER_QUESTION_ID]) },
+    { fn: "skip_round", attempt: () => skipRound(hostB.client, room.id, 1, [OTHER_QUESTION_ID]) },
+    { fn: "end_game", attempt: () => endGame(hostB.client, room.id) },
+  ])("host B calling $fn on host A's game gets room_unknown", async ({ attempt }) => {
+    const answer = await attempt();
+
+    expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "room_unknown" } });
   });
 });
 

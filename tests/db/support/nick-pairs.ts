@@ -8,9 +8,10 @@
 // \u{…} escapes, never literal: an editor or a formatter can drop them, and a review cannot see them.
 //
 // The emoji pairs (U+2764 with and without FE0F, # with and without FE0F, the flag of Scotland and the black flag)
-// waited for the emoji decision of the F4 fix; decision D5 (W2) of context/changes/first-live-round/research.md added
-// them at the end, after pair 23, so the numbers of the research table stay. Compatibility forms (full width,
-// ligatures) stay out by decision (context/archive/2026-10-10-testing-lobby-foundation/plan.md, What We're NOT Doing).
+// waited for the emoji decision of the F4 fix; decision D5 (W2) of
+// context/archive/2026-10-13-first-live-round/research.md added them at the end, after pair 23, so the numbers of the
+// research table stay. Compatibility forms (full width, ligatures) stay out by decision
+// (context/archive/2026-10-10-testing-lobby-foundation/plan.md, What We're NOT Doing).
 // Spaces are escapes too: one at the end of a string is just as easy to miss.
 
 export type NickOutcome = "nick_taken" | "joins";
@@ -194,8 +195,8 @@ export const NICK_PAIRS: readonly NickPair[] = [
     why: "the same nick: the room rejects a duplicate nick (PRD FR-002)",
     knownHole: false,
   },
-  // Decision D5 (W2) of context/changes/first-live-round/research.md: an emoji with and without its variation selector
-  // or tags is one nick, compared without them and shown as typed.
+  // Decision D5 (W2) of context/archive/2026-10-13-first-live-round/research.md: an emoji with and without its
+  // variation selector or tags is one nick, compared without them and shown as typed.
   {
     taken: "Ola\u{2764}",
     probe: "Ola\u{2764}\u{FE0F}",

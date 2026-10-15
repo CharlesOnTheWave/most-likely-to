@@ -39,8 +39,8 @@ export interface RoomLive {
 
 // While the channel is down, in place of LOBBY_POLL_MS.
 export const BROKEN_POLL_MS = 5000;
-// Decision D4 (context/changes/first-live-round/research.md): report only from a visible tab, only a channel down for
-// more than 5 s of that, and at most 3 reports of each event per page load, so a locked phone makes no noise.
+// Decision D4 (context/archive/2026-10-13-first-live-round/research.md): report only from a visible tab, only a channel
+// down for more than 5 s of that, and at most 3 reports of each event per page load, so a locked phone makes no noise.
 const REPORT_AFTER_MS = 5000;
 const MAX_REPORTS_PER_EVENT = 3;
 // A CLOSED channel is gone for good: a new one, after 1 s, then 2, 4… up to 30 s while it keeps closing.
@@ -63,8 +63,9 @@ function isVisible(): boolean {
 
 // A screen's report to the owner's logs (POST /api/client-events): only the contract's keys, an event and a state
 // from its lists and the room's id; never a nick, a vote's target or any text. A report that does not arrive leaves a
-// line in this browser's console, through the same list of fields as the Worker's lines.
-function reportClientEvent(report: ClientEvent, keepalive = false): void {
+// line in this browser's console, through the same list of fields as the Worker's lines. Also RoomErrorBoundary's
+// island_crash, under the same limits.
+export function reportClientEvent(report: ClientEvent, keepalive = false): void {
   if (!isVisible()) return;
   const sent = reportsSent.get(report.event) ?? 0;
   if (sent >= MAX_REPORTS_PER_EVENT) return;

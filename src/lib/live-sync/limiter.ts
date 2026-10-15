@@ -1,9 +1,10 @@
 import { LOBBY_POLL_MS } from "@/lib/live-sync/shared";
 
 // How the room screen fetches the room's state (risk #7 in context/foundation/test-plan.md; T5 and F2 in
-// context/changes/first-live-round/research.md). The room's channel is public, so anyone who knows the room's id can
-// ring its bell: a series of bells must cost a bounded number of fetches, and the last bell must still end in a fetch
-// (the 2 s budget, PRD NFR). No browser or server imports, so tests/unit/limiter.test.ts drives it with fake timers.
+// context/archive/2026-10-13-first-live-round/research.md). The room's channel is public, so anyone who knows the
+// room's id can ring its bell: a series of bells must cost a bounded number of fetches, and the last bell must still
+// end in a fetch (the 2 s budget, PRD NFR). No browser or server imports, so tests/unit/limiter.test.ts drives it with
+// fake timers.
 //
 // - At most one fetch in flight and one waiting "for the end"; starts at least MIN_GAP_MS apart.
 // - A fetch is given up after FETCH_TIMEOUT_MS: its signal aborts and its place is free again.

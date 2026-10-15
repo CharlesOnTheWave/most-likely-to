@@ -2,17 +2,21 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { anonClient, newHost, type Host, type TestClient } from "./support/clients";
 import { isRecord, readOwnRoom, seedGuest, seedRoom, type OwnRoom, type SeededGuest } from "./support/rooms";
 import {
+  EVENING_QUESTION_IDS,
   LOBBY_KEYS,
   PLAYER_KEYS,
   RESULT_KEYS,
   REVEALED_ROUND_KEYS,
+  SKIPPED_ROUND_KEYS,
   VOTING_ROUND_KEYS,
   castVote,
+  endGame,
   keysOf,
   roomLink,
   roomLobby,
   roundOf,
   seedReveal,
+  seedSkipRound,
   seedStartGame,
   seedVote,
   type Answer,
@@ -20,17 +24,19 @@ import {
 
 // Anonymity (#1) through the roles' own doors: RPC and REST with the publishable key, as guests and as the signed-in
 // host. No role gets a voter next to a target, or any count before the reveal, and a round that ends without a reveal
-// leaves nothing to read. Oracle: PRD Non-Goals and the anonymity NFR (nobody, the host and the game's creator
-// included, can tell who voted for whom), AGENTS.md Hard Rules and decision D1 of
-// context/changes/first-live-round/research.md (the urn that disappears). What the creator sees as the database owner
-// is supabase/tests/round_creator_view.test.sql's to check (pgTAP).
+// (skipped, or the game ended or closed mid-round) leaves nothing to read. Oracle: PRD Non-Goals and the anonymity NFR
+// (nobody, the host and the game's creator included, can tell who voted for whom), AGENTS.md Hard Rules, decision D1
+// of context/archive/2026-10-13-first-live-round/research.md (the urn that disappears) and decisions D3 and D4 of
+// context/changes/full-game-evening/research.md (a skipped round keeps no count; ending the game drops the urn). What
+// the creator sees as the database owner is supabase/tests/round_creator_view.test.sql's to check (pgTAP).
 //
 // Exact key sets, not "the fields we know of": a new key in an answer is how a pair or an early count would leak
 // (test-plan §2, #1: never only the table's columns).
 //
-// The round functions come from supabase/migrations/*_first_live_round.sql. Without them the suites that start a round
-// in beforeAll are red as a whole (PGRST202, no such function). The private-schema guard starts no round, so it holds
-// with or without them.
+// The round functions come from supabase/migrations/*_first_live_round.sql, the evening's (skip_round, end_game,
+// cast_vote's p_round, room_lobby's skipped round and after_skip) from *_full_game_evening.sql. Without them the suites
+// that need them are red (PGRST202, no such function, or a key set without after_skip). The private-schema guard
+// starts no round, so it holds with or without them.
 //
 // One sign-up per run. One open room per host, so the rooms come one after another (confirm_close closes the one
 // before); Vitest runs the suites in order, each suite's beforeAll right before its tests.
@@ -106,7 +112,9 @@ describe("a round in progress shows who voted, never how", () => {
     { viewer: "the host", meVoted: true, lobby: () => hostView },
   ];
 
-  // The only test that checks the whole answer of an accepted vote (plan, Faza 5, break-check b): no target, no count.
+  // One of the two tests that check the whole answer of an accepted vote (S-02 plan, Faza 5, break-check b): this one
+  // with no question number, as the Worker before S-03 sends it; the skipped-round suite below with one. No target, no
+  // count.
   it("cast_vote answers exactly { ok: true }, to a guest and to the host", () => {
     expect(kubaVote).toEqual({ data: { ok: true }, error: null });
     expect(hostVote).toEqual({ data: { ok: true }, error: null });
@@ -196,5 +204,104 @@ describe("a room closed mid-round keeps nothing of the round", () => {
 
     expect(answer).toMatchObject({ error: null, data: { status: "closed" } });
     expect(countKeys).toEqual([]);
+  });
+});
+
+// D3: a skipped round's votes are gone for everyone. The round after a skip shows only the voting keys, with nobody's
+// vote from the skipped one, and a skipped round that stays the latest one (no question left) shows its number and
+// phase: no count, no question, not even who voted in it.
+describe("a skipped round keeps nothing of its votes", () => {
+  const [Q1, Q2] = EVENING_QUESTION_IDS;
+  let olaVoteWithNumber: Answer;
+  let olaNextView: Answer;
+  let bartekNextView: Answer;
+  let hostNextView: Answer;
+  let olaSkippedView: Answer;
+  let bartekSkippedView: Answer;
+  let hostSkippedView: Answer;
+
+  beforeAll(async () => {
+    // Closes the lobby left open by "Nowa gra" above.
+    const room = await seedRoom(host, { confirmClose: true });
+    const ola = await seedGuest(room.linkToken, "Ola");
+    const bartek = await seedGuest(room.linkToken, "Bartek");
+    await seedStartGame(host, room.id, Q1);
+
+    // Round 1: Ola votes with the question's number, then the host skips it; Q2 comes up as round 2.
+    olaVoteWithNumber = await castVote(anon, room.id, "Bartek", ola.playerToken, 1);
+    await seedSkipRound(host, room.id, 1, [Q1, Q2]);
+    olaNextView = await roomLobby(anon, room.id, ola.playerToken);
+    bartekNextView = await roomLobby(anon, room.id, bartek.playerToken);
+    hostNextView = await roomLobby(host.client, room.id);
+
+    // Round 2: Ola votes again, then the host skips it with no question left, so it stays the latest round.
+    await seedVote(anon, room.id, "Bartek", ola.playerToken);
+    await seedSkipRound(host, room.id, 2, [Q1, Q2]);
+    olaSkippedView = await roomLobby(anon, room.id, ola.playerToken);
+    bartekSkippedView = await roomLobby(anon, room.id, bartek.playerToken);
+    hostSkippedView = await roomLobby(host.client, room.id);
+  });
+
+  // The other test that checks the whole answer of an accepted vote, here with the question's number.
+  it("cast_vote with the question's number answers exactly { ok: true }", () => {
+    expect(olaVoteWithNumber).toEqual({ data: { ok: true }, error: null });
+  });
+
+  it.each([
+    { viewer: "Ola, who voted in the skipped round", lobby: () => olaNextView },
+    { viewer: "Bartek, who did not", lobby: () => bartekNextView },
+    { viewer: "the host", lobby: () => hostNextView },
+  ])("after a skip $viewer sees the next round with exactly the voting keys and nobody's vote", ({ lobby }) => {
+    const round = roundOf(lobby());
+
+    expect(keysOf(round)).toEqual(VOTING_ROUND_KEYS);
+    expect(round).toMatchObject({ number: 2, phase: "voting", voted: [], me_voted: false, after_skip: true });
+  });
+
+  it.each([
+    { viewer: "Ola, who voted in the skipped round", lobby: () => olaSkippedView },
+    { viewer: "Bartek, who did not", lobby: () => bartekSkippedView },
+    { viewer: "the host", lobby: () => hostSkippedView },
+  ])("$viewer sees the last skipped round with exactly its number and phase", ({ lobby }) => {
+    expect(keysOf(lobby().data)).toEqual(LOBBY_KEYS);
+    expect(keysOf(roundOf(lobby()))).toEqual(SKIPPED_ROUND_KEYS);
+  });
+});
+
+// D4: "Zakończ grę" mid-round, like "Nowa gra", leaves no counts and no voters behind.
+describe("a game ended mid-round keeps nothing of the round", () => {
+  let room: OwnRoom;
+  let olaToken: string;
+  let bartekToken: string;
+
+  beforeAll(async () => {
+    room = await seedRoom(host, { confirmClose: true });
+    const ola = await seedGuest(room.linkToken, "Ola");
+    const bartek = await seedGuest(room.linkToken, "Bartek");
+    olaToken = ola.playerToken;
+    bartekToken = bartek.playerToken;
+    await seedStartGame(host, room.id);
+    await seedVote(anon, room.id, "Ola", bartek.playerToken);
+    await endGame(host.client, room.id);
+    if ((await readOwnRoom(host, room.id)).status !== "closed") {
+      throw new Error("precondition failed: end_game did not close the room mid-round");
+    }
+  });
+
+  it("the ended game's link answers exactly { status: closed }", async () => {
+    const answer = await roomLink(room.linkToken);
+
+    expect(answer).toEqual({ data: { status: "closed" }, error: null });
+  });
+
+  it.each([
+    { viewer: "Bartek, who voted", read: () => roomLobby(anon, room.id, bartekToken) },
+    { viewer: "Ola, who did not", read: () => roomLobby(anon, room.id, olaToken) },
+    { viewer: "the host", read: () => roomLobby(host.client, room.id) },
+  ])("$viewer sees the room closed with no round, and only the lobby's keys", async ({ read }) => {
+    const answer = await read();
+
+    expect(answer).toMatchObject({ error: null, data: { status: "closed", round: null } });
+    expect(keysOf(answer.data)).toEqual(LOBBY_KEYS);
   });
 });
