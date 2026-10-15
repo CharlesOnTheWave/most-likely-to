@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from "react";
+import { Component, createRef, type ReactNode } from "react";
 import { RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { reportClientEvent } from "@/components/room/useRoomState";
@@ -21,8 +21,11 @@ interface State {
 // island_crash with the room's id only (src/lib/client-events.ts), through the same limits as the screen's other
 // reports. The error's name goes only to this browser's console, through the log's list of fields; its message may
 // hold a nick. Only the browser: on the server an error in the screen fails the page as any other.
+// The snapshot says whether the focus was in the room screen just before the crash screen replaced it.
 export class RoomErrorBoundary extends Component<Props, State> {
   state: State = { crashed: false };
+  private readonly screen = createRef<HTMLDivElement>();
+  private readonly title = createRef<HTMLHeadingElement>();
 
   static getDerivedStateFromError(): State {
     return { crashed: true };
@@ -34,12 +37,34 @@ export class RoomErrorBoundary extends Component<Props, State> {
     if (!isPreview) reportClientEvent({ event: "island_crash", roomId });
   }
 
+  getSnapshotBeforeUpdate(): boolean {
+    const focused = document.activeElement;
+    return focused !== null && this.screen.current?.contains(focused) === true;
+  }
+
+  // The focused element went away with the room screen, so the focus goes to the crash screen's heading instead of the
+  // page's start (as RoomScreen does after a host's move). Focus that was elsewhere on the page stays where it is.
+  componentDidUpdate(_props: Props, previous: State, focusWasInScreen: unknown) {
+    if (this.state.crashed && !previous.crashed && focusWasInScreen === true) this.title.current?.focus();
+  }
+
   render() {
-    if (!this.state.crashed) return this.props.children;
+    if (!this.state.crashed) {
+      return (
+        <div ref={this.screen} className="contents">
+          {this.props.children}
+        </div>
+      );
+    }
     const { titleAs: Title } = this.props;
     return (
-      <section role="alert" className="flex flex-col items-center gap-4 py-12 text-center">
-        <Title className="text-2xl font-semibold text-balance">Coś się popsuło — odśwież stronę.</Title>
+      <section className="flex flex-col items-center gap-4 py-12 text-center">
+        {/* The alert holds the text only, so a screen reader does not read the button's name with it. */}
+        <div role="alert">
+          <Title ref={this.title} tabIndex={-1} className="text-2xl font-semibold text-balance outline-none">
+            Coś się popsuło — odśwież stronę.
+          </Title>
+        </div>
         <Button
           type="button"
           onClick={() => {

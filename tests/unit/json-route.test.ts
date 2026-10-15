@@ -99,6 +99,8 @@ describe("bodyRound", () => {
   it.each([
     { body: { round: 1 }, round: 1 },
     { body: { target: "Ola", round: 12 }, round: 12 },
+    // The largest number a Postgres integer holds (p_round).
+    { body: { round: 2_147_483_647 }, round: 2_147_483_647 },
   ])("reads the question's number from $body", ({ body, round }) => {
     expect(bodyRound(body)).toBe(round);
   });
@@ -116,6 +118,9 @@ describe("bodyRound", () => {
     { round: 1.5 },
     { round: "2" },
     { round: null },
+    // One past a Postgres integer: the database would fail the call instead of refusing it (F1 of
+    // context/changes/full-game-evening/reviews/impl-review.md).
+    { round: 2_147_483_648 },
     { round: Number.MAX_SAFE_INTEGER + 1 },
     { round: Number.NaN },
   ])("gives undefined for the round $round", (body) => {

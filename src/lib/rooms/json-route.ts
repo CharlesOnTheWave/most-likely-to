@@ -11,6 +11,10 @@ const NO_STORE = { "Cache-Control": "no-store" };
 // In bytes. A vote is ~100; anything much longer is not our screen.
 const MAX_BODY_LENGTH = 4096;
 
+// The largest round number the database takes (p_round is a Postgres integer). A larger one would fail the call before
+// the function runs, as a 500 with error lines in the log, instead of a plain refusal.
+const MAX_ROUND = 2_147_483_647;
+
 // Someone outside the room (no session and no cookie of the room, another host's room, no such room): the same 404 as
 // for a room that does not exist, so the answer does not tell which rooms exist.
 export const OUTSIDE_ROOM: RoomFailure = { ok: false, reason: "room_unknown" };
@@ -102,13 +106,13 @@ export function readJsonBody(context: APIContext, op: string): Promise<JsonBody>
   return readJsonRequest(context.request, op);
 }
 
-// The number of the question on the player's screen, from a game action's body: a whole number from 1, null when the
-// body has no round (a screen loaded before S-03 votes without one), undefined when it is there but not a number of a
-// round. next and skip need one; a vote takes either.
+// The number of the question on the player's screen, from a game action's body: a whole number from 1 to MAX_ROUND,
+// null when the body has no round (a screen loaded before S-03 votes without one), undefined when it is there but not a
+// number of a round. next and skip need one; a vote takes either.
 export function bodyRound(body: unknown): number | null | undefined {
   if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "round")) return null;
   const { round } = body as Record<string, unknown>;
-  return typeof round === "number" && Number.isSafeInteger(round) && round >= 1 ? round : undefined;
+  return typeof round === "number" && Number.isInteger(round) && round >= 1 && round <= MAX_ROUND ? round : undefined;
 }
 
 function statusFor(reason: string): number {
