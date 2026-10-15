@@ -103,12 +103,14 @@ function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): Room
   return { status: "lobby", role, me, players, round: null, questionsLeft: null };
 }
 
+// round: the question's number in the game and whether the host skipped the one before it (S-03).
 function voting(
   role: "host" | "guest",
   me: string,
   players: LobbyPlayer[],
   voted: string[],
   question: string | null = QUESTION,
+  round: { number?: number; afterSkip?: boolean } = {},
 ): RoomView {
   return {
     status: "playing",
@@ -116,12 +118,12 @@ function voting(
     me,
     players,
     round: {
-      number: 1,
+      number: round.number ?? 1,
       question_id: QUESTION_ID,
       phase: "voting",
       voted,
       me_voted: voted.includes(me),
-      after_skip: false,
+      after_skip: round.afterSkip ?? false,
       question,
     },
     questionsLeft: null,
@@ -136,6 +138,7 @@ function revealed(
   results: [string, number][],
   abstained: number,
   question: string | null = QUESTION,
+  questionsLeft = true,
 ): RoomView {
   const votes = results.reduce((sum, [, count]) => sum + count, 0);
   return {
@@ -152,9 +155,26 @@ function revealed(
       ballots: votes + abstained,
       question,
     },
-    // As for a host whose pool still has questions; S-03's screens show it (Faza 4).
-    questionsLeft: role === "host" ? true : null,
+    // Only the host learns whether the game's pool has a question left.
+    questionsLeft: role === "host" ? questionsLeft : null,
   };
+}
+
+// The host skipped the last question of the game's pool: no round follows it, its votes are gone.
+function skipped(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
+  return {
+    status: "playing",
+    role,
+    me,
+    players,
+    round: { number: 7, phase: "skipped" },
+    questionsLeft: role === "host" ? false : null,
+  };
+}
+
+// The end of the evening: the room is closed, no round, no counts.
+function closed(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
+  return { status: "closed", role, me, players, round: null, questionsLeft: null };
 }
 
 // Ola 2, Kasia 2 (a tie, in seat order), three zeros, one abstention: 5 ballots from 5 players.
@@ -199,11 +219,12 @@ const allForOne: [string, number][] = [
       <h1 class="text-2xl font-semibold">Stany pokoju</h1>
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
-        graczy stoją w miejscu. Hover i focus-visible sprawdzasz na stanach 2, 9, 14, 25, 28 i 45f: najedź myszą na pola
-        i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy
-        pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”)
-        niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, a start i odsłona zostają w stanie wysyłania.
-        Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie.
+        graczy stoją w miejscu. Hover i focus-visible sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42 i 45f: najedź myszą
+        na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany
+        host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”,
+        „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”) niczego nie wysyłają: głos od razu pokazuje
+        „Głos oddany”, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a wysłana akcja hosta zostaje w stanie
+        wysyłania. Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -369,8 +390,8 @@ const allForOne: [string, number][] = [
           </section>
 
           <section id="join-closed" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">13. Gra zamknięta</h2>
-            <RoomMessage titleAs="h2" title="Ta gra jest zamknięta." text="Poproś hosta o nowy link." />
+            <h2 class="text-muted-foreground text-sm font-medium">13. Gra skończona</h2>
+            <RoomMessage titleAs="h2" title="Ta gra już się skończyła." text="Poproś hosta o nowy link." />
           </section>
         </div>
       </div>
@@ -450,7 +471,7 @@ const allForOne: [string, number][] = [
           </section>
 
           <section id="lobby-closed-host" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">20. Pokój zamknięty: host</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">20. Koniec wieczoru: host</h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={{
@@ -468,7 +489,7 @@ const allForOne: [string, number][] = [
           </section>
 
           <section id="lobby-closed-guest" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">21. Pokój zamknięty: gość</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">21. Koniec wieczoru: gość</h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={{
@@ -652,7 +673,9 @@ const allForOne: [string, number][] = [
           </section>
 
           <section id="vote-host-before" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">36. Host: przed głosem, z „Odsłoń wynik”</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              36. Host: przed głosem, z przyciskami hosta · hover · focus-visible
+            </h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
@@ -663,7 +686,7 @@ const allForOne: [string, number][] = [
           </section>
 
           <section id="vote-host-voted" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">37. Host: po głosie, z „Odsłoń wynik”</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">37. Host: po głosie, z przyciskami hosta</h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"])}
@@ -679,7 +702,7 @@ const allForOne: [string, number][] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"])}
               realtime={null}
-              preview={{ idPrefix: "vote-host-revealing", myVote: { target: "Bartek" }, revealing: true }}
+              preview={{ idPrefix: "vote-host-revealing", myVote: { target: "Bartek" }, host: { busy: "reveal" } }}
               client:load
             />
           </section>
@@ -690,7 +713,7 @@ const allForOne: [string, number][] = [
               roomId={ROOM_ID}
               initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
               realtime={null}
-              preview={{ idPrefix: "vote-host-confirm", confirmingReveal: true }}
+              preview={{ idPrefix: "vote-host-confirm", host: { confirming: "reveal" } }}
               client:load
             />
           </section>
@@ -742,7 +765,9 @@ const allForOne: [string, number][] = [
           </section>
 
           <section id="reveal-host" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">42. Host: „Kolejne pytania wkrótce” i „Nowa gra”</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              42. Host: „Następne pytanie” i „Zakończ grę” · hover · focus-visible
+            </h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
@@ -853,6 +878,170 @@ const allForOne: [string, number][] = [
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
               preview={{ idPrefix: "reveal-toggle-focus" }}
+              client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: wieczór (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
+          <section id="evening-skip-confirm" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">48. Host: „Pomiń pytanie” pyta drugi raz</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "evening-skip-confirm", host: { confirming: "skip" } }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-end-confirm-vote" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              49. Host: „Zakończ grę” pyta drugi raz (głosowanie)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "evening-end-confirm-vote", host: { confirming: "end" } }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-skipping" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">50. Host: pomijanie pytania</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "evening-skipping", host: { busy: "skip" } }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-after-skip-guest" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">51. Gość: pytanie 2 po pominięciu (notka)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola"], QUESTION, { number: 2, afterSkip: true })}
+              realtime={null}
+              preview={{ idPrefix: "evening-after-skip-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-after-skip-host" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">52. Host: pytanie 3 po pominięciu, po głosie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", roundPlayers, ["Ola", "Kasia 🎉"], LONG_QUESTION, {
+                number: 3,
+                afterSkip: true,
+              })}
+              realtime={null}
+              preview={{ idPrefix: "evening-after-skip-host", myVote: { target: "Zosia" } }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-end-confirm-reveal" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">53. Host: „Zakończ grę” pyta drugi raz (odsłona)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "evening-end-confirm-reveal", host: { confirming: "end" } }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-next-pending" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">54. Host: „Następne pytanie” wysłane</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "evening-next-pending", host: { busy: "next" } }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-next-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">55. Host: „Następne pytanie” odrzucone</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "evening-next-error", host: { error: roomErrorMessage("round_over") } }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-no-questions" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">56. Host: odsłona, pytania się skończyły</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, false)}
+              realtime={null}
+              preview={{ idPrefix: "evening-no-questions" }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-skipped-host" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">57. Host: pominięte ostatnie pytanie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={skipped("host", "Ola", roundPlayers)}
+              realtime={null}
+              preview={{ idPrefix: "evening-skipped-host" }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-skipped-guest" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">58. Gość: pominięte ostatnie pytanie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={skipped("guest", "Bartek", roundPlayers)}
+              realtime={null}
+              preview={{ idPrefix: "evening-skipped-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-end-host" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">59. Koniec wieczoru po grze: host</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={closed("host", "Ola", roundPlayers)}
+              realtime={null}
+              preview={{ idPrefix: "evening-end-host" }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-end-guest" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">60. Koniec wieczoru po grze: gość</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={closed("guest", "Bartek", roundPlayers)}
+              realtime={null}
+              preview={{ idPrefix: "evening-end-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-crash" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">61. Ekran się wysypał (F4)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola"])}
+              realtime={null}
+              preview={{ idPrefix: "evening-crash", crash: true }}
               client:load
             />
           </section>

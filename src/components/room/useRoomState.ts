@@ -63,8 +63,9 @@ function isVisible(): boolean {
 
 // A screen's report to the owner's logs (POST /api/client-events): only the contract's keys, an event and a state
 // from its lists and the room's id; never a nick, a vote's target or any text. A report that does not arrive leaves a
-// line in this browser's console, through the same list of fields as the Worker's lines.
-function reportClientEvent(report: ClientEvent, keepalive = false): void {
+// line in this browser's console, through the same list of fields as the Worker's lines. Also RoomErrorBoundary's
+// island_crash, under the same limits.
+export function reportClientEvent(report: ClientEvent, keepalive = false): void {
   if (!isVisible()) return;
   const sent = reportsSent.get(report.event) ?? 0;
   if (sent >= MAX_REPORTS_PER_EVENT) return;

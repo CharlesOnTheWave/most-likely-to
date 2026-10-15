@@ -589,21 +589,21 @@ Przegląd implementacji, wdrożenie „baza, smoke na starym kodzie, scalenie, s
 
 #### Automated
 
-- [x] 3.1 `npm test` zielone z nowymi testami (pula, parser, kody odmów, F6)
-- [x] 3.2 Lokalna bramka zielona: `npm run lint`, `npx astro check`, `npm run build`
-- [ ] 3.3 CI zielone (`ci`, `db`, `smoke`, `e2e`)
+- [x] 3.1 `npm test` zielone z nowymi testami (pula, parser, kody odmów, F6) — 2507462
+- [x] 3.2 Lokalna bramka zielona: `npm run lint`, `npx astro check`, `npm run build` — 2507462
+- [x] 3.3 CI zielone (`ci`, `db`, `smoke`, `e2e`) — 2507462
 
 ### Phase 4: Ekrany wieczoru
 
 #### Automated
 
-- [ ] 4.1 Lokalna bramka zielona z testami ogłoszeń i notki: `npm run lint` (z literałami UI), `npx astro check`, `npm test`, `npm run build`
+- [x] 4.1 Lokalna bramka zielona z testami ogłoszeń i notki: `npm run lint` (z literałami UI), `npx astro check`, `npm test`, `npm run build`
 - [ ] 4.2 CI zielone (`ci`, `db`, `smoke`, `e2e`)
 
 #### Manual
 
-- [ ] 4.3 Zrzuty nowych stanów z `/dev/room-states` ocenione przez Karola (laptop jako całe okno, telefon w prawdziwej wielkości)
-- [ ] 4.4 Klawiatura: „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie” i „Anuluj” osiągalne, fokus po potwierdzeniu nie ginie; regiony `aria-live` mają teksty z numerem pytania, pominięciem i końcem (czytnik w fazie 6)
+- [x] 4.3 Zrzuty nowych stanów z `/dev/room-states` ocenione przez Karola (laptop jako całe okno, telefon w prawdziwej wielkości)
+- [x] 4.4 Klawiatura: „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie” i „Anuluj” osiągalne, fokus po potwierdzeniu nie ginie; regiony `aria-live` mają teksty z numerem pytania, pominięciem i końcem (czytnik w fazie 6)
 
 ### Phase 5: Test w przeglądarce, smoke z wieczorem, próbne alarmy
 

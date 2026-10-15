@@ -1,11 +1,12 @@
-import React, { useRef, useState } from "react";
-import { CircleCheck, Eye, Send } from "lucide-react";
+import React, { useState } from "react";
+import { CircleCheck, Eye, Send, SkipForward } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FieldError, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import { endGameAction, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import type { LobbyPlayer, RoomView, RoundView } from "@/lib/rooms/shared";
@@ -27,10 +28,6 @@ export interface VotingPreview {
   myVote?: MyVote;
   voting?: boolean;
   voteError?: string | null;
-  // The host pressed "Odsłoń wynik" once: the button asks before revealing.
-  confirmingReveal?: boolean;
-  revealing?: boolean;
-  revealError?: string | null;
 }
 
 interface Props {
@@ -40,9 +37,14 @@ interface Props {
   idPrefix: string;
   titleAs: "h1" | "h2";
   refreshFailed: boolean;
-  onVote: (target: string | null) => Promise<ActionOutcome>;
+  // The round's number goes with the vote, the skip and nothing else, so neither lands in a question this screen has
+  // not shown (round_over).
+  onVote: (target: string | null, round: number) => Promise<ActionOutcome>;
   onReveal: () => Promise<ActionOutcome>;
+  onSkip: (round: number) => Promise<ActionOutcome>;
+  onEnd: () => Promise<ActionOutcome>;
   preview?: VotingPreview;
+  hostPreview?: HostActionsPreview;
 }
 
 // The radio button's value for an abstention; a player's radio carries the player's place in the list, so no nick can
@@ -71,7 +73,9 @@ function PlayerBadges({ player, isMe, hasVoted }: { player: LobbyPlayer; isMe: b
 
 // "Kto z nas najprawdopodobniej …?": one person from the list (oneself too) or "Wstrzymuję się", then "Zagłosuj". A
 // vote is final (decision D2), so the screen says so before and after. Everyone sees who has voted, never for whom;
-// the host can reveal the result at any time (decision D3).
+// the host can reveal the result at any time (decision D3), skip the question while it is voting (its votes are gone,
+// the next question opens at once) and end the game (decisions D2 and D4 of context/changes/full-game-evening/
+// research.md); skipping and ending ask first.
 export default function RoundVoting({
   view,
   round,
@@ -80,7 +84,10 @@ export default function RoundVoting({
   refreshFailed,
   onVote,
   onReveal,
+  onSkip,
+  onEnd,
   preview,
+  hostPreview,
 }: Props) {
   // undefined: nothing chosen yet.
   const [choice, setChoice] = useState<string | null | undefined>(preview?.choice);
@@ -88,23 +95,17 @@ export default function RoundVoting({
   const [myVote, setMyVote] = useState<MyVote | null>(preview?.myVote ?? null);
   const [voting, setVoting] = useState(preview?.voting ?? false);
   const [voteError, setVoteError] = useState<string | null>(preview?.voteError ?? null);
-  // Two steps (decision D3, option b): the round reveals itself after the last vote, so the host's button exists only
-  // while someone has not voted, and the first press always asks. No timer: the question stays until answered.
-  const [confirming, setConfirming] = useState(preview?.confirmingReveal ?? false);
-  const [revealing, setRevealing] = useState(preview?.revealing ?? false);
-  const [revealError, setRevealError] = useState<string | null>(preview?.revealError ?? null);
   const isHost = view.role === "host";
   // After a reload only the database knows: "Głos oddany", without the choice.
   const hasVoted = myVote !== null || round.me_voted;
   const voted = new Set(round.voted);
   const choiceErrorId = `${idPrefix}vote-choice-error`;
-  const revealRef = useRef<HTMLButtonElement>(null);
-  const confirmText = `Na pewno odsłonić? Zagłosowało ${round.voted.length} z ${view.players.length}`;
+  const votedOf = `${String(round.voted.length)} z ${String(view.players.length)}`;
 
   async function vote(target: string | null) {
     setVoting(true);
     setVoteError(null);
-    const outcome = await onVote(target);
+    const outcome = await onVote(target, round.number);
     setVoting(false);
     if (outcome.ok) {
       // Confirmed on screen at once, from the answer (PRD NFR), before the new state arrives.
@@ -123,33 +124,6 @@ export default function RoundVoting({
     }
     if (voting) return;
     void vote(choice);
-  }
-
-  async function reveal() {
-    setRevealing(true);
-    setRevealError(null);
-    const outcome = await onReveal();
-    // Accepted: the button stays busy until the result arrives and this view goes away.
-    if (!outcome.ok) {
-      setRevealing(false);
-      setConfirming(false);
-      setRevealError(outcome.message);
-    }
-  }
-
-  // The same button asks first and reveals on the second press, so the focus stays on it.
-  function pressReveal() {
-    if (!confirming) {
-      setRevealError(null);
-      setConfirming(true);
-      return;
-    }
-    void reveal();
-  }
-
-  function cancelReveal() {
-    setConfirming(false);
-    revealRef.current?.focus();
   }
 
   function choose(next: string | null) {
@@ -295,44 +269,33 @@ export default function RoundVoting({
       )}
 
       {isHost && (
-        <div className="flex flex-col gap-3 border-t pt-6">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              ref={revealRef}
-              type="button"
-              variant={confirming ? "default" : "secondary"}
-              disabled={revealing}
-              // The question may wrap on a phone ("Zagłosowało 12 z 20").
-              className="h-auto min-h-9 py-2 text-center whitespace-normal sm:flex-1"
-              onClick={pressReveal}
-            >
-              {revealing ? (
-                <>
-                  <Spinner aria-hidden="true" />
-                  Odsłanianie…
-                </>
-              ) : (
-                <>
-                  <Eye />
-                  {confirming ? confirmText : "Odsłoń wynik"}
-                </>
-              )}
-            </Button>
-            {confirming && !revealing && (
-              <Button type="button" variant="ghost" onClick={cancelReveal}>
-                Anuluj
-              </Button>
-            )}
-          </div>
-          <p className="text-muted-foreground text-sm">
-            Możesz odsłonić wynik w każdej chwili, także zanim zagłosują wszyscy.
-          </p>
-          {/* A screen reader may not read a focused button again when its name changes; this says the question. */}
-          <p aria-live="polite" className="sr-only">
-            {confirming && !revealing ? confirmText : ""}
-          </p>
-          <ServerError message={revealError} />
-        </div>
+        <HostActions
+          actions={[
+            // Two steps (decision D3, option b): the round reveals itself after the last vote, so this button exists
+            // only while someone has not voted, and the first press always asks. No timer.
+            {
+              id: "reveal",
+              label: "Odsłoń wynik",
+              busyLabel: "Odsłanianie…",
+              Icon: Eye,
+              confirmText: `Na pewno odsłonić? Zagłosowało ${votedOf}`,
+              variant: "secondary",
+              run: onReveal,
+            },
+            {
+              id: "skip",
+              label: "Pomiń pytanie",
+              busyLabel: "Pomijanie…",
+              Icon: SkipForward,
+              confirmText: `Na pewno pominąć? Głosy przepadną (zagłosowało ${votedOf})`,
+              variant: "outline",
+              run: () => onSkip(round.number),
+            },
+            endGameAction(onEnd),
+          ]}
+          note="Możesz odsłonić wynik w każdej chwili, także zanim zagłosują wszyscy."
+          preview={hostPreview}
+        />
       )}
     </div>
   );
