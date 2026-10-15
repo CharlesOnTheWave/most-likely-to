@@ -1,6 +1,8 @@
-import { ChartBarDecreasing, ChartPie, Plus } from "lucide-react";
+import { ChartBarDecreasing, ChartPie } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { afterRoundActions, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
+import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import { pieSlices, resultBars, resultViews, slicePath, type PieSlice, type ResultView } from "@/lib/rooms/chart";
 import type { RoomView, RoundView } from "@/lib/rooms/shared";
@@ -19,6 +21,10 @@ interface Props {
   // next round while the page lives; never sent anywhere or stored.
   chosenView: ResultView | null;
   onChooseView: (next: ResultView) => void;
+  // The round's number goes with "Następne pytanie", so a second press never moves past the question it opened.
+  onNext: (round: number) => Promise<ActionOutcome>;
+  onEnd: () => Promise<ActionOutcome>;
+  hostPreview?: HostActionsPreview;
 }
 
 // One colour per slice, in the slices' order (src/styles/global.css, --chart-1 … --chart-20). Full class names:
@@ -97,8 +103,8 @@ function ResultPie({ slices }: { slices: PieSlice[] }) {
 
 // The reveal (PRD FR-009; decision D3: always the counts, also after one vote): every player, most votes first, a tie
 // in seat order, zeros dimmed at the bottom (sortResults), and how many abstained. Only counts per person, never who
-// voted for whom. "Koło" or "Paski" changes only this player's screen. The result stays; S-03 brings the next
-// question, so the host gets "Nowa gra" for now.
+// voted for whom. "Koło" or "Paski" changes only this player's screen. The result stays until the host opens the next
+// question or ends the game; when the game's pool ran out, only "Zakończ grę" (questionsLeft false).
 export default function RoundReveal({
   view,
   round,
@@ -107,6 +113,9 @@ export default function RoundReveal({
   refreshFailed,
   chosenView,
   onChooseView,
+  onNext,
+  onEnd,
+  hostPreview,
 }: Props) {
   const rows = resultBars(round.results);
   const top = rows[0]?.votes ?? 0;
@@ -213,13 +222,11 @@ export default function RoundReveal({
       </section>
 
       {isHost && (
-        <div className="flex flex-col gap-3 border-t pt-6">
-          <p className="text-muted-foreground text-sm">Kolejne pytania wkrótce.</p>
-          <a href="/" className={buttonVariants({ variant: "secondary" })}>
-            <Plus />
-            Nowa gra
-          </a>
-        </div>
+        <HostActions
+          // null: the Worker could not tell, so the button stays and next_round has the final word (no_questions).
+          {...afterRoundActions(view.questionsLeft !== false, () => onNext(round.number), onEnd)}
+          preview={hostPreview}
+        />
       )}
     </div>
   );

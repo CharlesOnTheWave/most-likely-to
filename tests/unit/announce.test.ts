@@ -1,0 +1,183 @@
+import { describe, expect, it } from "vitest";
+import { announcement, announcementKey, skipNotice } from "@/lib/rooms/announce";
+import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
+
+// What the room screen's live region says when the game moves on, and when the screen shows the note after a skip
+// (context/changes/full-game-evening/plan.md, Faza 4 #1; Desired End State 2 and 7). Behaviour only: a new question's
+// number is heard, a skip and the end of the evening have their own words, the note belongs to the round after a skip
+// alone. The Polish sentences are not copied here (test-plan §6.1); the states are written by hand from the contract
+// in src/lib/rooms/shared.ts.
+
+const PLAYERS: LobbyPlayer[] = [
+  { nick: "Ola", host: true },
+  { nick: "Bartek", host: false },
+  { nick: "Kuba", host: false },
+];
+const QUESTION = "spóźniłby się na własne urodziny";
+const OTHER_QUESTION = "zjadłby pizzę z ananasem";
+
+function lobby(): RoomView {
+  return { status: "lobby", role: "host", me: "Ola", players: PLAYERS, round: null, questionsLeft: null };
+}
+
+function voting(
+  number: number,
+  options: { afterSkip?: boolean; question?: string | null; voted?: string[]; role?: "host" | "guest" } = {},
+): RoomView {
+  const voted = options.voted ?? [];
+  const me = options.role === "host" ? "Ola" : "Bartek";
+  return {
+    status: "playing",
+    role: options.role ?? "guest",
+    me,
+    players: PLAYERS,
+    round: {
+      number,
+      question_id: "na-co-dzien-001",
+      phase: "voting",
+      voted,
+      me_voted: voted.includes(me),
+      after_skip: options.afterSkip ?? false,
+      question: options.question === undefined ? QUESTION : options.question,
+    },
+    questionsLeft: null,
+  };
+}
+
+function revealed(number: number): RoomView {
+  return {
+    status: "playing",
+    role: "guest",
+    me: "Bartek",
+    players: PLAYERS,
+    round: {
+      number,
+      question_id: "na-co-dzien-001",
+      phase: "revealed",
+      results: [
+        { nick: "Ola", votes: 2 },
+        { nick: "Bartek", votes: 0 },
+        { nick: "Kuba", votes: 1 },
+      ],
+      abstained: 0,
+      ballots: 3,
+      question: QUESTION,
+    },
+    questionsLeft: null,
+  };
+}
+
+function skipped(number: number, role: "host" | "guest" = "guest"): RoomView {
+  return {
+    status: "playing",
+    role,
+    me: role === "host" ? "Ola" : "Bartek",
+    players: PLAYERS,
+    round: { number, phase: "skipped" },
+    questionsLeft: role === "host" ? false : null,
+  };
+}
+
+function closed(role: "host" | "guest"): RoomView {
+  return {
+    status: "closed",
+    role,
+    me: role === "host" ? "Ola" : "Bartek",
+    players: PLAYERS,
+    round: null,
+    questionsLeft: null,
+  };
+}
+
+// A number as a word of its own: "12" is not "2" followed by something.
+function saysNumber(text: string, number: number): boolean {
+  return new RegExp(`(^|\\D)${String(number)}(\\D|$)`).test(text);
+}
+
+describe("announcement", () => {
+  it("has its own words for every step of the evening", () => {
+    const steps = [voting(1), voting(2), voting(2, { afterSkip: true }), revealed(2), skipped(3), closed("guest")].map(
+      announcement,
+    );
+    for (const text of steps) expect(text).not.toBe("");
+    expect(new Set(steps).size).toBe(steps.length);
+  });
+
+  it.each([2, 3, 12])("says the number of question %i", (number) => {
+    expect(saysNumber(announcement(voting(number)), number)).toBe(true);
+    expect(saysNumber(announcement(voting(number, { afterSkip: true })), number)).toBe(true);
+  });
+
+  it("tells question 2 from question 12 with the same text", () => {
+    expect(announcement(voting(2))).not.toBe(announcement(voting(12)));
+    expect(saysNumber(announcement(voting(2)), 12)).toBe(false);
+  });
+
+  it("starts the game with the first question, not with a number", () => {
+    expect(announcement(voting(1))).not.toBe(announcement(voting(2)));
+  });
+
+  it("says the question on every new question, also after a skip", () => {
+    for (const view of [voting(1), voting(2), voting(4, { afterSkip: true })]) {
+      expect(announcement(view)).toContain(QUESTION);
+    }
+    expect(announcement(voting(2, { question: OTHER_QUESTION }))).toContain(OTHER_QUESTION);
+  });
+
+  it("says a question the base did not have without a placeholder", () => {
+    const text = announcement(voting(2, { question: null }));
+    expect(text).not.toBe("");
+    expect(text).not.toBe(announcement(voting(2)));
+    expect(text).not.toMatch(/null|undefined/);
+  });
+
+  it("says the skip together with the new question, so a screen that slept through it still hears it", () => {
+    expect(announcement(voting(3, { afterSkip: true }))).not.toBe(announcement(voting(3)));
+  });
+
+  it("is the same for the host and a guest", () => {
+    expect(announcement(voting(2, { role: "host" }))).toBe(announcement(voting(2, { role: "guest" })));
+    expect(announcement(skipped(4, "host"))).toBe(announcement(skipped(4, "guest")));
+    expect(announcement(closed("host"))).toBe(announcement(closed("guest")));
+  });
+
+  it("says nothing in the lobby", () => {
+    expect(announcement(lobby())).toBe("");
+  });
+});
+
+describe("announcementKey", () => {
+  it("changes with every new question, phase and status", () => {
+    const keys = [lobby(), voting(1), revealed(1), voting(2), revealed(2), skipped(3), closed("guest")].map(
+      announcementKey,
+    );
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("changes when a skip opens the next question, even with the same phase", () => {
+    expect(announcementKey(voting(3, { afterSkip: true }))).not.toBe(announcementKey(voting(2)));
+  });
+
+  it("stays the same while players vote, so a vote is not announced as a new question", () => {
+    expect(announcementKey(voting(2, { voted: ["Ola"] }))).toBe(announcementKey(voting(2)));
+    expect(announcementKey(voting(2, { voted: ["Ola", "Kuba"] }))).toBe(announcementKey(voting(2, { voted: ["Ola"] })));
+  });
+});
+
+describe("skipNotice", () => {
+  it("shows on the round after a skip, for the host and a guest", () => {
+    expect(skipNotice(voting(3, { afterSkip: true }))).toBe(true);
+    expect(skipNotice(voting(3, { afterSkip: true, role: "host", voted: ["Ola"] }))).toBe(true);
+  });
+
+  it.each([
+    { why: "a round after a reveal", view: voting(3) },
+    { why: "the first question", view: voting(1) },
+    { why: "a reveal", view: revealed(3) },
+    { why: "a skipped last question", view: skipped(3) },
+    { why: "the lobby", view: lobby() },
+    { why: "the end of the evening", view: closed("guest") },
+  ])("stays hidden on $why", ({ view }) => {
+    expect(skipNotice(view)).toBe(false);
+  });
+});

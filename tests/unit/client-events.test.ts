@@ -4,7 +4,7 @@ import { parseClientEvent } from "@/lib/client-events";
 // A player's screen reports a broken live connection, a failed refresh or a crashed island (decision D4; audit L1, L2,
 // L4). The endpoint is public, so its input is narrow: only the listed events and states and a room id, nothing else,
 // because anything free-form could carry a nick or a vote into the log (test-plan #1). Oracle: the lists in
-// context/changes/first-live-round/plan.md, Faza 3 #8, written out by hand.
+// context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #8, written out by hand.
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const EVENTS = ["realtime_status", "refresh_failed", "island_crash"];
 const STATES = ["CHANNEL_ERROR", "TIMED_OUT", "CLOSED", "http_4xx", "http_5xx", "network"];

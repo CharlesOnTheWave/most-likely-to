@@ -21,30 +21,61 @@ export interface QuestionBase<Id extends string = string> {
 const BASE: QuestionBase<QuestionId> = { categories: CATEGORIES.map((category) => category.id), questions: QUESTIONS };
 
 // PRD FR-015 and US-01: only questions of the picked categories that exist in the base, 18+ only from the picked
-// categories where the host included them (FR-005). random gives a number in [0, 1) and picks one question of that
-// pool, in the base's order; null when the pool is empty. No repeats within a game is S-03's: S-02 has one round.
+// categories where the host included them (FR-005). In the base's order.
+function poolFrom<Id extends string>(base: QuestionBase<Id>, selection: QuestionSelection): Id[] {
+  const known = new Set(base.categories);
+  const picked = new Set(selection.categories.filter((id) => known.has(id)));
+  const adult = new Set(selection.adultCategories.filter((id) => picked.has(id)));
+  return (Object.keys(base.questions) as Id[]).filter((id) => {
+    const entry = base.questions[id];
+    return picked.has(entry.category) && (!entry.adult || adult.has(entry.category));
+  });
+}
+
+// An index in [0, length) from random, which gives a number in [0, 1); a value outside that still lands in range.
+function indexFrom(random: () => number, length: number): number {
+  const value = random();
+  return Number.isFinite(value) ? Math.min(length - 1, Math.max(0, Math.floor(value * length))) : 0;
+}
+
+// Round 1's question: one question of the pool, picked by random; null when the pool is empty.
 export function drawFrom<Id extends string>(
   base: QuestionBase<Id>,
   selection: QuestionSelection,
   random: () => number,
 ): Id | null {
-  const known = new Set(base.categories);
-  const picked = new Set(selection.categories.filter((id) => known.has(id)));
-  const adult = new Set(selection.adultCategories.filter((id) => picked.has(id)));
-  const pool = (Object.keys(base.questions) as Id[]).filter((id) => {
-    const entry = base.questions[id];
-    return picked.has(entry.category) && (!entry.adult || adult.has(entry.category));
-  });
-  if (pool.length === 0) return null;
+  const pool = poolFrom(base, selection);
+  return pool.length === 0 ? null : pool[indexFrom(random, pool.length)];
+}
 
-  // A random outside [0, 1) still lands in the pool.
-  const value = random();
-  const index = Number.isFinite(value) ? Math.min(pool.length - 1, Math.max(0, Math.floor(value * pool.length))) : 0;
-  return pool[index];
+// The candidates of "Następne pytanie" and "Pomiń pytanie": the whole pool, each question once, in an order drawn by
+// random (Fisher-Yates). The database takes the first one not played in this game yet, so no question comes twice
+// (FR-015; decision D1 of context/changes/full-game-evening/research.md).
+export function shuffledPool<Id extends string>(
+  base: QuestionBase<Id>,
+  selection: QuestionSelection,
+  random: () => number,
+): Id[] {
+  const pool = poolFrom(base, selection);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = indexFrom(random, i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
 }
 
 export function drawQuestion(selection: QuestionSelection, random: () => number): QuestionId | null {
   return drawFrom(BASE, selection, random);
+}
+
+export function shuffledQuestions(selection: QuestionSelection, random: () => number): QuestionId[] {
+  return shuffledPool(BASE, selection, random);
+}
+
+// The game's pool in the base's order. Its size tells the host whether a question is left: every round of a game has
+// a question of this pool and none comes twice, so N rounds have played N of them.
+export function questionPool(selection: QuestionSelection): QuestionId[] {
+  return poolFrom(BASE, selection);
 }
 
 // The text after "Kto z nas najprawdopodobniej" of a round's question, or null for an id the base does not have (the

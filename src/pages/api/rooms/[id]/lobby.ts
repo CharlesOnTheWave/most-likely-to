@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { logEvent } from "@/lib/log";
 import { jsonAnswer } from "@/lib/rooms/json-route";
-import { roomLobby, roomView } from "@/lib/rooms/server";
+import { hostQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
 import { playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient } from "@/lib/supabase";
 
@@ -9,7 +9,8 @@ const ROUTE = "/api/rooms/[id]/lobby";
 
 // The room's state the room screen fetches after each bell and every 15 s, with the round's question as text
 // (RoomView, src/lib/rooms/shared.ts): the database is the source of truth, the channel only says "check". The host is
-// recognised by the session, a guest by the room's cookie. Anyone else, a malformed id and a room that does not exist
+// recognised by the session, a guest by the room's cookie; the host also learns whether questions are left once a
+// round is revealed or skipped. Anyone else, a malformed id and a room that does not exist
 // get the same 404, so the endpoint does not tell which rooms exist.
 export const GET: APIRoute = async (context) => {
   const roomId = context.params.id ?? "";
@@ -38,5 +39,6 @@ export const GET: APIRoute = async (context) => {
     });
     return jsonAnswer({ error: "not_found" }, 404);
   }
-  return jsonAnswer(roomView(result.lobby, roomId));
+  const questionsLeft = await hostQuestionsLeft(supabase, result.lobby, roomId);
+  return jsonAnswer(roomView(result.lobby, roomId, questionsLeft));
 };

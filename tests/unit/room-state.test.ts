@@ -5,8 +5,8 @@ import { parseLobbyState, parseRoomView } from "@/lib/rooms/shared";
 // text). Every new state goes through one parser that names the field that did not pass (audit P6, L4): a database and
 // a Worker out of step must give a log line that says which field, not "an unexpected shape", and an island must not
 // render a shape it does not know. The fixtures are written by hand from the round's contract
-// (context/changes/first-live-round/plan.md, Faza 1 #4; tests/db/support/rounds.ts, the exact key sets), never from the
-// parser.
+// (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4; context/changes/full-game-evening/plan.md, Faza 1 #2
+// and Faza 3 #2; tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 const PLAYERS = [
   { nick: "Ola", host: true },
@@ -22,6 +22,7 @@ const VOTING_ROUND = {
   phase: "voting",
   voted: ["Ola", "Kuba"],
   me_voted: true,
+  after_skip: false,
 };
 const VOTING = { status: "playing", role: "guest", me: "Kuba", players: PLAYERS, round: VOTING_ROUND };
 // Every eligible player in seat order, zeros included; one abstention among four ballots.
@@ -38,6 +39,13 @@ const REVEALED_ROUND = {
   ballots: 4,
 };
 const REVEALED = { status: "playing", role: "host", me: "Ola", players: PLAYERS, round: REVEALED_ROUND };
+// S-03: the host skipped the last question of the pool, so the skipped round stays the latest one. Its votes are gone:
+// only its number and phase.
+const SKIPPED_ROUND = { number: 4, phase: "skipped" };
+const SKIPPED = { status: "playing", role: "guest", me: "Bartek", players: PLAYERS, round: SKIPPED_ROUND };
+// The round after a skip says so to every screen, including one that slept through the skip.
+const AFTER_SKIP_ROUND = { ...VOTING_ROUND, number: 3, after_skip: true };
+const AFTER_SKIP = { ...VOTING, round: AFTER_SKIP_ROUND };
 
 const QUESTION = "spóźniłby się na własne urodziny";
 
@@ -55,6 +63,8 @@ describe("parseLobbyState", () => {
     { why: "a closed room", state: CLOSED },
     { why: "a round open for votes", state: VOTING },
     { why: "a revealed round", state: REVEALED },
+    { why: "a skipped round", state: SKIPPED },
+    { why: "a round after a skip", state: AFTER_SKIP },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -96,8 +106,18 @@ describe("parseLobbyState", () => {
     expect(parseLobbyState(state)).toEqual({ ok: false, field: "round" });
   });
 
-  it.each(["number", "question_id", "phase", "voted", "me_voted"])("names the missing voting field round.%s", (key) => {
-    expect(parseLobbyState(withRound(VOTING, without(VOTING_ROUND, key)))).toEqual({
+  it.each(["number", "question_id", "phase", "voted", "me_voted", "after_skip"])(
+    "names the missing voting field round.%s",
+    (key) => {
+      expect(parseLobbyState(withRound(VOTING, without(VOTING_ROUND, key)))).toEqual({
+        ok: false,
+        field: `round.${key}`,
+      });
+    },
+  );
+
+  it.each(["number", "phase"])("names the missing skipped field round.%s", (key) => {
+    expect(parseLobbyState(withRound(SKIPPED, without(SKIPPED_ROUND, key)))).toEqual({
       ok: false,
       field: `round.${key}`,
     });
@@ -122,6 +142,8 @@ describe("parseLobbyState", () => {
     { field: "round.voted", round: { ...VOTING_ROUND, voted: "Ola" } },
     { field: "round.voted", round: { ...VOTING_ROUND, voted: [1] } },
     { field: "round.me_voted", round: { ...VOTING_ROUND, me_voted: "yes" } },
+    { field: "round.after_skip", round: { ...VOTING_ROUND, after_skip: "yes" } },
+    { field: "round.number", round: { ...SKIPPED_ROUND, number: 0 } },
     { field: "round.results", round: { ...REVEALED_ROUND, results: {} } },
     { field: "round.results", round: { ...REVEALED_ROUND, results: [null] } },
     { field: "round.results.nick", round: { ...REVEALED_ROUND, results: [{ nick: 1, votes: 0 }] } },
@@ -131,6 +153,20 @@ describe("parseLobbyState", () => {
     { field: "round.ballots", round: { ...REVEALED_ROUND, ballots: "4" } },
   ])("names $field for a wrong value", ({ field, round }) => {
     expect(parseLobbyState(withRound(VOTING, round))).toEqual({ ok: false, field });
+  });
+
+  // Anonymity (test-plan #1) and decision D3 of context/changes/full-game-evening/research.md: a skipped round's votes
+  // are gone, so anything about them next to it (a count, who voted, even its question) means they were not dropped.
+  // The state is refused, not passed on without it.
+  it.each([
+    { field: "round.results", round: { ...SKIPPED_ROUND, results: [{ nick: "Ola", votes: 1 }] } },
+    { field: "round.abstained", round: { ...SKIPPED_ROUND, abstained: 0 } },
+    { field: "round.ballots", round: { ...SKIPPED_ROUND, ballots: 1 } },
+    { field: "round.voted", round: { ...SKIPPED_ROUND, voted: ["Ola"] } },
+    { field: "round.me_voted", round: { ...SKIPPED_ROUND, me_voted: true } },
+    { field: "round.question_id", round: { ...SKIPPED_ROUND, question_id: "na-co-dzien-004" } },
+  ])("names $field for a skipped round that carries it", ({ field, round }) => {
+    expect(parseLobbyState(withRound(SKIPPED, round))).toEqual({ ok: false, field });
   });
 
   // Anonymity (test-plan #1): a key outside the contract, such as counts before the reveal, never reaches a screen,
@@ -150,17 +186,26 @@ describe("parseLobbyState", () => {
   });
 });
 
+// The Worker's view adds questionsLeft: for the host once the latest round is revealed or skipped, whether the pool has
+// a question not played yet; null in every other state and for a guest.
+function view(state: Record<string, unknown>, questionsLeft: boolean | null = null): Record<string, unknown> {
+  return { ...state, questionsLeft };
+}
+
 describe("parseRoomView", () => {
   it.each([
-    { why: "the lobby", state: LOBBY },
-    { why: "a closed room", state: CLOSED },
+    { why: "the lobby", state: view(LOBBY) },
+    { why: "a closed room", state: view(CLOSED) },
+    { why: "a skipped round, for a guest", state: view(SKIPPED) },
+    { why: "a skipped round, for the host with no question left", state: view({ ...SKIPPED, role: "host" }, false) },
   ])("accepts $why without a question", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
 
   it.each([
-    { why: "a round open for votes", state: withRound(VOTING, { ...VOTING_ROUND, question: QUESTION }) },
-    { why: "a revealed round", state: withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }) },
+    { why: "a round open for votes", state: view(withRound(VOTING, { ...VOTING_ROUND, question: QUESTION })) },
+    { why: "a round after a skip", state: view(withRound(AFTER_SKIP, { ...AFTER_SKIP_ROUND, question: QUESTION })) },
+    { why: "a revealed round", state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }), true) },
   ])("accepts $why with its question", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
@@ -168,21 +213,29 @@ describe("parseRoomView", () => {
   // A question the base does not have comes as null (src/lib/rooms/server.ts, roomView): the screen says it could not
   // load the question, and the round goes on.
   it.each([
-    { why: "a round open for votes", state: withRound(VOTING, { ...VOTING_ROUND, question: null }) },
-    { why: "a revealed round", state: withRound(REVEALED, { ...REVEALED_ROUND, question: null }) },
+    { why: "a round open for votes", state: view(withRound(VOTING, { ...VOTING_ROUND, question: null })) },
+    { why: "a revealed round", state: view(withRound(REVEALED, { ...REVEALED_ROUND, question: null }), false) },
   ])("accepts $why whose question the base does not have", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
 
   it.each([
-    { why: "missing", state: VOTING },
-    { why: "not a text", state: withRound(VOTING, { ...VOTING_ROUND, question: 1 }) },
-    { why: "an object", state: withRound(VOTING, { ...VOTING_ROUND, question: { text: QUESTION } }) },
+    { why: "missing", state: view(VOTING) },
+    { why: "not a text", state: view(withRound(VOTING, { ...VOTING_ROUND, question: 1 })) },
+    { why: "an object", state: view(withRound(VOTING, { ...VOTING_ROUND, question: { text: QUESTION } })) },
   ])("names round.question when it is $why", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: false, field: "round.question" });
   });
 
+  it.each([
+    { why: "missing", state: LOBBY },
+    { why: "not true, false or null", state: { ...LOBBY, questionsLeft: "yes" } },
+    { why: "a number", state: { ...LOBBY, questionsLeft: 3 } },
+  ])("names questionsLeft when it is $why", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: false, field: "questionsLeft" });
+  });
+
   it("names the field the lobby parser names", () => {
-    expect(parseRoomView({ ...LOBBY, status: "paused" })).toEqual({ ok: false, field: "status" });
+    expect(parseRoomView(view({ ...LOBBY, status: "paused" }))).toEqual({ ok: false, field: "status" });
   });
 });
