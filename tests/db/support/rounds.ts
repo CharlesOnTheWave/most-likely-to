@@ -3,7 +3,7 @@ import { anonClient, newPlayerToken, type Host, type TestClient } from "./client
 import { isRecord } from "./rooms";
 
 // The round's contract (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4) and the evening's
-// (context/changes/full-game-evening/plan.md, Faza 1 #2), called through the roles' own doors: start_game,
+// (context/archive/2026-10-15-full-game-evening/plan.md, Faza 1 #2), called through the roles' own doors: start_game,
 // reveal_round, next_round, skip_round and end_game as the signed-in host, cast_vote as a guest with its player token
 // or as the host by its session, room_lobby as either. supabase/migrations/*_first_live_round.sql implements the
 // round and *_full_game_evening.sql the evening (S-03, phase 2); before a function exists, PostgREST answers its call

@@ -50,7 +50,7 @@ export function drawFrom<Id extends string>(
 
 // The candidates of "Następne pytanie" and "Pomiń pytanie": the whole pool, each question once, in an order drawn by
 // random (Fisher-Yates). The database takes the first one not played in this game yet, so no question comes twice
-// (FR-015; decision D1 of context/changes/full-game-evening/research.md).
+// (FR-015; decision D1 of context/archive/2026-10-15-full-game-evening/research.md).
 export function shuffledPool<Id extends string>(
   base: QuestionBase<Id>,
   selection: QuestionSelection,

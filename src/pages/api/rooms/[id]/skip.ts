@@ -9,9 +9,9 @@ const OP = "skip";
 
 // "Pomiń pytanie", for the room's host (the session), while the round on the host's screen is voting. Its votes are
 // gone and the next question opens at once from the game's pool in random order, as in next.ts (decisions D2 and D3 of
-// context/changes/full-game-evening/research.md). The body carries that round's number ({round}), so the same skip
-// sent twice never skips the question after it (round_over). JSON from the room screen: {ok: true} or {error: code}
-// (src/lib/rooms/json-route.ts).
+// context/archive/2026-10-15-full-game-evening/research.md). The body carries that round's number ({round}), so the
+// same skip sent twice never skips the question after it (round_over). JSON from the room screen: {ok: true} or
+// {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;

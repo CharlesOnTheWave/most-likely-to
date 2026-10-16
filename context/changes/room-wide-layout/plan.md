@@ -402,23 +402,23 @@ Brak zmian w bazie. Wycofanie to revert scalenia; bez kolejności „baza, potem
 
 #### Automated
 
-- [x] 1.1 Lokalna bramka zielona: `npm run lint` (z literałami UI), `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 Po prototypie nie ma śladu: `git grep -nE "room-layout|RoomLayout|room-layouts|mixLayout|MIX_WIDTH" -- src scripts` nic nie znajduje
-- [x] 1.3 Telefon bez zmian: zrzuty całych stron 390×844 wszystkich stanów `/dev/room-window` i całej `/dev/room-states` identyczne bajt w bajt ze wzorcem sprzed zmiany
-- [ ] 1.4 CI zielone (`ci`, `db`, `smoke`, `e2e`) na commicie fazy, na gałęzi ze szkicem PR
+- [x] 1.1 Lokalna bramka zielona: `npm run lint` (z literałami UI), `npx astro check`, `npm test`, `npm run build` — 0ed1d4e
+- [x] 1.2 Po prototypie nie ma śladu: `git grep -nE "room-layout|RoomLayout|room-layouts|mixLayout|MIX_WIDTH" -- src scripts` nic nie znajduje — 0ed1d4e
+- [x] 1.3 Telefon bez zmian: zrzuty całych stron 390×844 wszystkich stanów `/dev/room-window` i całej `/dev/room-states` identyczne bajt w bajt ze wzorcem sprzed zmiany — 0ed1d4e
+- [x] 1.4 CI zielone (`ci`, `db`, `smoke`, `e2e`) na commicie fazy, na gałęzi ze szkicem PR — 0ed1d4e
 
 #### Manual
 
-- [x] 1.5 Karol ocenia zrzuty (laptop 1280×600 jako całe okno, monitor 1920×950 dla odsłony, telefon 390×844): stany jak w galerii M, pasek hosta po głosie hosta, potwierdzenie w pasku czytelne
-- [x] 1.6 Klawiatura w oknie 1280×600 (skrypt w Chrome bez okna): kolejność Tab zgodna z ekranem, przyciski paska osiągalne, fokus nie chowa się pod paskiem
+- [x] 1.5 Karol ocenia zrzuty (laptop 1280×600 jako całe okno, monitor 1920×950 dla odsłony, telefon 390×844): stany jak w galerii M, pasek hosta po głosie hosta, potwierdzenie w pasku czytelne — 0ed1d4e
+- [x] 1.6 Klawiatura w oknie 1280×600 (skrypt w Chrome bez okna): kolejność Tab zgodna z ekranem, przyciski paska osiągalne, fokus nie chowa się pod paskiem — 0ed1d4e
 
 ### Phase 2: Bramka, reguła i test telefonu
 
 #### Automated
 
-- [ ] 2.1 Lokalna bramka zielona; `npx playwright test --list` pokazuje `game.spec.ts` w projektach `chromium` i `phone`
-- [ ] 2.2 Telefon bez zmian po zmianie bramki: zrzut sekcji „Pokój (/r/…)” strony `/dev/room-states` w oknie 390×844 identyczny ze wzorcem z fazy 1
-- [ ] 2.3 Stare ścieżki: `git grep` znajduje `context/changes/full-game-evening` tylko w 2 liniach wgranej migracji, a `context/changes/ui-signin-contract` w `src` wcale
+- [x] 2.1 Lokalna bramka zielona; `npx playwright test --list` pokazuje `game.spec.ts` w projektach `chromium` i `phone`
+- [x] 2.2 Telefon bez zmian po zmianie bramki: zrzut sekcji „Pokój (/r/…)” strony `/dev/room-states` w oknie 390×844 identyczny ze wzorcem z fazy 1
+- [x] 2.3 Stare ścieżki: `git grep` znajduje `context/changes/full-game-evening` tylko w 2 liniach wgranej migracji, a `context/changes/ui-signin-contract` w `src` wcale
 - [ ] 2.4 CI zielone (`ci`, `db`, `smoke`, `e2e` z projektem `phone`)
 - [ ] 2.5 Próbny alarm: przyciski hosta schowane pod 1024 px zapalają tylko `game.spec.ts` w projekcie `phone`; po `git revert` CI zielone
 

@@ -5,8 +5,9 @@ import { parseLobbyState, parseRoomView } from "@/lib/rooms/shared";
 // text). Every new state goes through one parser that names the field that did not pass (audit P6, L4): a database and
 // a Worker out of step must give a log line that says which field, not "an unexpected shape", and an island must not
 // render a shape it does not know. The fixtures are written by hand from the round's contract
-// (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4; context/changes/full-game-evening/plan.md, Faza 1 #2
-// and Faza 3 #2; tests/db/support/rounds.ts, the exact key sets), never from the parser.
+// (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
+// context/archive/2026-10-15-full-game-evening/plan.md, Faza 1 #2 and Faza 3 #2; tests/db/support/rounds.ts, the exact
+// key sets), never from the parser.
 
 const PLAYERS = [
   { nick: "Ola", host: true },
@@ -155,9 +156,9 @@ describe("parseLobbyState", () => {
     expect(parseLobbyState(withRound(VOTING, round))).toEqual({ ok: false, field });
   });
 
-  // Anonymity (test-plan #1) and decision D3 of context/changes/full-game-evening/research.md: a skipped round's votes
-  // are gone, so anything about them next to it (a count, who voted, even its question) means they were not dropped.
-  // The state is refused, not passed on without it.
+  // Anonymity (test-plan #1) and decision D3 of context/archive/2026-10-15-full-game-evening/research.md: a skipped
+  // round's votes are gone, so anything about them next to it (a count, who voted, even its question) means they were
+  // not dropped. The state is refused, not passed on without it.
   it.each([
     { field: "round.results", round: { ...SKIPPED_ROUND, results: [{ nick: "Ola", votes: 1 }] } },
     { field: "round.abstained", round: { ...SKIPPED_ROUND, abstained: 0 } },

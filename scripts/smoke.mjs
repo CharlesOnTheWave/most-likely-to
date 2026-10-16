@@ -7,8 +7,8 @@
 // enabled in the Supabase project, so CI (local Supabase, no providers) runs without it.
 // SMOKE_GAME=0 skips the evening's steps (S-03: the next question, a late vote, a skip, the end) and prints them as
 // skipped: for production while it still runs a Worker without them, between `npx supabase db push` and the merge
-// (context/changes/full-game-evening/plan.md, Faza 6). SMOKE_ROUND=0 skips the round's steps and the evening's after
-// them, as S-02 needed it (context/archive/2026-10-13-first-live-round/plan.md, Faza 6).
+// (context/archive/2026-10-15-full-game-evening/plan.md, Faza 6). SMOKE_ROUND=0 skips the round's steps and the
+// evening's after them, as S-02 needed it (context/archive/2026-10-13-first-live-round/plan.md, Faza 6).
 
 const missing = ["SMOKE_EMAIL", "SMOKE_PASSWORD"].filter((name) => !process.env[name]);
 if (missing.length > 0) {
@@ -296,9 +296,9 @@ const THIRD_AFTER_SKIP = new RegExp(
 );
 const GAME_OVER = new RegExp(['"status":"closed"', '"round":null'].map((part) => `(?=.*${part})`).join(""));
 
-// S-03's evening (context/changes/full-game-evening/plan.md, Faza 5), on from the round's reveal in the same room: the
-// next question, a vote that comes late, a skip and the end. Ola votes at question 2 with its number, as the room
-// screen sends it. The second guest's screen is still on question 1, so its vote carries 1 and must not land in
+// S-03's evening (context/archive/2026-10-15-full-game-evening/plan.md, Faza 5), on from the round's reveal in the same
+// room: the next question, a vote that comes late, a skip and the end. Ola votes at question 2 with its number, as the
+// room screen sends it. The second guest's screen is still on question 1, so its vote carries 1 and must not land in
 // question 2, which it has not shown (round_over). Skipped with SMOKE_GAME=0 (production between `npx supabase db
 // push` and the merge: a Worker without next, skip and end) and with SMOKE_ROUND=0.
 function gameSteps() {

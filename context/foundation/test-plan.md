@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-15
+> Last updated: 2026-10-16
 
 ## 1. Strategy
 
@@ -97,7 +97,7 @@ Klasyczna baza testów tego projektu. Narzędzia AI-native mają datę
 | DB, widok twórcy (katalog, granty, publikacja, resztki po rundzie) | pgTAP (`supabase test db`, pliki `supabase/tests/*.test.sql`) jako właściciel bazy (`postgres`) (checked: 2026-10-14) | Supabase CLI 2.120.0 w CI (stała wersja) | tylko w CI: krok joba `db` po Vitest na tej samej jednorazowej bazie, także po czerwonym Vitest; lokalnie potrzebuje Dockera, a z `--linked` trafiłby w produkcję, więc `supabase test` pyta (`.claude/settings.json`); jedyny wyjątek od „tylko klucz publishable” (§6.2) |
 | HTTP smoke | `npm run smoke` (własny skrypt Node) | Node 22 w CI, 24 lokalnie | 53 kroki (14 logowania + 22 pokoju + 8 rundy + 9 wieczoru; z `SMOKE_OAUTH=1` jeszcze 2; z `SMOKE_GAME=0` 9 kroków wieczoru pominiętych, a zamknięcie pokoju jak przed S-03, więc 46; z `SMOKE_ROUND=0` także 8 kroków rundy, więc 38): logowanie, start i powrót OAuth, pokój, wejście gościa, otwarcie linku bez ciasteczka i bez nowego gracza, powrót na nick, nick z U+FE0F zajęty, runda (start, odmowa wejścia po starcie, 3 głosy, odsłona z liczbami, głos po odsłonie, powrót z linku), „Nowa gra” pyta przy gościach, wieczór (następne pytanie, głos z numerem pytania, spóźniony głos `round_over`, pominięcie, kolejne pytanie bez głosów, koniec gry, stan `closed` dla hosta i gościa, link 410); CI na lokalnym Supabase i produkcja po pushu; zostawia pokoje w bazie produkcyjnej |
 | sonda live-sync | `npm run live-probe` | Node 24 lokalnie | ręcznie, na produkcji; nie w CI |
-| e2e | Playwright Test (checked: 2026-10-11) | 1.64.0 | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju; tylko w CI (job `e2e`, lokalny Supabase z Realtime), bo lokalnie `.dev.vars` wskazuje na produkcję i konfiguracja odmawia startu; dziś lobby (M3L4), runda 3 graczy bez pomiaru czasu (`round.spec.ts`, S-02) i wieczór 3 graczy: następne pytanie, pominięcie z notką, koniec (`game.spec.ts`, S-03); czas i zerwane połączenie w rundzie z Phase 3; uruchamianie i ograniczenia: `context/foundation/test-stack.md` |
+| e2e | Playwright Test (checked: 2026-10-11) | 1.64.0 | kilka kontekstów przeglądarki = kilku graczy w jednym pokoju; tylko w CI (job `e2e`, lokalny Supabase z Realtime), bo lokalnie `.dev.vars` wskazuje na produkcję i konfiguracja odmawia startu; dziś lobby (M3L4), runda 3 graczy bez pomiaru czasu (`round.spec.ts`, S-02) i wieczór 3 graczy: następne pytanie, pominięcie z notką, koniec (`game.spec.ts`, S-03); dwa projekty: `chromium` (okno laptopa 1280×720, cały zestaw) i `phone` (okno telefonu 390×844 bez emulacji dotyku, tylko `game.spec.ts`; room-wide-layout); czas i zerwane połączenie w rundzie z Phase 3; uruchamianie i ograniczenia: `context/foundation/test-stack.md` |
 | accessibility | none yet | — | lint `jsx-a11y` w `npm run lint`; kontrast sprawdzany ręcznie przy zmianach UI |
 | (optional) AI-native | agent rozgrywa rundę w przeglądarce (Claude in Chrome — checked: 2026-10-08) | n/a | When NOT to use: zamiast testów deterministycznych; do pomiaru 2 s; na produkcji z prawdziwymi graczami |
 | agent hooks | hooki Claude Code w `.claude/settings.json`, skrypty Node w `.claude/hooks/` (checked: 2026-10-11) | Claude Code (hooki `PostToolUse`, `Stop`) | dowód: `npm run test:hooks` (`tests/hooks/`, lokalnie i w CI); When NOT to use: jako zamiennik CI albo do wolnych testów bazy i smoke |
@@ -120,7 +120,7 @@ wdrożenia tej fazy; wcześniej jest `planned`.
 | HTTP smoke | CI (lokalny Supabase) + produkcja po pushu | required | zepsute logowanie, wejście do pokoju, konfiguracja środowiska |
 | unit (`npm test`) | local + CI | required | regresje reguł w kodzie TS (dziś: czytelne odmowy na drodze gościa) |
 | integracja bazy (`npm run test:db`: uprawnienia ról, reguła nicku, reguły rundy, anonimowość) + pgTAP (`supabase test db`: widok twórcy) | CI only (job `db`; lokalnie brak Dockera) | required w sensie reguły PR z `AGENTS.md`: zmiany bazy i pokoju są scalane tylko na zielonym CI, także `db`; technicznie bramka zatrzyma wdrożenie dopiero po §3 Phase 4 | regresje uprawnień ról, reguły nicku i reguł rundy; para „kto na kogo” albo liczby przed odsłoną w odpowiedzi; urna logowana, z grantem, w publikacji albo z resztkami po rundzie, także po pominięciu i końcu gry; zasady wieczoru (kolejne pytanie bez powtórek, pominięcie, koniec, spóźniony głos `round_over`); znane dziury F1 i F4 domknięte w S-02 |
-| e2e na rundzie z kilkoma graczami | CI (job `e2e`) | required od 2026-10-14 (S-02, `round.spec.ts`; od S-03 także `game.spec.ts`) w sensie reguły PR z `AGENTS.md`; technicznie bramka zatrzyma wdrożenie dopiero po §3 Phase 4 | zepsuta runda widziana przez graczy: inne pytanie albo inna odsłona na którymś ekranie, liczby niezgodne z głosami; po „Następne pytanie” albo pominięciu brak nowego pytania, powtórka albo inne pytanie na którymś ekranie, brak notki po pominięciu albo końca wieczoru; nowe pytanie bez dzwonka |
+| e2e na rundzie z kilkoma graczami | CI (job `e2e`) | required od 2026-10-14 (S-02, `round.spec.ts`; od S-03 także `game.spec.ts`) w sensie reguły PR z `AGENTS.md`; technicznie bramka zatrzyma wdrożenie dopiero po §3 Phase 4 | zepsuta runda widziana przez graczy: inne pytanie albo inna odsłona na którymś ekranie, liczby niezgodne z głosami; po „Następne pytanie” albo pominięciu brak nowego pytania, powtórka albo inne pytanie na którymś ekranie, brak notki po pominięciu albo końca wieczoru; nowe pytanie bez dzwonka; zepsuty układ telefonu w wieczorze (projekt `phone`), np. przyciski hosta schowane poniżej 1024 px |
 | czerwone CI zatrzymuje wdrożenie | GitHub → Cloudflare | required after §3 Phase 4 | dziś Workers Builds wdraża `main` mimo czerwonego CI |
 | hooki agenta: po edycji ESLint pliku, literały UI i powiązane testy unit; na koniec tury (tylko gdy zmienił się kod) ESLint zmienionych plików, literały UI, testy unit i `astro check`, z jednym odesłaniem agenta | local (agent loop) | required od 2026-10-11 (M3L3; właściciel przyspieszył wiersz „recommended after §3 Phase 4”) | błędy lintu, typów i testów unit w chwili edycji, zanim agent odda turę; nie łapie zachowania w przeglądarce ani uprawnień bazy |
 | sonda live-sync | produkcja, ręcznie | optional (przed prawdziwym wieczorem) | budżet 2 s w prawdziwej sieci |
@@ -229,13 +229,13 @@ Cel (ryzyko #1): po rundzie żadna rola i żaden kanał nie łączy głosująceg
 
 ### 6.4 Adding an e2e multi-player test
 
-Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wieczór 3 graczy (S-03, 2026-10-15). Pomiar czasu i zerwane połączenie w rundzie dojdą w §3 Phase 3 na tym samym wzorcu.
+Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wieczór 3 graczy (S-03, 2026-10-15), wieczór także w oknie telefonu (room-wide-layout, 2026-10-16). Pomiar czasu i zerwane połączenie w rundzie dojdą w §3 Phase 3 na tym samym wzorcu.
 
 - **Location**: `tests/e2e/*.spec.ts` (Playwright, `playwright.config.ts`). Wzory:
   - `seed.spec.ts`: host widzi nowego gościa bez odświeżania (dzwonek);
   - `lobby-connection-drop.spec.ts`: ekran, któremu padło połączenie, po jego powrocie sam pokazuje, kto wszedł w międzyczasie;
   - `round.spec.ts`: host i 2 gości grają rundę; to samo pytanie i ta sama odsłona na 3 ekranach, liczby zgodne z głosami;
-  - `game.spec.ts`: host i 2 gości przez wieczór; po „Następne pytanie” i po pominięciu to samo nowe pytanie na 3 ekranach, inne niż wcześniejsze, z pustym formularzem głosu, po pominięciu notka na 3 ekranach, po „Zakończ grę” „Koniec wieczoru” na 3 ekranach, „Nowa gra” tylko u hosta, stary link 410. Gość B dostaje następne pytanie z dzwonka, przed własnym odpytywaniem (niżej, „Bell vs poll”).
+  - `game.spec.ts`: host i 2 gości przez wieczór; po „Następne pytanie” i po pominięciu to samo nowe pytanie na 3 ekranach, inne niż wcześniejsze, z pustym formularzem głosu, po pominięciu notka na 3 ekranach, po „Zakończ grę” „Koniec wieczoru” na 3 ekranach, „Nowa gra” tylko u hosta, stary link 410. Gość B dostaje następne pytanie z dzwonka, przed własnym odpytywaniem (niżej, „Bell vs poll”). Gra dwa razy: w oknie laptopa (projekt `chromium`) i w oknie telefonu (projekt `phone`, niżej, „Spec w oknie telefonu”).
 - **Run**: tylko w CI, w jobie `e2e` (lokalny Supabase z Realtime, konto hosta zakładane w jobie). Lokalnie działa tylko `npx playwright test --list`.
   - Bezpiecznik (`tests/e2e/support/env.ts`, wołany w `playwright.config.ts`) przerywa przed buildem, gdy `.dev.vars` nie wskazuje na `127.0.0.1` ani `localhost` albo klucz nie zaczyna się od `sb_publishable_`. Build wkleja `.dev.vars` do serwera, więc to ten plik decyduje, gdzie trafiają pokoje.
   - Poluzowanie bezpiecznika wymaga w tej samej zmianie reguły `ask` dla `Bash(npx playwright test*)` (lessons.md, wpis 1).
@@ -256,6 +256,11 @@ Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wiecz�
   2. mierzy czas od załadowania ekranu i sprawdza, że jest krótszy niż `LOBBY_POLL_MS`.
   - Ekran, który jest w grze od dawna, odpytuje w nieznanej fazie, więc samo `ROUND_UPDATE_MS` (10 s) nie odróżnia dzwonka od odpytywania: odpytanie trafia w 10-sekundowe okno w około 2 przypadkach na 3. `game.spec.ts` przeładowuje więc ekran gościa B tuż przed ruchem hosta (`nextListFetch` przed `reload`) i mierzy czas od tego przeładowania, jak w punktach 1–2.
 - **Dropped connection**: `sleepableRealtime(page)` (`tests/e2e/support/realtime.ts`) przed wejściem do pokoju. `sleep()` gubi wiadomości serwera, `wake()` zamyka gniazdo, a klient sam łączy się ponownie. Przed asercją test sprawdza, że dzwonek zadzwonił (host widzi nowego gracza) i że uśpiony ekran go zgubił (`missed() > 0`).
+- **Spec w oknie telefonu**: projekt `phone` w `playwright.config.ts` gra `game.spec.ts` drugi raz (`testMatch` tylko ten plik), w oknie 390×844, z tą samą sesją hosta (`storageState`, zależny od `setup`), bez emulacji dotyku (bez `isMobile` i `hasTouch`): sprawdza układ, nie gesty. Pod 1024 px pokój ma układ telefonu, którego okno `chromium` (1280×720) nie pokazuje.
+  - Konteksty gości z `newGuestContext(browser)` dziedziczą okno projektu, tak jak sesję.
+  - Spec na starcie sprawdza, że okno hosta i obu gości ma wymiary okna projektu (`test.info().project.use.viewport` wobec `viewportSize()` i `window.innerWidth` każdej strony). Projekt, który po cichu zagrałby w oknie laptopa, albo projekt bez okna świeci wtedy na czerwono, zamiast dać fałszywą zieleń.
+  - Biegnie po `chromium` na tym samym workerze (`workers: 1`); `openRoom` z `confirm_close=1` zamyka pokój poprzedniego testu.
+  - Kolejny spec w oknie telefonu: dopisz go do `testMatch` projektu `phone` i skopiuj kontrolę okna graczy.
 - **Serial**: `workers: 1`, bo jeden host ma najwyżej jeden otwarty pokój. Nicki z `uniqueNick` (najwyżej 20 znaków).
 - **Cleanup**: test zamyka konteksty gości. Pokoje, gracze i liczby odsłoniętych rund zostają w bazie, bo do S-13 nie ma czym ich usunąć; baza joba jest jednorazowa. Zestaw przechodzi dwa razy z rzędu na jednej bazie (`--repeat-each=2`, 2026-10-11).
 - **No 2 s here**: budżet 2 s z PRD mierzy sonda na produkcji, nie e2e (§2, #2: pomiar 2 s na lokalnym serwerze to antywzorzec).
@@ -264,6 +269,7 @@ Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wiecz�
   - lista pobierana tylko przy pierwszym połączeniu kanału, nie po powrocie (`RoomLobby.tsx`): czerwony tylko `lobby-connection-drop`, na asercji końcowej.
 - Próbny alarm z 2026-10-14 (S-02) też trafił dokładnie: komórka z liczbą głosów w tabeli odsłony pokazuje `votes + 1` (`RoundReveal.tsx`). Czerwony tylko `round.spec.ts`, we wszystkich 3 próbach na „votes of <gość A>” (oczekiwane 2, ekran pokazał 3). Smoke (czyta API, nie ekran), baza i reszta e2e zielone.
 - Próbny alarm (c) z 2026-10-15 (S-03) też trafił dokładnie: `next.ts` bez dzwonka po „Następne pytanie” (import `ringLobby` usunięty razem z wywołaniem, inaczej czerwony byłby też lint). Czerwony tylko `game.spec.ts`, we wszystkich 3 próbach na kroku gościa B (przeładowany ekran po 10 s miał dalej pytanie 1). `round.spec.ts`, seed, `lobby-connection-drop`, smoke (bez Realtime, odpowiedź `next` dalej `{"ok":true}`), baza i `ci` zielone.
+- Próbny alarm z 2026-10-16 (room-wide-layout): WYNIK DO UZUPEŁNIENIA
 
 ### 6.5 Adding a smoke step
 

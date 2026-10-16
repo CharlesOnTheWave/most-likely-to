@@ -1,8 +1,10 @@
 // risk: test-plan.md #2 and #3, the evening on the players' screens: after "Następne pytanie" and after a skip every
 // screen shows the same new question, one this game has not played yet (FR-015), ready for a fresh vote; after a skip
 // every screen says its votes are gone; "Zakończ grę" ends the evening on every screen (PRD FR-006; decisions D2 and D4
-// of context/changes/full-game-evening/research.md). One time is checked: guest B gets the next question from the
-// room's bell, before its own poll could have run (test-plan §6.4, "Bell vs poll"). The 2 s budget is the probe's.
+// of context/archive/2026-10-15-full-game-evening/research.md). One time is checked: guest B gets the next question
+// from the room's bell, before its own poll could have run (test-plan §6.4, "Bell vs poll"). The 2 s budget is the
+// probe's. The evening plays twice (playwright.config.ts): in a laptop's window (project chromium) and in a phone's
+// (project phone, 390×844), where the room has the layout below lg; every player's window is checked first.
 // seed: tests/e2e/seed.spec.ts
 import { test, expect } from "@playwright/test";
 import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
@@ -49,6 +51,15 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
       ["guest B", pageB],
     ] as const;
     const guests = screens.slice(1);
+
+    // Setup check: every player's window is the project's (390×844 in phone, 1280×720 in chromium). The guests'
+    // contexts take it from the project's `use`; a phone project played at a laptop's width would be a false green.
+    const viewport = test.info().project.use.viewport;
+    expect(viewport, "the project sets no window size").toBeTruthy();
+    for (const [who, screen] of screens) {
+      expect(screen.viewportSize(), `${who}'s window`).toEqual(viewport);
+      expect(await screen.evaluate(() => window.innerWidth), `${who}'s page width`).toBe(viewport?.width);
+    }
 
     // Setup: question 1 played to its reveal. A votes for B and B abstains; the host's vote is the last one and
     // reveals the round by itself. The counts are round.spec.ts's; here every screen only has to be on the reveal.

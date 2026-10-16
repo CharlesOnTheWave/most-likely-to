@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { bodyRound, readJsonRequest } from "@/lib/rooms/json-route";
 
 // F6 of the S-02 review (context/archive/2026-10-13-first-live-round/follow-ups/review-fixes.md;
-// context/changes/full-game-evening/plan.md, Faza 3 #5): a body too large for a game's action is refused before the
-// Worker reads it, so a stranger cannot make it hold megabytes in memory. The limit is 4096 bytes: a vote is about 100.
+// context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #5): a body too large for a game's action is refused
+// before the Worker reads it, so a stranger cannot make it hold megabytes in memory. The limit is 4096 bytes: a vote is
+// about 100.
 
 const URL = "https://most-likely-to.example/api/rooms/x/vote";
 
@@ -92,9 +93,9 @@ describe("readJsonRequest", () => {
   });
 });
 
-// T1 of context/changes/full-game-evening/research.md: a vote, "Następne pytanie" and "Pomiń pytanie" carry the number
-// of the question on the screen. Without one, a vote from a screen loaded before S-03 still counts (the database takes
-// the latest round); anything else in its place is not our screen.
+// T1 of context/archive/2026-10-15-full-game-evening/research.md: a vote, "Następne pytanie" and "Pomiń pytanie" carry
+// the number of the question on the screen. Without one, a vote from a screen loaded before S-03 still counts (the
+// database takes the latest round); anything else in its place is not our screen.
 describe("bodyRound", () => {
   it.each([
     { body: { round: 1 }, round: 1 },
@@ -119,7 +120,7 @@ describe("bodyRound", () => {
     { round: "2" },
     { round: null },
     // One past a Postgres integer: the database would fail the call instead of refusing it (F1 of
-    // context/changes/full-game-evening/reviews/impl-review.md).
+    // context/archive/2026-10-15-full-game-evening/reviews/impl-review.md).
     { round: 2_147_483_648 },
     { round: Number.MAX_SAFE_INTEGER + 1 },
     { round: Number.NaN },

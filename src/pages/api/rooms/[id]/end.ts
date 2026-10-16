@@ -7,8 +7,9 @@ import { createClient } from "@/lib/supabase";
 const OP = "end";
 
 // "Zakończ grę", for the room's host (the session), while the game is in play: the room is closed for everyone and the
-// round in progress keeps no vote (PRD FR-006; decision D4 of context/changes/full-game-evening/research.md). The
-// screen asks first. JSON from the room screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
+// round in progress keeps no vote (PRD FR-006; decision D4 of
+// context/archive/2026-10-15-full-game-evening/research.md). The screen asks first. JSON from the room screen:
+// {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
