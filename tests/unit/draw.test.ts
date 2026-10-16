@@ -16,8 +16,8 @@ import {
 // category) and context/archive/2026-10-07-room-lobby/follow-ups/review-fixes.md:16 (the categories stored in the
 // database are filtered through CATEGORIES: a host can store any name over RPC). The expected sets are written by hand,
 // never computed with the draw's own filter. The pool in random order: decision D1 of
-// context/changes/full-game-evening/research.md (the Worker sends the whole pool, in its own order, and the database
-// takes the first question not played yet).
+// context/archive/2026-10-15-full-game-evening/research.md (the Worker sends the whole pool, in its own order, and the
+// database takes the first question not played yet).
 
 // Every value the injected random can give, on a grid fine enough to reach each question of a small pool.
 const GRID = Array.from({ length: 1000 }, (_, i) => i / 1000).concat([1 - Number.EPSILON]);

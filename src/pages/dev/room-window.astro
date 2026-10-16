@@ -1,0 +1,228 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AppHeader from "@/components/room/AppHeader.astro";
+import type { HostActionsPreview } from "@/components/room/HostActions";
+import { ROOM_FRAME } from "@/components/room/room-frame";
+import RoomScreen from "@/components/room/RoomScreen";
+import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
+
+// One room screen in the real page's frame (the wide header and <main> of /r/[id]), for screenshots of the whole
+// window and for checking the host's bar at the window's bottom edge: /dev/room-window?state=reveal-host; without a
+// query, the list of states. Sample data as on /dev/room-states: no database, no Realtime, no polling, and the game's
+// buttons only answer "ok" (RoomScreen's preview). Local only; a production build answers an empty 404.
+const isDev = import.meta.env.DEV;
+if (!isDev) {
+  Astro.response.status = 404;
+}
+
+const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
+const LINK_URL = "https://most-likely-to.charlesonthewave.workers.dev/j/Xq3vL9tR2mWb7KpZ0aYc_e";
+const QUESTION = "spóźniłby się na własne urodziny";
+const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, żeby się pochwalić";
+const QUESTION_ID = "na-co-dzien-001";
+
+const eightPlayers: LobbyPlayer[] = [
+  "Ola",
+  "Bartek",
+  "Najdłuższy nick 20zn",
+  "Kasia 🎉",
+  "Zosia",
+  "Kuba",
+  "Marta",
+  "Igor",
+].map((nick, index) => ({ nick, host: index === 0 }));
+const roundPlayers: LobbyPlayer[] = ["Ola", "Bartek", "Kasia 🎉", "Zosia", "Kuba"].map((nick, index) => ({
+  nick,
+  host: index === 0,
+}));
+const twentyPlayers: LobbyPlayer[] = [
+  "Ola",
+  "Najdłuższy nick 20zn",
+  "Kasia 🎉",
+  "Bartłomiej Kowalczyk",
+  "Zosia",
+  "Kuba",
+  "Małgorzata Wiśniewsk",
+  "🦄 Jednorożec",
+  "Igor",
+  "Marta",
+  "Przemysław Grzegorz",
+  "Ania 🍕",
+  "Szczepan Brzęczyszcz",
+  "Tomek",
+  "Ewa",
+  "WWWWWWWWWWWWWWWWWWWW",
+  "Jan",
+  "Łukasz 🎮",
+  "Natalia",
+  "Krzysztof",
+].map((nick, index) => ({ nick, host: index === 0 }));
+const fiveResults: [string, number][] = [
+  ["Ola", 2],
+  ["Bartek", 0],
+  ["Kasia 🎉", 2],
+  ["Zosia", 0],
+  ["Kuba", 0],
+];
+const twentyCounts = [3, 2, 0, 3, 1, 0, 2, 1, 0, 0, 1, 0, 0, 2, 0, 1, 0, 0, 1, 0];
+const twentyResults: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, twentyCounts[index]]);
+
+function voting(role: "host" | "guest", me: string, players: LobbyPlayer[], voted: string[]): RoomView {
+  return {
+    status: "playing",
+    role,
+    me,
+    players,
+    round: {
+      number: 1,
+      question_id: QUESTION_ID,
+      phase: "voting",
+      voted,
+      me_voted: voted.includes(me),
+      after_skip: false,
+      question: QUESTION,
+    },
+    questionsLeft: null,
+  };
+}
+
+function revealed(players: LobbyPlayer[], results: [string, number][], abstained: number, question: string): RoomView {
+  const votes = results.reduce((sum, [, count]) => sum + count, 0);
+  return {
+    status: "playing",
+    role: "host",
+    me: "Ola",
+    players,
+    round: {
+      number: 1,
+      question_id: QUESTION_ID,
+      phase: "revealed",
+      results: results.map(([nick, count]) => ({ nick, votes: count })),
+      abstained,
+      ballots: votes + abstained,
+      question,
+    },
+    questionsLeft: true,
+  };
+}
+
+interface Sample {
+  label: string;
+  initial: RoomView;
+  linkUrl?: string;
+  myVote?: { target: string | null };
+  // The host's buttons, e.g. a question "Na pewno…?" open in the bar.
+  host?: HostActionsPreview;
+}
+
+const SAMPLES: Record<string, Sample> = {
+  "lobby-host": {
+    label: "Poczekalnia: host, 8 graczy",
+    initial: { status: "lobby", role: "host", me: "Ola", players: eightPlayers, round: null, questionsLeft: null },
+    linkUrl: LINK_URL,
+  },
+  // A list longer than a laptop's window: the game's column stays in view while the players scroll.
+  "lobby-host-20": {
+    label: "Poczekalnia: host, 20 graczy",
+    initial: { status: "lobby", role: "host", me: "Ola", players: twentyPlayers, round: null, questionsLeft: null },
+    linkUrl: LINK_URL,
+  },
+  "lobby-guest": {
+    label: "Poczekalnia: gość, 8 graczy",
+    initial: { status: "lobby", role: "guest", me: "Bartek", players: eightPlayers, round: null, questionsLeft: null },
+  },
+  "vote-guest": {
+    label: "Głosowanie: gość przed głosem",
+    initial: voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]),
+  },
+  "vote-guest-after": {
+    label: "Głosowanie: gość po głosie",
+    initial: voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"]),
+    myVote: { target: "Kasia 🎉" },
+  },
+  "vote-host-before": {
+    label: "Głosowanie: host przed głosem",
+    initial: voting("host", "Ola", roundPlayers, ["Bartek", "Zosia"]),
+  },
+  "vote-host": {
+    label: "Głosowanie: host po głosie",
+    initial: voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"]),
+    myVote: { target: "Bartek" },
+  },
+  "vote-host-confirm-skip": {
+    label: "Głosowanie: host po głosie, „Pomiń pytanie” pyta drugi raz",
+    initial: voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"]),
+    myVote: { target: "Bartek" },
+    host: { confirming: "skip" },
+  },
+  "reveal-host": { label: "Odsłona: host, 5 graczy", initial: revealed(roundPlayers, fiveResults, 1, QUESTION) },
+  "reveal-host-20": {
+    label: "Odsłona: host, 20 graczy, długie pytanie",
+    initial: revealed(twentyPlayers, twentyResults, 3, LONG_QUESTION),
+  },
+  "reveal-host-confirm-end": {
+    label: "Odsłona: host, „Zakończ grę” pyta drugi raz",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    host: { confirming: "end" },
+  },
+  "reveal-guest": {
+    label: "Odsłona: gość, 5 graczy",
+    initial: { ...revealed(roundPlayers, fiveResults, 1, QUESTION), role: "guest", me: "Bartek", questionsLeft: null },
+  },
+  "skipped-host": {
+    label: "Pominięte ostatnie pytanie: host",
+    initial: {
+      status: "playing",
+      role: "host",
+      me: "Ola",
+      players: roundPlayers,
+      round: { number: 7, phase: "skipped" },
+      questionsLeft: false,
+    },
+  },
+  "end-host": {
+    label: "Koniec wieczoru: host",
+    initial: { status: "closed", role: "host", me: "Ola", players: roundPlayers, round: null, questionsLeft: null },
+  },
+};
+
+const stateParam = Astro.url.searchParams.get("state") ?? "";
+const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
+---
+
+{isDev && (
+  <Layout title="Okno pokoju (dev)">
+    {sample ? (
+      <>
+        <AppHeader signedIn wide />
+        <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", ROOM_FRAME]}>
+          <RoomScreen
+            roomId={ROOM_ID}
+            initial={sample.initial}
+            linkUrl={sample.linkUrl}
+            realtime={null}
+            preview={{ idPrefix: "window", myVote: sample.myVote, host: sample.host }}
+            client:load
+          />
+        </main>
+      </>
+    ) : (
+      <main class="mx-auto flex max-w-3xl flex-col gap-4 p-6">
+        <h1 class="text-2xl font-semibold">Okno pokoju (dev)</h1>
+        <p class="text-muted-foreground text-sm">
+          Jeden stan pokoju w prawdziwej ramie strony /r/…, do zrzutów całego okna i do sprawdzania paska hosta przy
+          dolnej krawędzi. Wszystkie stany obok siebie: /dev/room-states.
+        </p>
+        <ul class="flex flex-col gap-2 text-sm">
+          {Object.entries(SAMPLES).map(([state, { label }]) => (
+            <li>
+              <a class="text-primary underline" href={`?state=${state}`}>
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </main>
+    )}
+  </Layout>
+)}

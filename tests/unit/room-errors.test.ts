@@ -15,8 +15,8 @@ const GUEST_REFUSALS = [
 ];
 
 // The round's codes as the plans list them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4, and
-// context/changes/full-game-evening/plan.md, Faza 3 #4: round_over for a question that changed under the screen,
-// round_in_progress for "Następne pytanie" while the round is voting), written out by hand: a code dropped from
+// context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #4: round_over for a question that changed under the
+// screen, round_in_progress for "Następne pytanie" while the round is voting), written out by hand: a code dropped from
 // ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",

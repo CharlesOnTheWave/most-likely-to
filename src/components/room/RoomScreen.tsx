@@ -6,6 +6,7 @@ import type { HostActionsPreview } from "@/components/room/HostActions";
 import { LiveBanner } from "@/components/room/LiveBanner";
 import RoomLobby, { type LobbyPreview } from "@/components/room/RoomLobby";
 import { RoomErrorBoundary } from "@/components/room/RoomErrorBoundary";
+import { roomColumn } from "@/components/room/room-frame";
 import { sendRoomAction, type ActionOutcome, type RoomAction } from "@/components/room/room-actions";
 import RoundReveal from "@/components/room/RoundReveal";
 import RoundSkipped from "@/components/room/RoundSkipped";
@@ -14,10 +15,12 @@ import { useRoomState, type LiveConfig, type LivePreview } from "@/components/ro
 import { announcement, announcementKey, skipNotice } from "@/lib/rooms/announce";
 import type { ResultView } from "@/lib/rooms/chart";
 import type { RoomView } from "@/lib/rooms/shared";
+import { cn } from "@/lib/utils";
 
-// Starting state for /dev/room-states, which renders several screens on one page; the real page never sets it. With
-// a preview the screen makes no network call at all: no fetch, no channel, no report, and its actions only answer
-// "ok" (a vote shows "Głos oddany"; the host's actions stay busy, as they do until the new state arrives).
+// Starting state for the dev previews (/dev/room-states with several screens on one page, /dev/room-window with one);
+// the real page never sets it. With a preview the screen makes no network call at all: no fetch, no channel, no
+// report, and its actions only answer "ok" (a vote shows "Głos oddany"; the host's actions stay busy, as they do until
+// the new state arrives).
 export interface ScreenPreview extends LivePreview, LobbyPreview, VotingPreview {
   idPrefix: string;
   // The reveal as if the player had picked this view with the toggle.
@@ -47,8 +50,8 @@ function PreviewCrash() {
 }
 
 // "Koniec wieczoru" for everyone once the room is closed: "Zakończ grę", "Nowa gra" or the sweep of abandoned games
-// (decision D4 of context/changes/full-game-evening/research.md). No counts and no summary of the evening (FR-022 is
-// parked).
+// (decision D4 of context/archive/2026-10-15-full-game-evening/research.md). No counts and no summary of the evening
+// (FR-022 is parked).
 function EveningEnd({ view, titleAs: Title }: { view: RoomView; titleAs: "h1" | "h2" }) {
   return (
     <section className="flex flex-col items-center gap-4 py-12 text-center">
@@ -189,8 +192,10 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
     );
   }
 
+  // The state's column in the page's frame (src/components/room/room-frame.ts), so the banner and the note after a skip
+  // are as wide as the view under them.
   return (
-    <div className="flex flex-col gap-6">
+    <div className={cn("flex flex-col gap-6", roomColumn(view))}>
       <p aria-live="polite" className="sr-only">
         {announced}
       </p>
