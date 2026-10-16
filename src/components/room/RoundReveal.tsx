@@ -104,7 +104,9 @@ function ResultPie({ slices }: { slices: PieSlice[] }) {
 // The reveal (PRD FR-009; decision D3: always the counts, also after one vote): every player, most votes first, a tie
 // in seat order, zeros dimmed at the bottom (sortResults), and how many abstained. Only counts per person, never who
 // voted for whom. "Koło" or "Paski" changes only this player's screen. The result stays until the host opens the next
-// question or ends the game; when the game's pool ran out, only "Zakończ grę" (questionsLeft false).
+// question or ends the game; when the game's pool ran out, only "Zakończ grę" (questionsLeft false). From lg the pie
+// stands next to the table and the host's buttons are a bar at the window's bottom, so the next move stays in view
+// however long the table is.
 export default function RoundReveal({
   view,
   round,
@@ -129,8 +131,11 @@ export default function RoundReveal({
     <div className="flex flex-col gap-8">
       <RoundQuestion question={round.question} titleAs={titleAs} />
 
-      <section aria-labelledby={`${idPrefix}results-heading`} className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section
+        aria-labelledby={`${idPrefix}results-heading`}
+        className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 lg:col-span-2">
           <h2 id={`${idPrefix}results-heading`} className="text-sm font-medium">
             Wynik
           </h2>
@@ -158,7 +163,8 @@ export default function RoundReveal({
 
         {shown === "pie" && <ResultPie slices={slices} />}
 
-        <div className="overflow-hidden rounded-md border">
+        {/* Next to the pie from lg; across the section when the pie is not shown ("Paski"). */}
+        <div className={cn("overflow-hidden rounded-md border", shown !== "pie" && "lg:col-span-2")}>
           <table className="w-full">
             <thead className="bg-muted/50 text-muted-foreground text-xs">
               <tr>
@@ -213,7 +219,7 @@ export default function RoundReveal({
           </table>
         </div>
 
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 lg:col-span-2">
           <p className="text-muted-foreground text-sm">Wstrzymało się: {round.abstained}</p>
           <p aria-live="polite" className="text-muted-foreground text-xs">
             {refreshFailed ? "Nie udało się odświeżyć stanu gry" : ""}
@@ -225,6 +231,7 @@ export default function RoundReveal({
         <HostActions
           // null: the Worker could not tell, so the button stays and next_round has the final word (no_questions).
           {...afterRoundActions(view.questionsLeft !== false, () => onNext(round.number), onEnd)}
+          placement="bar"
           preview={hostPreview}
         />
       )}

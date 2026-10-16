@@ -77,76 +77,81 @@ export default function RoomLobby({ view, idPrefix, titleAs: Title, linkUrl, ref
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <Title className="text-2xl font-semibold break-words">
-          {isHost ? "Twój pokój" : `Jesteś w grze jako ${view.me}`}
-        </Title>
-        <p className="text-muted-foreground">
-          {isHost ? "Wklej link na Discordzie. Kto go otworzy, wpisze nick i dołączy." : "Czekamy, aż host zacznie."}
-        </p>
+    <div className="flex flex-col gap-8 lg:grid lg:grid-cols-3 lg:items-start lg:gap-x-12">
+      {/* From lg two columns: the game (title first in the DOM, where the focus goes after a host's move) and the
+          players. Below lg the game's group is display: contents, so its blocks stand in one column as on a phone. */}
+      <div className="contents lg:col-span-2 lg:flex lg:flex-col lg:gap-8">
+        <div className="flex flex-col gap-2">
+          <Title className="text-2xl font-semibold break-words">
+            {isHost ? "Twój pokój" : `Jesteś w grze jako ${view.me}`}
+          </Title>
+          <p className="text-muted-foreground">
+            {isHost ? "Wklej link na Discordzie. Kto go otworzy, wpisze nick i dołączy." : "Czekamy, aż host zacznie."}
+          </p>
+        </div>
+
+        {isHost &&
+          (linkUrl ? (
+            <div className="flex flex-col gap-3">
+              <Label htmlFor={`${idPrefix}room-link`}>Link dla graczy</Label>
+              <div className="flex gap-2">
+                <Input
+                  ref={linkRef}
+                  id={`${idPrefix}room-link`}
+                  readOnly
+                  value={linkUrl}
+                  onFocus={(e) => {
+                    e.currentTarget.select();
+                  }}
+                />
+                <Button type="button" variant="secondary" onClick={() => void copyLink()}>
+                  {copied ? <Check /> : <Copy />}
+                  {copied ? "Skopiowano" : "Kopiuj"}
+                </Button>
+              </div>
+              <p aria-live="polite" className="sr-only">
+                {copied ? "Link skopiowany" : ""}
+              </p>
+            </div>
+          ) : (
+            <p role="alert" className="text-destructive text-sm">
+              Nie udało się pobrać linku. Odśwież stronę.
+            </p>
+          ))}
+
+        {isHost && (
+          <div className="flex flex-col gap-3">
+            <Button
+              type="button"
+              className="w-full"
+              disabled={!canStart || starting}
+              aria-describedby={startHintId}
+              onClick={() => void start()}
+            >
+              {starting ? (
+                <>
+                  <Spinner aria-hidden="true" />
+                  Zaczynamy…
+                </>
+              ) : (
+                <>
+                  <Play />
+                  Zacznij grę
+                </>
+              )}
+            </Button>
+            <p id={startHintId} className="text-muted-foreground text-sm">
+              {canStart
+                ? "Po starcie nikt nowy już nie dołączy."
+                : `Grę zaczniesz, gdy będzie was co najmniej ${MIN_PLAYERS}.`}
+            </p>
+            <ServerError message={startError} />
+          </div>
+        )}
       </div>
 
-      {isHost &&
-        (linkUrl ? (
-          <div className="flex flex-col gap-3">
-            <Label htmlFor={`${idPrefix}room-link`}>Link dla graczy</Label>
-            <div className="flex gap-2">
-              <Input
-                ref={linkRef}
-                id={`${idPrefix}room-link`}
-                readOnly
-                value={linkUrl}
-                onFocus={(e) => {
-                  e.currentTarget.select();
-                }}
-              />
-              <Button type="button" variant="secondary" onClick={() => void copyLink()}>
-                {copied ? <Check /> : <Copy />}
-                {copied ? "Skopiowano" : "Kopiuj"}
-              </Button>
-            </div>
-            <p aria-live="polite" className="sr-only">
-              {copied ? "Link skopiowany" : ""}
-            </p>
-          </div>
-        ) : (
-          <p role="alert" className="text-destructive text-sm">
-            Nie udało się pobrać linku. Odśwież stronę.
-          </p>
-        ))}
-
-      {isHost && (
-        <div className="flex flex-col gap-3">
-          <Button
-            type="button"
-            className="w-full"
-            disabled={!canStart || starting}
-            aria-describedby={startHintId}
-            onClick={() => void start()}
-          >
-            {starting ? (
-              <>
-                <Spinner aria-hidden="true" />
-                Zaczynamy…
-              </>
-            ) : (
-              <>
-                <Play />
-                Zacznij grę
-              </>
-            )}
-          </Button>
-          <p id={startHintId} className="text-muted-foreground text-sm">
-            {canStart
-              ? "Po starcie nikt nowy już nie dołączy."
-              : `Grę zaczniesz, gdy będzie was co najmniej ${MIN_PLAYERS}.`}
-          </p>
-          <ServerError message={startError} />
-        </div>
-      )}
-
-      <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
+      {/* From lg the column next to the game, kept in view while the page scrolls. */}
+      <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3 lg:sticky lg:top-6">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
             Gracze ({view.players.length})

@@ -294,6 +294,9 @@ export default function RoundVoting({
             endGameAction(onEnd),
           ]}
           note="Możesz odsłonić wynik w każdej chwili, także zanim zagłosują wszyscy."
+          // From lg one line under the form, stuck to the window's bottom only once the host has voted: before, a bar
+          // would cover "Zagłosuj".
+          placement={hasVoted ? "bar" : "row"}
           preview={hostPreview}
         />
       )}
