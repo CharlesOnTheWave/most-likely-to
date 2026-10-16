@@ -416,11 +416,11 @@ Brak zmian w bazie. Wycofanie to revert scalenia; bez kolejności „baza, potem
 
 #### Automated
 
-- [x] 2.1 Lokalna bramka zielona; `npx playwright test --list` pokazuje `game.spec.ts` w projektach `chromium` i `phone`
-- [x] 2.2 Telefon bez zmian po zmianie bramki: zrzut sekcji „Pokój (/r/…)” strony `/dev/room-states` w oknie 390×844 identyczny ze wzorcem z fazy 1
-- [x] 2.3 Stare ścieżki: `git grep` znajduje `context/changes/full-game-evening` tylko w 2 liniach wgranej migracji, a `context/changes/ui-signin-contract` w `src` wcale
-- [ ] 2.4 CI zielone (`ci`, `db`, `smoke`, `e2e` z projektem `phone`)
-- [ ] 2.5 Próbny alarm: przyciski hosta schowane pod 1024 px zapalają tylko `game.spec.ts` w projekcie `phone`; po `git revert` CI zielone
+- [x] 2.1 Lokalna bramka zielona; `npx playwright test --list` pokazuje `game.spec.ts` w projektach `chromium` i `phone` — 519bf3f
+- [x] 2.2 Telefon bez zmian po zmianie bramki: zrzut sekcji „Pokój (/r/…)” strony `/dev/room-states` w oknie 390×844 identyczny ze wzorcem z fazy 1 — 519bf3f
+- [x] 2.3 Stare ścieżki: `git grep` znajduje `context/changes/full-game-evening` tylko w 2 liniach wgranej migracji, a `context/changes/ui-signin-contract` w `src` wcale — 519bf3f
+- [x] 2.4 CI zielone (`ci`, `db`, `smoke`, `e2e` z projektem `phone`) — 519bf3f
+- [x] 2.5 Próbny alarm: przyciski hosta schowane pod 1024 px zapalają tylko `game.spec.ts` w projekcie `phone`; po `git revert` CI zielone — 7fa4c80
 
 #### Manual
 
