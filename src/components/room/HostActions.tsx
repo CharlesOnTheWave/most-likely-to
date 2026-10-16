@@ -79,7 +79,7 @@ export interface HostActionsPreview {
 // overflow.
 export type HostActionsPlacement = "stack" | "row" | "bar";
 
-const BAR = "lg:bg-background lg:bottom-0 lg:z-10 lg:-mx-4 lg:px-4 lg:pb-4";
+const BAR = "lg:bg-background lg:sticky lg:bottom-0 lg:z-10 lg:-mx-4 lg:px-4 lg:pb-4";
 
 interface Props {
   actions: HostAction[];
