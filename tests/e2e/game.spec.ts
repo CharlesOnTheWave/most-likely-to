@@ -24,6 +24,9 @@ import {
   voteConfirmation,
 } from "./support/round";
 
+// Tailwind's lg (64rem): from this window width the room has its wide layout and the host's bar (AGENTS.md "## UI").
+const LG_WIDTH = 1024;
+
 test.describe("risks #2 and #3 (evening) — three players go on to the next question, skip one and end the game", () => {
   test("every screen gets the same new question after Następne pytanie and after a skip, and the end of the evening", async ({
     page,
@@ -55,10 +58,13 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
     // Setup check: every player's window is the project's (390×844 in phone, 1280×720 in chromium). The guests'
     // contexts take it from the project's `use`; a phone project played at a laptop's width would be a false green.
     const viewport = test.info().project.use.viewport;
-    expect(viewport, "the project sets no window size").toBeTruthy();
+    if (!viewport) throw new Error("the project sets no window size");
+    expect(viewport.width < LG_WIDTH, "only the phone project plays below lg").toBe(
+      test.info().project.name === "phone",
+    );
     for (const [who, screen] of screens) {
       expect(screen.viewportSize(), `${who}'s window`).toEqual(viewport);
-      expect(await screen.evaluate(() => window.innerWidth), `${who}'s page width`).toBe(viewport?.width);
+      expect(await screen.evaluate(() => window.innerWidth), `${who}'s page width`).toBe(viewport.width);
     }
 
     // Setup: question 1 played to its reveal. A votes for B and B abstains; the host's vote is the last one and
@@ -76,6 +82,22 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
     await castVote(page, nickA);
     for (const [, screen] of screens) {
       await expect(resultTable(screen)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    }
+
+    // From lg the host's buttons are a bar stuck to the window's bottom (HostActions, placement "bar"): in a window
+    // too short for the reveal, "Następne pytanie" is in view at the top of the page. Without the bar it would be
+    // below the window's edge. A phone's window has no bar.
+    if (viewport.width >= LG_WIDTH) {
+      await page.setViewportSize({ width: viewport.width, height: 400 });
+      await page.evaluate(() => {
+        window.scrollTo(0, 0);
+      });
+      expect(
+        await page.evaluate(() => document.documentElement.scrollHeight),
+        "the reveal is taller than the window",
+      ).toBeGreaterThan(400);
+      await expect(page.getByRole("button", { name: "Następne pytanie", exact: true })).toBeInViewport({ ratio: 1 });
+      await page.setViewportSize(viewport);
     }
 
     // Setup: guest B's screen loads again, on the reveal. Its own poll then comes no sooner than LOBBY_POLL_MS after

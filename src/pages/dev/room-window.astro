@@ -121,6 +121,12 @@ const SAMPLES: Record<string, Sample> = {
     initial: { status: "lobby", role: "host", me: "Ola", players: eightPlayers, round: null, questionsLeft: null },
     linkUrl: LINK_URL,
   },
+  // A list longer than a laptop's window: the game's column stays in view while the players scroll.
+  "lobby-host-20": {
+    label: "Poczekalnia: host, 20 graczy",
+    initial: { status: "lobby", role: "host", me: "Ola", players: twentyPlayers, round: null, questionsLeft: null },
+    linkUrl: LINK_URL,
+  },
   "lobby-guest": {
     label: "Poczekalnia: gość, 8 graczy",
     initial: { status: "lobby", role: "guest", me: "Bartek", players: eightPlayers, round: null, questionsLeft: null },

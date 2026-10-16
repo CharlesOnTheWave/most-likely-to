@@ -1,7 +1,7 @@
 ---
 change_id: room-wide-layout
 title: Szeroki układ strony pokoju na laptopie i dużym monitorze
-status: implementing
+status: impl_reviewed
 created: 2026-10-15
 updated: 2026-10-16
 archived_at: null

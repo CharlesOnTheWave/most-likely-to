@@ -79,8 +79,10 @@ export default function RoomLobby({ view, idPrefix, titleAs: Title, linkUrl, ref
   return (
     <div className="flex flex-col gap-8 lg:grid lg:grid-cols-3 lg:items-start lg:gap-x-12">
       {/* From lg two columns: the game (title first in the DOM, where the focus goes after a host's move) and the
-          players. Below lg the game's group is display: contents, so its blocks stand in one column as on a phone. */}
-      <div className="contents lg:col-span-2 lg:flex lg:flex-col lg:gap-8">
+          players. The game's group stays in view while a long list of players scrolls the page, so the host keeps the
+          link and "Zacznij grę" on screen; a sticky grid item moves only within its row, so only the shorter column
+          can stick. Below lg the group is display: contents, so its blocks stand in one column as on a phone. */}
+      <div className="contents lg:sticky lg:top-6 lg:col-span-2 lg:flex lg:flex-col lg:gap-8">
         <div className="flex flex-col gap-2">
           <Title className="text-2xl font-semibold break-words">
             {isHost ? "Twój pokój" : `Jesteś w grze jako ${view.me}`}
@@ -150,8 +152,8 @@ export default function RoomLobby({ view, idPrefix, titleAs: Title, linkUrl, ref
         )}
       </div>
 
-      {/* From lg the column next to the game, kept in view while the page scrolls. */}
-      <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3 lg:sticky lg:top-6">
+      {/* From lg the column next to the game. */}
+      <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
             Gracze ({view.players.length})

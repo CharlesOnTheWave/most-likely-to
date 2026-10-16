@@ -424,7 +424,7 @@ Brak zmian w bazie. Wycofanie to revert scalenia; bez kolejności „baza, potem
 
 #### Manual
 
-- [ ] 2.6 Wynik próbnego alarmu opisany w PR
+- [x] 2.6 Wynik próbnego alarmu opisany w PR — e56592a
 
 ### Phase 3: Przegląd i wdrożenie
 
