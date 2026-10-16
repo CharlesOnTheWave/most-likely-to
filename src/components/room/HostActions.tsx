@@ -125,7 +125,7 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
   }
 
   return (
-    <div className={cn("flex flex-col gap-3 border-t pt-6 max-lg:hidden", placement === "bar" && BAR)}>
+    <div className={cn("flex flex-col gap-3 border-t pt-6", placement === "bar" && BAR)}>
       {/* Below lg display: contents, so each action is a row of the column; from lg the line of "row" and "bar". */}
       <div className={cn("contents", inLine && "lg:flex lg:gap-3")}>
         {actions.map((action) => {
