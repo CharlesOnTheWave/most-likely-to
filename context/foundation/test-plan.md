@@ -269,7 +269,7 @@ Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wiecz�
   - lista pobierana tylko przy pierwszym połączeniu kanału, nie po powrocie (`RoomLobby.tsx`): czerwony tylko `lobby-connection-drop`, na asercji końcowej.
 - Próbny alarm z 2026-10-14 (S-02) też trafił dokładnie: komórka z liczbą głosów w tabeli odsłony pokazuje `votes + 1` (`RoundReveal.tsx`). Czerwony tylko `round.spec.ts`, we wszystkich 3 próbach na „votes of <gość A>” (oczekiwane 2, ekran pokazał 3). Smoke (czyta API, nie ekran), baza i reszta e2e zielone.
 - Próbny alarm (c) z 2026-10-15 (S-03) też trafił dokładnie: `next.ts` bez dzwonka po „Następne pytanie” (import `ringLobby` usunięty razem z wywołaniem, inaczej czerwony byłby też lint). Czerwony tylko `game.spec.ts`, we wszystkich 3 próbach na kroku gościa B (przeładowany ekran po 10 s miał dalej pytanie 1). `round.spec.ts`, seed, `lobby-connection-drop`, smoke (bez Realtime, odpowiedź `next` dalej `{"ok":true}`), baza i `ci` zielone.
-- Próbny alarm z 2026-10-16 (room-wide-layout): WYNIK DO UZUPEŁNIENIA
+- Próbny alarm z 2026-10-16 (room-wide-layout) też trafił dokładnie: `HostActions` z `max-lg:hidden` (przyciski hosta schowane poniżej 1024 px, `3fbbaea`). Czerwony tylko `game.spec.ts` w projekcie `phone`, we wszystkich 3 próbach na linii 91 (host nie znalazł „Następne pytanie” po odsłonie pytania 1). Projekt `chromium` (wszystkie 4 specy, okno 1280 px), smoke, baza i `ci` zielone. Revert `7fa4c80`.
 
 ### 6.5 Adding a smoke step
 
