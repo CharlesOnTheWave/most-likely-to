@@ -74,8 +74,8 @@ function PlayerBadges({ player, isMe, hasVoted }: { player: LobbyPlayer; isMe: b
 // "Kto z nas najprawdopodobniej …?": one person from the list (oneself too) or "Wstrzymuję się", then "Zagłosuj". A
 // vote is final (decision D2), so the screen says so before and after. Everyone sees who has voted, never for whom;
 // the host can reveal the result at any time (decision D3), skip the question while it is voting (its votes are gone,
-// the next question opens at once) and end the game (decisions D2 and D4 of context/changes/full-game-evening/
-// research.md); skipping and ending ask first.
+// the next question opens at once) and end the game (decisions D2 and D4 of
+// context/archive/2026-10-15-full-game-evening/research.md); skipping and ending ask first.
 export default function RoundVoting({
   view,
   round,

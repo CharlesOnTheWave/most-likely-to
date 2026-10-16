@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Palette: tweakcn "Graphite" (https://tweakcn.com/r/themes/graphite.json), fetched 2026-10-04; radius 0.75rem; WCAG lightness tweaks and values: context/changes/ui-signin-contract/theme.md */
+/* Palette: tweakcn "Graphite" (https://tweakcn.com/r/themes/graphite.json), fetched 2026-10-04; radius 0.75rem; WCAG lightness tweaks and values: context/archive/2026-10-04-ui-signin-contract/theme.md */
 :root {
   --radius: 0.75rem;
   --background: oklch(0.9551 0 0);

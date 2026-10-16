@@ -44,6 +44,9 @@ Before handing off a change, `npm run lint`, `npx astro check`, `npm test` and `
 ## UI
 
 - Tokens live in `src/styles/global.css` (`:root`, `.dark`, published in `@theme inline`); the app always runs dark (`class="dark"` on `<html>`). Use role classes (`bg-primary`, `text-muted-foreground`, `border-input`). A new colour is a new token, never a literal: no palette classes (`bg-purple-600`), hex/rgb/oklch or arbitrary values (`p-[13px]`) in views.
+- Room page widths come from `src/components/room/room-frame.ts`. Below `lg` (1024 px) every room screen is one 512 px column, as on a phone; wider classes start at `lg:` and come from Tailwind's default scale, never an arbitrary value.
+- In a room view the title comes first in the DOM (focus goes there after a host's move) and a grid places the columns; each region appears once (e2e finds "Gracze" and "Wynik" by role).
+- A new room state gets a preview in `/dev/room-states`; when it changes the window (header, the host's bar), also a state in `/dev/room-window`.
 - Components live in `src/components/ui` (shadcn). Check that directory before writing a component; add missing ones with `npx shadcn@latest add <name>`. Auth screens compose them in `src/components/auth`.
 - Sign-in states (default, hover, focus, disabled, error, empty, loading) are shown at `/dev/ui-kitchen-sink` (dev only).
 - `npm run lint` runs `scripts/ui-literals.mjs` on the views already on tokens; when a new view is moved onto tokens, add its files to the list in that script.

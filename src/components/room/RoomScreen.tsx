@@ -50,8 +50,8 @@ function PreviewCrash() {
 }
 
 // "Koniec wieczoru" for everyone once the room is closed: "Zakończ grę", "Nowa gra" or the sweep of abandoned games
-// (decision D4 of context/changes/full-game-evening/research.md). No counts and no summary of the evening (FR-022 is
-// parked).
+// (decision D4 of context/archive/2026-10-15-full-game-evening/research.md). No counts and no summary of the evening
+// (FR-022 is parked).
 function EveningEnd({ view, titleAs: Title }: { view: RoomView; titleAs: "h1" | "h2" }) {
   return (
     <section className="flex flex-col items-center gap-4 py-12 text-center">
