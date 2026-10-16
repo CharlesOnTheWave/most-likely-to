@@ -61,7 +61,7 @@ Zgodność z planem: każdy plik z planu ma zmianę zgodną z intencją, nic nie
   - Tradeoff: regresja `overflow` przejdzie przez CI niezauważona aż do ręcznego sprawdzenia.
   - Confidence: HIGH — tylko dokumentacja.
   - Blind spot: None significant.
-- **Decision**: FIXED (Fix A): krok „Host's bar” w `game.spec.ts` (okno 1280×400 przy odsłonie, `toBeInViewport({ ratio: 1 })`), opis w test-plan §6.4; próbny alarm w CI.
+- **Decision**: FIXED (Fix A): krok „Host's bar” w `game.spec.ts` (okno 1280×400 przy odsłonie, `toBeInViewport({ ratio: 1 })`), opis w test-plan §6.4. Próbny alarm `18f2638` (pasek bez `lg:sticky`): czerwony tylko ten krok w `chromium` (linia 99, 3 próby, run 38896274126); `phone` i reszta zielone; revert `cfe158f`.
 
 ### F3 — Kontrola okna w `game.spec.ts` nie złapie projektu `phone` bez rozmiaru 390×844
 

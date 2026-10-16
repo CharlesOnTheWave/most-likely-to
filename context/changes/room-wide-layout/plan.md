@@ -436,4 +436,4 @@ Brak zmian w bazie. Wycofanie to revert scalenia; bez kolejności „baza, potem
 #### Manual
 
 - [ ] 3.3 Karol na produkcji: na laptopie poczekalnia w dwóch kolumnach, odsłona z wykresem obok tabeli i paskiem hosta bez przewijania; na telefonie jak dawniej
-- [ ] 3.4 `/10x-impl-review` zakończone, ustalenia rozstrzygnięte z Karolem
+- [x] 3.4 `/10x-impl-review` zakończone, ustalenia rozstrzygnięte z Karolem — 8722b0e
