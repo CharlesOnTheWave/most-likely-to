@@ -14,9 +14,9 @@ export interface LobbyPlayer {
 }
 
 // The round's keys as room_lobby names them (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
-// context/changes/full-game-evening/plan.md, Faza 2 #4). The latest round of the game only. While it is open: who has
-// voted, in seat order (never the order of voting), never a count, and whether the round before it was skipped (public
-// to everyone, tied to no one's vote).
+// context/archive/2026-10-15-full-game-evening/plan.md, Faza 2 #4). The latest round of the game only. While it is
+// open: who has voted, in seat order (never the order of voting), never a count, and whether the round before it was
+// skipped (public to everyone, tied to no one's vote).
 export interface VotingRound {
   number: number;
   question_id: string;
@@ -118,7 +118,7 @@ function parseResults(value: unknown): ParseResult<RoundResult[]> {
 
 // Copies only the contract's keys: a key the database might add by mistake (a count before the reveal) stays here.
 // A skipped round is the exception: any key next to its number and phase means its votes were not dropped (decision D3
-// of context/changes/full-game-evening/research.md), so the state is refused.
+// of context/archive/2026-10-15-full-game-evening/research.md), so the state is refused.
 function parseRound(value: Record<string, unknown>): ParseResult<RoundState> {
   const { number, question_id: questionId, phase } = value;
   if (typeof number !== "number" || !Number.isSafeInteger(number) || number < 1) return fail("round.number");

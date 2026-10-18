@@ -20,11 +20,12 @@ import {
 // The evening's rules (#3) through the roles' own doors: RPC with the publishable key, as guests and as the signed-in
 // host, past the Worker. Oracle: PRD FR-006 (the host moves on to the next question, skips a round, whose votes are
 // lost, and ends the game after a confirmation), FR-015 (no question twice in one game) and the decisions of
-// context/changes/full-game-evening/research.md: D1 (the Worker sends the pool in its own order and the database takes
-// the first question not played yet), D2 (a skip only while voting, with the next question at once; skipping the last
-// question does not end the game), D3 (a skipped round keeps no count), D4 (ending the game closes the room) and T1 (a
-// vote and the host's moves carry the number of the question on screen; another number is round_over). Every expected
-// question, round number and count is written out by hand from the scenario, never computed.
+// context/archive/2026-10-15-full-game-evening/research.md: D1 (the Worker sends the pool in its own order and the
+// database takes the first question not played yet), D2 (a skip only while voting, with the next question at once;
+// skipping the last question does not end the game), D3 (a skipped round keeps no count), D4 (ending the game closes
+// the room) and T1 (a vote and the host's moves carry the number of the question on screen; another number is
+// round_over). Every expected question, round number and count is written out by hand from the scenario, never
+// computed.
 //
 // next_round, skip_round, end_game and cast_vote's p_round come from supabase/migrations/*_full_game_evening.sql.
 // Without them PostgREST answers each of those calls with PGRST202 (no such function), and every test here is red on

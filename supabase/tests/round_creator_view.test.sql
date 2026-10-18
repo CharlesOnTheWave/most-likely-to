@@ -4,8 +4,8 @@
 -- and rounds. Oracle: decision D1 of context/archive/2026-10-13-first-live-round/research.md (the urn that disappears:
 -- in-progress state only in unlogged private tables with no grants, outside the publication, deleted at the reveal and
 -- whenever a round ends otherwise), plan-review F1 of that change (an hourly pg_cron sweep closes games started more
--- than 12 hours ago) and decisions D3 and D4 of context/changes/full-game-evening/research.md (a skipped round stays as
--- a row with no urn and no count; ending the game drops the urn).
+-- than 12 hours ago) and decisions D3 and D4 of context/archive/2026-10-15-full-game-evening/research.md (a skipped
+-- round stays as a row with no urn and no count; ending the game drops the urn).
 --
 -- The round's objects (private.rounds, round_results, ballot_boxes, round_voters, rooms.started_at, start_game,
 -- cast_vote, private.close_stale_games, the cron schema) came with S-02; the evening's (next_round, skip_round,

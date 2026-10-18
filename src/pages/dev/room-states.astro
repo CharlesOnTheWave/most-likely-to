@@ -5,6 +5,7 @@ import JoinForm from "@/components/room/JoinForm";
 import Landing from "@/components/room/Landing.astro";
 import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
+import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomCard from "@/components/room/RoomCard.astro";
 import RoomMessage from "@/components/room/RoomMessage.astro";
 import RoomScreen from "@/components/room/RoomScreen";
@@ -16,6 +17,9 @@ import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 // Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
 // no Realtime, no polling, no reports; the round's buttons only answer "ok" on this page (RoomScreen's preview). Local
 // only; a production build answers an empty 404.
+// From lg (1024 px) each room state (/r/…) is as wide as the page (ROOM_FRAME, one per row), because its lg: classes
+// answer the window's width, not the frame's; below lg every frame is 512 px, as before. The header, / and /j/… keep
+// their 512 px frames; the wide header and the host's bar at the window's bottom edge are on /dev/room-window.
 // (Status instead of an early `return`, which crashes typescript-eslint's no-misused-promises in .astro files.)
 const isDev = import.meta.env.DEV;
 if (!isDev) {
@@ -224,7 +228,9 @@ const allForOne: [string, number][] = [
         host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”,
         „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”) niczego nie wysyłają: głos od razu pokazuje
         „Głos oddany”, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a wysłana akcja hosta zostaje w stanie
-        wysyłania. Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie.
+        wysyłania. Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Od 1024 px stany
+        pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje
+        /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -398,8 +404,8 @@ const allForOne: [string, number][] = [
 
       <div class="mt-10 flex flex-col gap-6">
         <h2 class="border-b pb-2 text-lg font-semibold">Pokój (/r/…)</h2>
-        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
-          <section id="lobby-host-1" class="flex w-full max-w-lg flex-col gap-3">
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="lobby-host-1" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">14. Host, 1 gracz · hover · focus-visible</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -411,7 +417,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="lobby-host-8" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="lobby-host-8" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">15. Host, 8 graczy (nick 20 znaków, emotka)</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -423,7 +429,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="lobby-copied" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="lobby-copied" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">16. Skopiowano</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -435,7 +441,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="lobby-refresh-failed" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="lobby-refresh-failed" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">17. Błąd odświeżania listy</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -447,7 +453,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="lobby-no-link" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="lobby-no-link" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">18. Host: link się nie wczytał</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -459,7 +465,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="lobby-guest" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="lobby-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">19. Gość</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -470,7 +476,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="lobby-closed-host" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="lobby-closed-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">20. Koniec wieczoru: host</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -488,7 +494,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="lobby-closed-guest" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="lobby-closed-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">21. Koniec wieczoru: gość</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -506,12 +512,12 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="room-outside" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="room-outside" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">22. Spoza pokoju</h2>
             <RoomMessage titleAs="h2" title="Nie jesteś w tym pokoju." text="Poproś hosta o link." />
           </section>
 
-          <section id="room-error" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="room-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">23. Błąd: serwer niedostępny</h2>
             <RoomMessage
               titleAs="h2"
@@ -524,8 +530,8 @@ const allForOne: [string, number][] = [
 
       <div class="mt-10 flex flex-col gap-6">
         <h2 class="border-b pb-2 text-lg font-semibold">Gra: start (/r/…)</h2>
-        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
-          <section id="start-off" class="flex w-full max-w-lg flex-col gap-3">
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="start-off" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">24. Host: „Zacznij grę” nieaktywne (2 graczy)</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -537,7 +543,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="start-on" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="start-on" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               25. Host: „Zacznij grę” aktywne (3 graczy) · hover · focus-visible
             </h2>
@@ -551,7 +557,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="start-pending" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="start-pending" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">26. Host: start wysłany</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -563,7 +569,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="start-error" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="start-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">27. Host: start odrzucony</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -579,8 +585,8 @@ const allForOne: [string, number][] = [
 
       <div class="mt-10 flex flex-col gap-6">
         <h2 class="border-b pb-2 text-lg font-semibold">Gra: głosowanie (/r/…)</h2>
-        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
-          <section id="vote-guest-before" class="flex w-full max-w-lg flex-col gap-3">
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="vote-guest-before" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">28. Gość: przed głosem · hover · focus-visible</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -591,7 +597,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-guest-chosen" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-guest-chosen" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">29. Gość: wybrana osoba</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -602,7 +608,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-guest-missing" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-guest-missing" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">30. Gość: „Zagłosuj” bez wyboru</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -613,7 +619,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-guest-pending" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-guest-pending" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">31. Gość: wysyłanie głosu</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -624,7 +630,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-guest-error" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-guest-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">32. Gość: głos nie doszedł</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -639,7 +645,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-guest-voted" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-guest-voted" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">33. Gość: po głosie</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -650,7 +656,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-guest-abstained" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-guest-abstained" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">34. Gość: po wstrzymaniu się</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -661,7 +667,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-guest-reloaded" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-guest-reloaded" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">35. Gość: po głosie i odświeżeniu strony</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -672,7 +678,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-host-before" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-host-before" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               36. Host: przed głosem, z przyciskami hosta · hover · focus-visible
             </h2>
@@ -685,7 +691,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-host-voted" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-host-voted" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">37. Host: po głosie, z przyciskami hosta</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -696,7 +702,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-host-revealing" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-host-revealing" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">38. Host: odsłanianie wyniku</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -707,7 +713,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-host-confirm" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-host-confirm" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">38a. Host: „Odsłoń wynik” pyta drugi raz</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -718,7 +724,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-unknown-question" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-unknown-question" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">39. Pytanie, którego nie ma w bazie</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -729,7 +735,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="vote-20" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="vote-20" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               40. 20 graczy (długie nicki, emotki), długie pytanie
             </h2>
@@ -752,8 +758,8 @@ const allForOne: [string, number][] = [
 
       <div class="mt-10 flex flex-col gap-6">
         <h2 class="border-b pb-2 text-lg font-semibold">Gra: odsłona (/r/…)</h2>
-        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
-          <section id="reveal-guest" class="flex w-full max-w-lg flex-col gap-3">
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="reveal-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">41. Gość: remis, zera i wstrzymanie</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -764,7 +770,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-host" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               42. Host: „Następne pytanie” i „Zakończ grę” · hover · focus-visible
             </h2>
@@ -777,7 +783,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-one-vote" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-one-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">43. Odsłona po 1 głosie</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -788,7 +794,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-all-abstained" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-all-abstained" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">44. Wszyscy się wstrzymali</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -799,7 +805,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-20" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-20" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               45. 20 graczy (długie nicki, emotki), długie pytanie
             </h2>
@@ -812,7 +818,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-pie-5" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-pie-5" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">45a. Koło: 5 graczy (domyślnie)</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -823,7 +829,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-pie-20-few" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-pie-20-few" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">45b. Koło: 20 graczy, głosy dostało 5</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -834,7 +840,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-bars-20" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-bars-20" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">45c. Paski: 20 graczy, głosy dostało 11 (wybrane)</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -845,7 +851,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-pie-20-many" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-pie-20-many" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               45d. Koło: 20 graczy, głosy dostało 11 (domyślnie)
             </h2>
@@ -858,7 +864,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-single" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-single" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">45e. Wszystkie głosy na jedną osobę (pełne koło)</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -869,7 +875,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="reveal-toggle-focus" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="reveal-toggle-focus" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               45f. Przełącznik „Koło” / „Paski” · hover · focus-visible
             </h2>
@@ -886,8 +892,8 @@ const allForOne: [string, number][] = [
 
       <div class="mt-10 flex flex-col gap-6">
         <h2 class="border-b pb-2 text-lg font-semibold">Gra: wieczór (/r/…)</h2>
-        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
-          <section id="evening-skip-confirm" class="flex w-full max-w-lg flex-col gap-3">
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="evening-skip-confirm" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">48. Host: „Pomiń pytanie” pyta drugi raz</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -898,7 +904,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-end-confirm-vote" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-end-confirm-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               49. Host: „Zakończ grę” pyta drugi raz (głosowanie)
             </h2>
@@ -911,7 +917,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-skipping" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-skipping" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">50. Host: pomijanie pytania</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -922,7 +928,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-after-skip-guest" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-after-skip-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">51. Gość: pytanie 2 po pominięciu (notka)</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -933,7 +939,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-after-skip-host" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-after-skip-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">52. Host: pytanie 3 po pominięciu, po głosie</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -947,7 +953,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-end-confirm-reveal" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-end-confirm-reveal" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">53. Host: „Zakończ grę” pyta drugi raz (odsłona)</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -958,7 +964,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-next-pending" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-next-pending" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">54. Host: „Następne pytanie” wysłane</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -969,7 +975,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-next-error" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-next-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">55. Host: „Następne pytanie” odrzucone</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -980,7 +986,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-no-questions" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-no-questions" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">56. Host: odsłona, pytania się skończyły</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -991,7 +997,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-skipped-host" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-skipped-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">57. Host: pominięte ostatnie pytanie</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -1002,7 +1008,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-skipped-guest" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-skipped-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">58. Gość: pominięte ostatnie pytanie</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -1013,7 +1019,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-end-host" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-end-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">59. Koniec wieczoru po grze: host</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -1024,7 +1030,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-end-guest" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-end-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">60. Koniec wieczoru po grze: gość</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -1035,7 +1041,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="evening-crash" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="evening-crash" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">61. Ekran się wysypał (F4)</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -1050,8 +1056,8 @@ const allForOne: [string, number][] = [
 
       <div class="mt-10 flex flex-col gap-6">
         <h2 class="border-b pb-2 text-lg font-semibold">Połączenie na żywo</h2>
-        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 xl:grid-cols-3">
-          <section id="live-broken-lobby" class="flex w-full max-w-lg flex-col gap-3">
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="live-broken-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">46. Lobby gościa: połączenie przerwane</h2>
             <RoomScreen
               roomId={ROOM_ID}
@@ -1062,7 +1068,7 @@ const allForOne: [string, number][] = [
             />
           </section>
 
-          <section id="live-broken-vote" class="flex w-full max-w-lg flex-col gap-3">
+          <section id="live-broken-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">
               47. Głosowanie: połączenie przerwane i błąd odświeżania
             </h2>

@@ -4,6 +4,7 @@ import { ServerError } from "@/components/auth/ServerError";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { cn } from "@/lib/utils";
 
 // The host's buttons that move the game on: "Odsłoń wynik", "Pomiń pytanie", "Zakończ grę", "Następne pytanie". An
 // action that takes something away (votes, the evening) asks first: the same button turns into the question and acts
@@ -63,26 +64,38 @@ export function afterRoundActions(
   return { actions: [nextQuestionAction(onNext), endGameAction(onEnd)] };
 }
 
-// /dev/room-states only: the starting state of the host's buttons; the real page never sets it.
+// The dev previews only (/dev/room-states, /dev/room-window): the starting state of the host's buttons; the real page
+// never sets it.
 export interface HostActionsPreview {
   confirming?: HostActionId;
   busy?: HostActionId;
   error?: string | null;
 }
 
+// Where the buttons stand from lg (1024 px, src/components/room/room-frame.ts); below lg every placement is one row per
+// action, as on a phone. "stack": one row per action at every width. "row": every action in one line, each as wide as
+// the others, and a question "Na pewno…?" with "Anuluj" twice as wide. "bar": that line stuck to the window's bottom,
+// on the page's background and above the content that scrolls under it. Sticky works while no ancestor clips its
+// overflow.
+export type HostActionsPlacement = "stack" | "row" | "bar";
+
+const BAR = "lg:bg-background lg:sticky lg:bottom-0 lg:z-10 lg:-mx-4 lg:px-4 lg:pb-4";
+
 interface Props {
   actions: HostAction[];
   // A quiet line under the buttons, e.g. when the questions ran out.
   note?: string;
+  placement?: HostActionsPlacement;
   preview?: HostActionsPreview;
 }
 
-export function HostActions({ actions, note, preview }: Props) {
+export function HostActions({ actions, note, placement = "stack", preview }: Props) {
   const [confirming, setConfirming] = useState<HostActionId | null>(preview?.confirming ?? null);
   const [busy, setBusy] = useState<HostActionId | null>(preview?.busy ?? null);
   const [error, setError] = useState<string | null>(preview?.error ?? null);
   const buttons = useRef(new Map<HostActionId, HTMLButtonElement>());
   const asking = actions.find((action) => action.id === confirming && busy === null);
+  const inLine = placement !== "stack";
 
   async function run(action: HostAction) {
     setBusy(action.id);
@@ -112,53 +125,63 @@ export function HostActions({ actions, note, preview }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t pt-6">
-      {actions.map((action) => {
-        const isAsking = asking?.id === action.id;
-        const isBusy = busy === action.id;
-        const { Icon } = action;
-        return (
-          <div key={action.id} className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              ref={(node) => {
-                if (node) buttons.current.set(action.id, node);
-                else buttons.current.delete(action.id);
-              }}
-              type="button"
-              variant={isAsking ? "default" : action.variant}
-              aria-disabled={busy !== null || undefined}
-              // The question may wrap on a phone ("Głosy przepadną (zagłosowało 12 z 20)"); busy looks as disabled.
-              className="h-auto min-h-9 py-2 text-center whitespace-normal aria-disabled:cursor-default aria-disabled:opacity-50 sm:flex-1"
-              onClick={() => {
-                press(action);
-              }}
-            >
-              {isBusy ? (
-                <>
-                  <Spinner aria-hidden="true" />
-                  {action.busyLabel}
-                </>
-              ) : (
-                <>
-                  <Icon />
-                  {isAsking ? action.confirmText : action.label}
-                </>
+    <div className={cn("flex flex-col gap-3 border-t pt-6", placement === "bar" && BAR)}>
+      {/* Below lg display: contents, so each action is a row of the column; from lg the line of "row" and "bar". */}
+      <div className={cn("contents", inLine && "lg:flex lg:gap-3")}>
+        {actions.map((action) => {
+          const isAsking = asking?.id === action.id;
+          const isBusy = busy === action.id;
+          const { Icon } = action;
+          return (
+            // In a line the question takes twice the room of a button, so it wraps to about two lines next to "Anuluj".
+            <div
+              key={action.id}
+              className={cn(
+                "flex flex-col gap-2 sm:flex-row",
+                inLine && (isAsking ? "lg:flex-2 lg:items-center" : "lg:flex-1"),
               )}
-            </Button>
-            {isAsking && (
+            >
               <Button
+                ref={(node) => {
+                  if (node) buttons.current.set(action.id, node);
+                  else buttons.current.delete(action.id);
+                }}
                 type="button"
-                variant="ghost"
+                variant={isAsking ? "default" : action.variant}
+                aria-disabled={busy !== null || undefined}
+                // The question may wrap on a phone ("Głosy przepadną (zagłosowało 12 z 20)"); busy looks as disabled.
+                className="h-auto min-h-9 py-2 text-center whitespace-normal aria-disabled:cursor-default aria-disabled:opacity-50 sm:flex-1"
                 onClick={() => {
-                  cancel(action.id);
+                  press(action);
                 }}
               >
-                Anuluj
+                {isBusy ? (
+                  <>
+                    <Spinner aria-hidden="true" />
+                    {action.busyLabel}
+                  </>
+                ) : (
+                  <>
+                    <Icon />
+                    {isAsking ? action.confirmText : action.label}
+                  </>
+                )}
               </Button>
-            )}
-          </div>
-        );
-      })}
+              {isAsking && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    cancel(action.id);
+                  }}
+                >
+                  Anuluj
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
       {note && <p className="text-muted-foreground text-sm">{note}</p>}
       {/* A screen reader may not read a focused button again when its name changes; this says the question. */}
       <p aria-live="polite" className="sr-only">
