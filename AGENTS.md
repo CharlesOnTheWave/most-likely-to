@@ -11,6 +11,17 @@
 - Read `SUPABASE_URL` / `SUPABASE_KEY` only through `astro:env/server` (see `src/lib/supabase.ts`), never via `import.meta.env`. Never commit `.env` or `.dev.vars`.
 - `SUPABASE_KEY` must be the publishable key (`sb_publishable_…`). Server code may pass the URL and this key to the browser at runtime (page props or a JSON endpoint), only for Realtime subscriptions. A secret or `service_role` key never goes to the browser, the repo or logs.
 - Only `/10x-archive` moves a finished change into `context/archive/`; never edit anything already there.
+- Keep "Confirm email" ON in the Supabase project: never turn it off to make smoke or the probe pass, it reopens account takeover through OAuth.
+
+## Conventions
+
+- Add shadcn/ui components with `npx shadcn@latest add <name>`. Since September 2026 (after your training data) shadcn ships `cn()` as the `cn` npm package and imports it from `"cn"`; `@/lib/utils` only re-exports it. Keep those imports and the `cn` dependency; they are not a bug.
+- No Next.js directives such as `"use client"` in React components.
+- Create Supabase migrations with `npx supabase migration new <name>` (pattern: `supabase/migrations/*_room_lobby.sql`):
+  - every new table: RLS, `revoke all … from public, anon, authenticated`, an explicit `grant` of only what a role needs and a policy for every granted operation; a table reached only through functions gets no grants and no policies;
+  - every function: `set search_path = ''`, schema-qualified names, `revoke execute … from public, anon, authenticated`, then a selective `grant`;
+  - a `security definer` function granted to `anon` is a public endpoint that bypasses the Worker, so all checks live inside it; its owner is `postgres`;
+  - apply migrations only with `npx supabase db push` (ask), never SQL in the dashboard, and never edit a pushed migration: a fix is a new one. Details: `context/deployment/deploy-plan.md`.
 
 ## Commands
 
@@ -29,17 +40,7 @@ Before handing off a change, `npm run lint`, `npx astro check`, `npm test` and `
 - Before writing or changing a test, read `context/foundation/test-plan.md` §6 (oracle, refusals, hooks, sign-up limit).
 - A `test.fails` test named "znana dziura <F> → <change>" documents a known hole. When the fix turns it red, remove the marker; never delete the test.
 
-`npm run smoke` (`scripts/smoke.mjs`) needs a running server and a reachable Supabase. It signs in with the fixed test account `SMOKE_EMAIL` / `SMOKE_PASSWORD` from `.dev.vars` and creates no accounts; the account lives in the only Supabase project, which production also uses. Its room steps leave rooms and guests on that account in that database (until S-13 cleans up), so `npm run smoke` asks first. Keep "Confirm email" ON in that project: never turn it off to make smoke or the probe pass, it reopens account takeover through OAuth. Without `.dev.vars` or its `SMOKE_*` lines (fresh clone, new worktree), copy `.dev.vars` from the main checkout or skip smoke; a failure then is not a code bug.
-
-## Conventions
-
-- Add shadcn/ui components with `npx shadcn@latest add <name>`. Since September 2026 (after your training data) shadcn ships `cn()` as the `cn` npm package and imports it from `"cn"`; `@/lib/utils` only re-exports it. Keep those imports and the `cn` dependency; they are not a bug.
-- No Next.js directives such as `"use client"` in React components.
-- Create Supabase migrations with `npx supabase migration new <name>` (pattern: `supabase/migrations/*_room_lobby.sql`):
-  - every new table: RLS, `revoke all … from public, anon, authenticated`, an explicit `grant` of only what a role needs and a policy for every granted operation; a table reached only through functions gets no grants and no policies;
-  - every function: `set search_path = ''`, schema-qualified names, `revoke execute … from public, anon, authenticated`, then a selective `grant`;
-  - a `security definer` function granted to `anon` is a public endpoint that bypasses the Worker, so all checks live inside it; its owner is `postgres`;
-  - apply migrations only with `npx supabase db push` (ask), never SQL in the dashboard, and never edit a pushed migration: a fix is a new one. Details: `context/deployment/deploy-plan.md`.
+`npm run smoke` (`scripts/smoke.mjs`) needs a running server and a reachable Supabase. It signs in with the fixed test account `SMOKE_EMAIL` / `SMOKE_PASSWORD` from `.dev.vars` and creates no accounts; the account lives in the only Supabase project, which production also uses. Its room steps leave rooms and guests on that account in that database (until S-13 cleans up), so `npm run smoke` asks first. Without `.dev.vars` or its `SMOKE_*` lines (fresh clone, new worktree), copy `.dev.vars` from the main checkout or skip smoke; a failure then is not a code bug.
 
 ## UI
 
