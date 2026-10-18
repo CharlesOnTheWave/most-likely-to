@@ -11,7 +11,7 @@ const OP = "next";
 // The body carries that round's number ({round}), so a double click or a resent request never moves past a question
 // nobody has seen (round_over). The Worker sends the game's whole pool in random order (src/lib/rounds/draw.ts), and
 // next_round opens the first question not played in this game yet (FR-015; decision D1 of
-// context/changes/full-game-evening/research.md). JSON from the room screen: {ok: true} or {error: code}
+// context/archive/2026-10-15-full-game-evening/research.md). JSON from the room screen: {ok: true} or {error: code}
 // (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);

@@ -27,8 +27,8 @@ import {
 // (skipped, or the game ended or closed mid-round) leaves nothing to read. Oracle: PRD Non-Goals and the anonymity NFR
 // (nobody, the host and the game's creator included, can tell who voted for whom), AGENTS.md Hard Rules, decision D1
 // of context/archive/2026-10-13-first-live-round/research.md (the urn that disappears) and decisions D3 and D4 of
-// context/changes/full-game-evening/research.md (a skipped round keeps no count; ending the game drops the urn). What
-// the creator sees as the database owner is supabase/tests/round_creator_view.test.sql's to check (pgTAP).
+// context/archive/2026-10-15-full-game-evening/research.md (a skipped round keeps no count; ending the game drops the
+// urn). What the creator sees as the database owner is supabase/tests/round_creator_view.test.sql's to check (pgTAP).
 //
 // Exact key sets, not "the fields we know of": a new key in an answer is how a pair or an early count would leak
 // (test-plan §2, #1: never only the table's columns).

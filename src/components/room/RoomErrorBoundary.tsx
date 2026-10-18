@@ -1,8 +1,10 @@
 import { Component, createRef, type ReactNode } from "react";
 import { RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ROOM_NARROW } from "@/components/room/room-frame";
 import { reportClientEvent } from "@/components/room/useRoomState";
 import { logEvent } from "@/lib/log";
+import { cn } from "@/lib/utils";
 
 interface Props {
   roomId: string;
@@ -57,8 +59,9 @@ export class RoomErrorBoundary extends Component<Props, State> {
       );
     }
     const { titleAs: Title } = this.props;
+    // Outside RoomContent and its column, so centred in 512 px here (src/components/room/room-frame.ts).
     return (
-      <section className="flex flex-col items-center gap-4 py-12 text-center">
+      <section className={cn("flex flex-col items-center gap-4 py-12 text-center", ROOM_NARROW)}>
         {/* The alert holds the text only, so a screen reader does not read the button's name with it. */}
         <div role="alert">
           <Title ref={this.title} tabIndex={-1} className="text-2xl font-semibold text-balance outline-none">

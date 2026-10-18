@@ -1,8 +1,8 @@
 import { questionSentence, type RoomView } from "@/lib/rooms/shared";
 
 // What the room screen tells a screen reader when the game moves on, and when it shows the note after a skip, worked
-// out from the room's state alone (context/changes/full-game-evening/plan.md, Faza 4 #1). No DOM, so the unit tests
-// check it; RoomScreen sets its live region from here. The same words for the host and every guest.
+// out from the room's state alone (context/archive/2026-10-15-full-game-evening/plan.md, Faza 4 #1). No DOM, so the
+// unit tests check it; RoomScreen sets its live region from here. The same words for the host and every guest.
 
 // Changes with the room's status, the round's phase and its number, and with nothing else: a vote changes who has
 // voted, never this key, so a vote is not announced as a new question.

@@ -3,10 +3,10 @@ import { announcement, announcementKey, skipNotice } from "@/lib/rooms/announce"
 import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 
 // What the room screen's live region says when the game moves on, and when the screen shows the note after a skip
-// (context/changes/full-game-evening/plan.md, Faza 4 #1; Desired End State 2 and 7). Behaviour only: a new question's
-// number is heard, a skip and the end of the evening have their own words, the note belongs to the round after a skip
-// alone. The Polish sentences are not copied here (test-plan §6.1); the states are written by hand from the contract
-// in src/lib/rooms/shared.ts.
+// (context/archive/2026-10-15-full-game-evening/plan.md, Faza 4 #1; Desired End State 2 and 7). Behaviour only: a new
+// question's number is heard, a skip and the end of the evening have their own words, the note belongs to the round
+// after a skip alone. The Polish sentences are not copied here (test-plan §6.1); the states are written by hand from
+// the contract in src/lib/rooms/shared.ts.
 
 const PLAYERS: LobbyPlayer[] = [
   { nick: "Ola", host: true },
