@@ -430,10 +430,10 @@ Brak zmian w bazie. Wycofanie to revert scalenia; bez kolejności „baza, potem
 
 #### Automated
 
-- [ ] 3.1 Workers Builds po scaleniu zielone
-- [ ] 3.2 Smoke na produkcji zielony
+- [x] 3.1 Workers Builds po scaleniu zielone
+- [x] 3.2 Smoke na produkcji zielony
 
 #### Manual
 
-- [ ] 3.3 Karol na produkcji: na laptopie poczekalnia w dwóch kolumnach, odsłona z wykresem obok tabeli i paskiem hosta bez przewijania; na telefonie jak dawniej
+- [x] 3.3 Karol na produkcji: na laptopie poczekalnia w dwóch kolumnach, odsłona z wykresem obok tabeli i paskiem hosta bez przewijania; na telefonie jak dawniej
 - [x] 3.4 `/10x-impl-review` zakończone, ustalenia rozstrzygnięte z Karolem — 8722b0e
