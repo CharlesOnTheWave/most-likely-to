@@ -2,26 +2,26 @@ Project rules for all agents: @AGENTS.md
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — moduł 4, lekcja 1 (Kontekst na dużą skalę)
+## Zestaw narzędzi AI 10xDevs — Moduł 4, Lekcja 2 (Mapa projektu)
 
-Utrzymuj ten plik reguł w zwięzłej formie i kieruj z niego do kontekstu, który znajduje się gdzie indziej. Duża baza kodu nie potrzebuje większego pliku głównego.
+Zapoznaj się z nieznanym lub starszym repozytorium na podstawie dowodów, a nie drzew katalogów: **najpierw szerokie skanowanie, później głębokie skupienie.**
 
 ```
-lean root rules file -> context/ (system of record) -> per-module rules only when a trigger signal appears
+git history + dependency graph + contributors -> context/map/repo-map.md -> focused /10x-research
 ```
 
 ### Router zadań — od czego zacząć
 
-| Umiejętność | Użyj jej, gdy |
+| Umiejętność / prompt | Użyj, gdy |
 | --- | --- |
-| `/10x-agents-md` -> `/10x-rule-review` | Odchudzasz rozbudowany główny plik reguł: przenieś szczegóły do `context/` i pozostaw odnośnik. |
-| `/10x-ray <skill> [args]` | Chcesz zobaczyć, jak działa umiejętność: mapuje jej kroki, rozgałęzienia i punkty kontroli człowieka, następnie ją uruchamia i wyjaśnia każdy krok w trakcie jego wykonywania. Dodaj `--mode html`, aby obserwować ją w przeglądarce. |
-| `/10x-lesson` | Błąd agenta, który ciągle powraca, powinien stać się zapisaną lekcją, a nie kolejną linią w tym pliku. |
+| `/10x-repo-map` | Mapa projektu w jednym przebiegu. Klasyfikuje możliwości biznesowe według krytyczności × rozgłosu, przechowuje dowody w `context/map/evidence/` i zapisuje `context/map/repo-map.md` ze strefami ryzyka, listą lektur na pierwszy dzień oraz wyraźnie wskazanymi niewiadomymi. Użyj `--replace`, aby odświeżyć; poprzedni przebieg zostanie przeniesiony do `context/archive/`. |
+| `m4l2-1-territory-git-history` -> `m4l2-2-structure-dependency-cruiser` -> `m4l2-3-contributors-git` -> `m4l2-repo-map-synthesis` | Ta sama mapa budowana krok po kroku, po jednym artefakcie naraz, aby zobaczyć, co dodaje każde źródło dowodów. |
+| `/10x-research` | Pytanie dotyczące jednej funkcji lub obszaru. Mapa obejmuje szerokość i nie przyjmuje celu; głębia należy do badań. |
 
-### Twarde reguły
+### Twarde zasady
 
-- **Pliki instrukcji się sumują; nie nadpisują się.** Narzędzia scalają pliki główne, zagnieżdżone i na poziomie użytkownika. Nie powtarzaj tej samej reguły na kilku poziomach.
-- **Test włączenia.** Linia należy tutaj tylko wtedy, gdy agent popełniłby bez niej błąd. Fakty, które agent może odczytać z kodu lub z `context/`, pozostają tam i otrzymują odnośnik.
-- **Dodawaj strukturę dla poszczególnych modułów tylko wtedy, gdy pojawi się sygnał.** Przykłady: agent ciągle myli dwa obszary albo konwencje jednego modułu wypierają wszystko inne. Sam rozmiar repozytorium nie jest sygnałem.
+- **Pozwól narzędziom zbierać dowody poza oknem kontekstu.** Używaj narzędzi git, forge i grafowych do gromadzenia danych, a następnie interpretuj wyłącznie ich skondensowane wyniki. Nigdy nie czytaj repozytorium plik po pliku.
+- **Wyklucz szum.** Podczas klasyfikowania aktywności pomijaj lockfile'y, wygenerowany kod, commity masowego formatowania, commity botów oraz commity utworzone przez agentów.
+- **Niewiadome są częścią mapy.** Oznaczaj jako niewiadome to, czego dowody nie mogą pokazać, zamiast wypełniać lukę zgadywaniem.
 
 <!-- END @przeprogramowani/10x-cli -->
