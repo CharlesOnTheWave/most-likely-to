@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-15
+updated: 2026-10-18
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -326,7 +326,6 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
 - **Nick zapamiętany w przeglądarce** — Why parked: PRD przesuwa go do v2 (Access Control: „Poza MVP”).
 - **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
-- **Szeroki układ ekranów gry na laptopie i dużym monitorze** — Why parked: decyzja Karola 2026-10-15 przy S-03 (faza 4, zrzuty): osobna zmiana `/10x-ui` zaraz po S-03, dla wszystkich ekranów gry naraz (poczekalnia, głosowanie, odsłona, koniec wieczoru), np. dwie kolumny od ok. 1024 px, telefon bez zmian. Powód: Karol gra z przeglądarką na całym ekranie, wielu graczy ma dwa monitory, a w wąskiej kolumnie przyciski hosta po odsłonie lądują pod krawędzią ekranu.
 - **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy.
 
 ## Milestone History
@@ -341,3 +340,4 @@ _Brak: to pierwszy kamień milowy._
 - **S-05: Host loguje się jednym kliknięciem przez zewnętrznego dostawcę, bez rejestracji i hasła; ten sam e-mail oznacza tego samego hosta także przy zapasowej drodze logowania.** — Archived 2026-10-08 → `context/archive/2026-10-04-one-click-host-login/`. Lesson: —.
 - **S-02: Host klika „start”; wszyscy w pokoju widzą to samo pytanie z wybranych kategorii (18+ tylko z tych, w których host je dołączył), każdy wskazuje jedną osobę z listy nicków (także siebie) albo się wstrzymuje, wszyscy widzą, kto już zagłosował, a po ostatnim głosie lub przewinięciu przez prowadzącego widzą odsłonę: ile głosów dostała każda osoba.** — Archived 2026-10-15 → `context/archive/2026-10-13-first-live-round/`. Lesson: —.
 - **S-03: Prowadzący przechodzi do kolejnego pytania (bez powtórek w tej grze), może pominąć rundę (jej głosy przepadają i nie liczą się do jakości pytania) i kończy grę po potwierdzeniu; po ostatnim pytaniu ekipa widzi koniec wieczoru bez punktacji.** — Archived 2026-10-15 → `context/archive/2026-10-15-full-game-evening/`. Lesson: —.
+- **Szeroki układ ekranów gry na laptopie i dużym monitorze (zmiana `/10x-ui` z Parked, bez numeru slice'a): od 1024 px poczekalnia w dwóch kolumnach, odsłona z wykresem obok tabeli, przyciski hosta w pasku przyklejonym do dołu okna; telefon bez zmian.** — Archived 2026-10-18 → `context/archive/2026-10-15-room-wide-layout/`. Lesson: —.
