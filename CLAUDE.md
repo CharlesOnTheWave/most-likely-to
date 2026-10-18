@@ -2,34 +2,26 @@ Project rules for all agents: @AGENTS.md
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — moduł 3, lekcja 5 (debugowanie)
+## Zestaw narzędzi AI 10xDevs — moduł 4, lekcja 1 (Kontekst na dużą skalę)
 
-Zamień awarię w poprawkę, której agent może bronić: najpierw dowody, potem nieprzechodzący test, a następnie poprawka.
+Utrzymuj ten plik reguł w zwięzłej formie i kieruj z niego do kontekstu, który znajduje się gdzie indziej. Duża baza kodu nie potrzebuje większego pliku głównego.
 
 ```
-signal (monitoring | log | flaky E2E | stack trace) -> gather evidence -> reproduce -> failing test -> fix -> verify
+lean root rules file -> context/ (system of record) -> per-module rules only when a trigger signal appears
 ```
 
 ### Router zadań — od czego zacząć
 
 | Umiejętność | Użyj jej, gdy |
 | --- | --- |
-| `/10x-frame` | Zgłoszenie przychodzi jako „bug + proponowana poprawka”. Sprawdź, czy zaobserwowany objaw i podana przyczyna rzeczywiście do siebie pasują, zanim ktokolwiek cokolwiek naprawi. |
-| `/10x-new` -> `/10x-research` -> `/10x-plan` -> `/10x-implement` | Poprawka to coś więcej niż jednolinijkowa zmiana. Research zbiera dowody; plan zaczyna się od nieprzechodzącego testu regresji. |
-| `/10x-tdd` | Pisanie testu regresji, który odtwarza błąd przed wprowadzeniem poprawki. |
-| `/10x-e2e` | Błąd pojawia się tylko w uruchomionej aplikacji. Odtwórz go w przeglądarce i zachowaj ten test. |
-| `/10x-observability-audit` | Błędy są nieobecne, zaszumione lub niemożliwe do zdiagnozowania na produkcji. Audytuje krytyczne przepływy pod kątem kodu ukrywającego awarie i zapisuje raport z datą w `context/audits/observability/`. Użyj `--verify <report>`, aby ponownie sprawdzić wcześniejszy raport po poprawkach. |
+| `/10x-agents-md` -> `/10x-rule-review` | Odchudzasz rozbudowany główny plik reguł: przenieś szczegóły do `context/` i pozostaw odnośnik. |
+| `/10x-ray <skill> [args]` | Chcesz zobaczyć, jak działa umiejętność: mapuje jej kroki, rozgałęzienia i punkty kontroli człowieka, następnie ją uruchamia i wyjaśnia każdy krok w trakcie jego wykonywania. Dodaj `--mode html`, aby obserwować ją w przeglądarce. |
+| `/10x-lesson` | Błąd agenta, który ciągle powraca, powinien stać się zapisaną lekcją, a nie kolejną linią w tym pliku. |
 
-### Twarde zasady
+### Twarde reguły
 
-- **Dowody przed hipotezą.** Korzystaj z tego, co pokazują tracker błędów, logi, odtworzenie problemu i kod. Nigdy nie zgaduj przyczyny wyłącznie na podstawie stack trace.
-- **Błąd najpierw staje się nieprzechodzącym testem.** Poprawka jest gotowa, gdy ten test przechodzi z czerwonego na zielony i pozostaje w zestawie testów.
-- **Nigdy nie ukrywaj dowodów.** Żadnych pustych `catch`, żadnych ignorowanych odrzuceń promise'ów, żadnego zamieniania awarii w przekierowania lub `200`, żadnego porzucania przyczyn błędów. Jeśli poprawka wymaga `catch`, loguje lub raportuje błąd wraz z jego przyczyną.
-- **Napraw przyczynę, nie test.** Nie edytuj asercji, aby pasowała do nowego zachowania, chyba że zmieniło się samo wymaganie.
-
-### Granice lekcji
-
-- `/10x-observability-audit` czyta kod i zapisuje raport. Nigdy nie zmienia audytowanego kodu. Naprawianie tego, co znajdzie, przechodzi przez łańcuch zmian.
-- Wybór dostawcy monitoringu należy do `/10x-infra-research`, a nie do tej lekcji.
+- **Pliki instrukcji się sumują; nie nadpisują się.** Narzędzia scalają pliki główne, zagnieżdżone i na poziomie użytkownika. Nie powtarzaj tej samej reguły na kilku poziomach.
+- **Test włączenia.** Linia należy tutaj tylko wtedy, gdy agent popełniłby bez niej błąd. Fakty, które agent może odczytać z kodu lub z `context/`, pozostają tam i otrzymują odnośnik.
+- **Dodawaj strukturę dla poszczególnych modułów tylko wtedy, gdy pojawi się sygnał.** Przykłady: agent ciągle myli dwa obszary albo konwencje jednego modułu wypierają wszystko inne. Sam rozmiar repozytorium nie jest sygnałem.
 
 <!-- END @przeprogramowani/10x-cli -->
