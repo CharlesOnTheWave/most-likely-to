@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-16
+> Last updated: 2026-10-18
 
 ## 1. Strategy
 
@@ -306,6 +306,10 @@ Dziś lobby (M3L4, 2026-10-11), jedna runda 3 graczy (S-02, 2026-10-14) i wiecz�
   - Testy bazy powstały przed migracją i świeciły na czerwono tylko z braku funkcji wieczoru. Dziś: baza 175 testów Vitest, pgTAP 105 asercji, unit 336, e2e 5 testów (wieczór 3 graczy ok. 11 s, bez ponowień), smoke 53 kroki.
   - Trzy próbne alarmy trafiły dokładnie (§6.2 i §6.4). Urnę pominiętej rundy widzi tylko pgTAP. Dzwonek po „Następne pytanie” złapał e2e dopiero po przeładowaniu ekranu gościa tuż przed ruchem hosta. Bez tego odpytywanie trafiało w okno 10 s w około 2 przypadkach na 3.
   - Wdrożenie „baza, potem kod”: smoke ze starym Workerem (`SMOKE_GAME=0`) zielony, po scaleniu 53/53. Ręczny wieczór Karola bez błędów. Czytnik ekranu świadomie pominięty (§7).
+- **room-wide-layout** (poza fazami §3, 2026-10-16, na produkcji 2026-10-18):
+  - Szeroki układ widzi tylko okno od 1024 px, więc e2e gra wieczór dwa razy: w oknie laptopa (`chromium`) i telefonu (`phone`, kontrola okna graczy). Dziś e2e 6 testów, smoke na produkcji 53/53.
+  - Dwa próbne alarmy trafiły dokładnie (§6.4): przyciski hosta schowane pod 1024 px zaświeciły tylko `phone`, pasek hosta bez `sticky` tylko krok „Host's bar” w `chromium`. Przyklejenia paska przy 3 graczach nie widać w oknie 1280×720, dlatego krok zmniejsza okno; bez niego nic by go nie pilnowało.
+  - Bez testu zrzutów w CI: telefon piksel w piksel sprawdzał lokalny skrypt porównania zrzutów `/dev/*`. Runda Karola na produkcji (laptop z przeglądarką na całym ekranie, telefon, incognito) bez uwag.
 
 ## 7. What We Deliberately Don't Test
 
