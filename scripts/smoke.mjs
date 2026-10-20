@@ -263,15 +263,31 @@ function skippedBy(steps, reason) {
 
 // S-02's round (context/archive/2026-10-13-first-live-round/plan.md, Faza 5) in the room of the steps around it: the
 // host, Ola and the second guest. The votes: Ola for herself, the second guest abstains, and the host, last, for "ola"
-// (not Ola: case counts); the last vote reveals the round by itself. The targets live only in the request bodies: no
-// step's name and nothing the script prints says who voted for whom. Skipped with SMOKE_ROUND=0.
+// (not Ola: case counts); the last vote reveals the round by itself. Every vote carries question 1's number, as the
+// room screen sends it; a vote or a reveal without one is refused before the database (F2 of
+// context/changes/deferred-review-fixes/plan.md). The targets live only in the request bodies: no step's name and
+// nothing the script prints says who voted for whom. Skipped with SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
+    [
+      "a vote without a question number is refused",
+      () => act("vote", { target: null }, olaJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
+    [
+      "a reveal without a question number is refused",
+      () => act("reveal", {}, hostJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
     ["a new guest cannot join a game in play", () => join("Kuba", new Map()), { status: 302, location: GAME_STARTED }],
-    ["Ola votes", () => act("vote", { target: "Ola" }, olaJar), { status: 200, body: ACCEPTED }],
-    ["the second guest votes", () => act("vote", { target: null }, secondGuestJar), { status: 200, body: ACCEPTED }],
-    ["host votes last", () => act("vote", { target: "ola" }, hostJar), { status: 200, body: ACCEPTED }],
+    ["Ola votes", () => act("vote", { target: "Ola", round: 1 }, olaJar), { status: 200, body: ACCEPTED }],
+    [
+      "the second guest votes",
+      () => act("vote", { target: null, round: 1 }, secondGuestJar),
+      { status: 200, body: ACCEPTED },
+    ],
+    ["host votes last", () => act("vote", { target: "ola", round: 1 }, hostJar), { status: 200, body: ACCEPTED }],
     [
       "room state shows the reveal with the votes' counts",
       () => lobby(room.id, olaJar),
@@ -279,7 +295,7 @@ function roundSteps() {
     ],
     [
       "a vote after the reveal is refused",
-      () => act("vote", { target: null }, olaJar),
+      () => act("vote", { target: null, round: 1 }, olaJar),
       { status: 409, body: /^\{"error":"round_revealed"\}$/ },
     ],
     ["link with Ola's cookie goes back to the room", () => request(`/j/${room.link}`, { cookies: olaJar }), thisRoom],
@@ -299,11 +315,19 @@ const GAME_OVER = new RegExp(['"status":"closed"', '"round":null'].map((part) =>
 // S-03's evening (context/archive/2026-10-15-full-game-evening/plan.md, Faza 5), on from the round's reveal in the same
 // room: the next question, a vote that comes late, a skip and the end. Ola votes at question 2 with its number, as the
 // room screen sends it. The second guest's screen is still on question 1, so its vote carries 1 and must not land in
-// question 2, which it has not shown (round_over). Skipped with SMOKE_GAME=0 (production between `npx supabase db
-// push` and the merge: a Worker without next, skip and end) and with SMOKE_ROUND=0.
+// question 2, which it has not shown (round_over); nor may "Odsłoń wynik" from a host's screen still on question 1
+// (F2 of context/changes/deferred-review-fixes/plan.md), and Ola's vote right after it shows question 2 still voting.
+// The host reveals question 3 with its number before the end: a route that refused every reveal would pass the
+// refusals too. Skipped with SMOKE_GAME=0 (production between `npx supabase db push` and the merge: a Worker without
+// next, skip and end) and with SMOKE_ROUND=0.
 function gameSteps() {
   const game = [
     ["host opens the next question", () => act("next", { round: 1 }, hostJar), { status: 200, body: ACCEPTED }],
+    [
+      "a reveal sent from question 1 is refused at question 2",
+      () => act("reveal", { round: 1 }, hostJar),
+      { status: 409, body: /^\{"error":"round_over"\}$/ },
+    ],
     [
       "Ola votes at question 2",
       () => act("vote", { target: "Smoke host", round: 2 }, olaJar),
@@ -319,6 +343,11 @@ function gameSteps() {
       "question 3 is open after the skip, with no vote in it",
       () => lobby(room.id, olaJar),
       { status: 200, body: THIRD_AFTER_SKIP },
+    ],
+    [
+      "host reveals question 3 with its number",
+      () => act("reveal", { round: 3 }, hostJar),
+      { status: 200, body: ACCEPTED },
     ],
     ["host ends the game", () => act("end", {}, hostJar), { status: 200, body: ACCEPTED }],
     ["room state tells the host the game is over", () => lobby(room.id, hostJar), { status: 200, body: GAME_OVER }],

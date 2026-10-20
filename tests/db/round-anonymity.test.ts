@@ -97,9 +97,9 @@ describe("a round in progress shows who voted, never how", () => {
     const kuba = await seedGuest(room.linkToken, "Kuba");
     await seedStartGame(host, room.id);
 
-    kubaVote = await castVote(anon, room.id, "Ola", kuba.playerToken);
-    kubaAgain = await castVote(anon, room.id, "Bartek", kuba.playerToken);
-    hostVote = await castVote(host.client, room.id, "Ola");
+    kubaVote = await castVote(anon, room.id, "Ola", kuba.playerToken, 1);
+    kubaAgain = await castVote(anon, room.id, "Bartek", kuba.playerToken, 1);
+    hostVote = await castVote(host.client, room.id, "Ola", undefined, 1);
     // Two of four have voted: the round stays open.
     olaView = await roomLobby(anon, room.id, ola.playerToken);
     kubaView = await roomLobby(anon, room.id, kuba.playerToken);
@@ -113,8 +113,8 @@ describe("a round in progress shows who voted, never how", () => {
   ];
 
   // One of the two tests that check the whole answer of an accepted vote (S-02 plan, Faza 5, break-check b): this one
-  // with no question number, as the Worker before S-03 sends it; the skipped-round suite below with one. No target, no
-  // count.
+  // for a guest and the host; the skipped-round suite below for a vote in a round that is skipped next. Both carry the
+  // question's number, as the room screen sends it. No target, no count.
   it("cast_vote answers exactly { ok: true }, to a guest and to the host", () => {
     expect(kubaVote).toEqual({ data: { ok: true }, error: null });
     expect(hostVote).toEqual({ data: { ok: true }, error: null });
@@ -149,7 +149,7 @@ describe("a round in progress shows who voted, never how", () => {
     let hostRevealView: Answer;
 
     beforeAll(async () => {
-      await seedReveal(host, room.id);
+      await seedReveal(host, room.id, 1);
       olaRevealView = await roomLobby(anon, room.id, ola.playerToken);
       hostRevealView = await roomLobby(host.client, room.id);
     });
@@ -180,7 +180,7 @@ describe("a room closed mid-round keeps nothing of the round", () => {
     const bartek = await seedGuest(room.linkToken, "Bartek");
     olaToken = ola.playerToken;
     await seedStartGame(host, room.id);
-    await seedVote(anon, room.id, "Ola", bartek.playerToken);
+    await seedVote(anon, room.id, "Ola", bartek.playerToken, 1);
     // "Nowa gra" with the "guests are still in it" question answered.
     await seedRoom(host, { confirmClose: true });
     if ((await readOwnRoom(host, room.id)).status !== "closed") {
@@ -235,14 +235,14 @@ describe("a skipped round keeps nothing of its votes", () => {
     hostNextView = await roomLobby(host.client, room.id);
 
     // Round 2: Ola votes again, then the host skips it with no question left, so it stays the latest round.
-    await seedVote(anon, room.id, "Bartek", ola.playerToken);
+    await seedVote(anon, room.id, "Bartek", ola.playerToken, 2);
     await seedSkipRound(host, room.id, 2, [Q1, Q2]);
     olaSkippedView = await roomLobby(anon, room.id, ola.playerToken);
     bartekSkippedView = await roomLobby(anon, room.id, bartek.playerToken);
     hostSkippedView = await roomLobby(host.client, room.id);
   });
 
-  // The other test that checks the whole answer of an accepted vote, here with the question's number.
+  // The other test that checks the whole answer of an accepted vote.
   it("cast_vote with the question's number answers exactly { ok: true }", () => {
     expect(olaVoteWithNumber).toEqual({ data: { ok: true }, error: null });
   });
@@ -281,7 +281,7 @@ describe("a game ended mid-round keeps nothing of the round", () => {
     olaToken = ola.playerToken;
     bartekToken = bartek.playerToken;
     await seedStartGame(host, room.id);
-    await seedVote(anon, room.id, "Ola", bartek.playerToken);
+    await seedVote(anon, room.id, "Ola", bartek.playerToken, 1);
     await endGame(host.client, room.id);
     if ((await readOwnRoom(host, room.id)).status !== "closed") {
       throw new Error("precondition failed: end_game did not close the room mid-round");

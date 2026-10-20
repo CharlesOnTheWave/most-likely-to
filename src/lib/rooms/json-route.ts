@@ -106,11 +106,13 @@ export function readJsonBody(context: APIContext, op: string): Promise<JsonBody>
   return readJsonRequest(context.request, op);
 }
 
-// The number of the question on the player's screen, from a game action's body: a whole number from 1 to MAX_ROUND,
-// null when the body has no round (a screen loaded before S-03 votes without one), undefined when it is there but not a
-// number of a round. next and skip need one; a vote takes either.
-export function bodyRound(body: unknown): number | null | undefined {
-  if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "round")) return null;
+// The number of the question on the player's screen, from a game action's body: a whole number from 1 to MAX_ROUND.
+// undefined when the body has no round, is not an object, or holds something else than a number of a round. Every move
+// of a round (vote, reveal, next, skip) needs one, so a move never lands in a question its screen has not shown.
+export function bodyRound(body: unknown): number | undefined {
+  if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "round")) {
+    return undefined;
+  }
   const { round } = body as Record<string, unknown>;
   return typeof round === "number" && Number.isInteger(round) && round >= 1 && round <= MAX_ROUND ? round : undefined;
 }

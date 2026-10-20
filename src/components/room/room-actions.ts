@@ -3,10 +3,10 @@ import { roomErrorMessage } from "@/lib/rooms/errors";
 
 // The game's actions from the room screen (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts,
 // end.ts): JSON from the app's own page (the routes check Content-Type and Origin), answered {ok: true} or
-// {error: code}. A vote, "Następne pytanie" and "Pomiń pytanie" carry the number of the question on the screen
-// ({round}), so none of them lands in a question the player has not seen. A vote's target goes only in the body: never
-// in the URL, a log line or storage on the device (AGENTS.md, Hard Rules; S-04 shows it after a reload). Browser lines
-// go through src/lib/log.ts too, so the target cannot slip into one.
+// {error: code}. A vote, "Odsłoń wynik", "Następne pytanie" and "Pomiń pytanie" carry the number of the question on
+// the screen ({round}), so none of them lands in a question the player has not seen. A vote's target goes only in the
+// body: never in the URL, a log line or storage on the device (AGENTS.md, Hard Rules; S-04 shows it after a reload).
+// Browser lines go through src/lib/log.ts too, so the target cannot slip into one.
 
 export type RoomAction = "start" | "vote" | "reveal" | "next" | "skip" | "end";
 
