@@ -17,6 +17,7 @@
 
 - Add shadcn/ui components with `npx shadcn@latest add <name>`. Since September 2026 (after your training data) shadcn ships `cn()` as the `cn` npm package and imports it from `"cn"`; `@/lib/utils` only re-exports it. Keep those imports and the `cn` dependency; they are not a bug.
 - No Next.js directives such as `"use client"` in React components.
+- Domain words: before naming anything in code, tests or plans, read `context/domain/glossary.md`; new code uses its terms (gość ≠ gracz, odsłona, pominięcie pytania vs wstrzymanie się).
 - No `catch` that swallows a failure or turns it into a redirect or a `200`: rethrow it, answer with an explicit error status, or log it through `logEvent` (`src/lib/log.ts`: allowed fields only, never an error message or player data).
 - Create Supabase migrations with `npx supabase migration new <name>` (pattern: `supabase/migrations/*_room_lobby.sql`):
   - every new table: RLS, `revoke all … from public, anon, authenticated`, an explicit `grant` of only what a role needs and a policy for every granted operation; a table reached only through functions gets no grants and no policies;
