@@ -7,6 +7,7 @@ import {
   endGame,
   joinRoom,
   nextRound,
+  revealRound,
   roomLink,
   roomLobby,
   roundOf,
@@ -24,12 +25,16 @@ import {
 // database takes the first question not played yet), D2 (a skip only while voting, with the next question at once;
 // skipping the last question does not end the game), D3 (a skipped round keeps no count), D4 (ending the game closes
 // the room) and T1 (a vote and the host's moves carry the number of the question on screen; another number is
-// round_over). Every expected question, round number and count is written out by hand from the scenario, never
-// computed.
+// round_over), plus the fixes of context/changes/deferred-review-fixes/plan.md with the cases of
+// context/domain/02-invariant-aggregate-refactor.md §5.3: F2 (a vote and "Odsłoń wynik" with no question number or
+// another one are round_over, and so is a reveal of a skipped round; I2, I7-I10, I15) and F3 (malformed candidates are
+// skipped like played ones, and a list longer than 1000 is refused whole with 22023). Every expected question, round
+// number and count is written out by hand from the scenario, never computed.
 //
-// next_round, skip_round, end_game and cast_vote's p_round come from supabase/migrations/*_full_game_evening.sql.
-// Without them PostgREST answers each of those calls with PGRST202 (no such function), and every test here is red on
-// its own probe or on the state those calls should have made.
+// next_round, skip_round, end_game and cast_vote's p_round come from supabase/migrations/*_full_game_evening.sql,
+// reveal_round's p_round and the candidates' limit from *_round_number_required.sql. Without them PostgREST answers
+// each of those calls with PGRST202 (no such function), and every test here is red on its own probe or on the state
+// those calls should have made.
 //
 // One sign-up per run, in beforeAll. One open room per host, so the rooms come one after another (confirm_close closes
 // the one before); Vitest runs the suites in order, each suite's beforeAll right before its tests.
@@ -38,6 +43,11 @@ const anon = anonClient();
 const [Q1, Q2, Q3, Q4] = EVENING_QUESTION_IDS;
 // The whole pool, as the Worker would send it at any point of this file's evening.
 const POOL = [Q1, Q2, Q3, Q4];
+// A real id in capitals: not the id format, so the candidates' filter skips it, as it skips null.
+const MALFORMED_ID = "NA-CO-DZIEN-001";
+// More candidates than the limit (a game sends at most 216): Q1, in the id format and played in every room here, so a
+// database without the limit answers no_questions and writes nothing.
+const TOO_MANY = Array<string>(1001).fill(Q1);
 
 let host: Host;
 
@@ -55,6 +65,7 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
   let nextAfterReveal: Answer;
   let olaRound2View: Answer;
   let olaVotesWithNoNumber: Answer;
+  let revealFromOldScreen: Answer;
   let nextWhileVoting: Answer;
   let nextFromOldScreen: Answer;
   let hostRound2View: Answer;
@@ -66,20 +77,27 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
   let skipSentAgain: Answer;
   let hostRound3View: Answer;
   let olaVotesWithNumber: Answer;
+  let revealWithNoNumber: Answer;
+  let hostRound3AfterRefusedReveal: Answer;
   let round3Revealed: Answer;
   let skipAfterReveal: Answer;
   // Round 4: the last question, skipped.
   let nextWithNoneLeft: Answer;
+  let nextWithOnlyMalformed: Answer;
+  let nextWithTooMany: Answer;
   let hostAfterNoneLeft: Answer;
   let nextToLastQuestion: Answer;
   let olaRound4View: Answer;
   let skipLastQuestion: Answer;
   let olaSkippedView: Answer;
   let olaVotesOnSkipped: Answer;
+  let revealSkipped: Answer;
   let nextAfterLastSkip: Answer;
   // The end.
   let endAfterLastSkip: Answer;
   let olaEndView: Answer;
+  let olaVotesAfterEnd: Answer;
+  let revealAfterEnd: Answer;
 
   beforeAll(async () => {
     room = await seedRoom(host);
@@ -94,8 +112,11 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     // Round 2: the pool starts with Q1, which was played, so Q2 comes up.
     nextAfterReveal = await nextRound(host.client, room.id, 1, [Q1, Q2]);
     olaRound2View = await roomLobby(anon, room.id, ola.playerToken);
-    // A screen loaded before S-03 sends no number: the vote goes to the latest round (the deployment window).
+    // A vote with no question number: nobody can tell which question its voter saw (T1, F2).
     olaVotesWithNoNumber = await castVote(anon, room.id, "Bartek", ola.playerToken);
+    // The host's second screen, still on round 1, sends "Odsłoń wynik": it must not reveal round 2, which it has not
+    // shown (I8).
+    revealFromOldScreen = await revealRound(host.client, room.id, 1);
     nextWhileVoting = await nextRound(host.client, room.id, 2, POOL);
     // The host's own screen still on round 1, or the same click sent twice.
     nextFromOldScreen = await nextRound(host.client, room.id, 1, POOL);
@@ -113,24 +134,38 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     skipSentAgain = await skipRound(host.client, room.id, 2, POOL);
     hostRound3View = await roomLobby(host.client, room.id);
     olaVotesWithNumber = await castVote(anon, room.id, "Bartek", ola.playerToken, 3);
+    // "Odsłoń wynik" with no question number. Right before the seed's reveal: a database that takes it reveals round 3
+    // just as the seed does, so the rest of the evening does not depend on the answer.
+    revealWithNoNumber = await revealRound(host.client, room.id);
+    hostRound3AfterRefusedReveal = await roomLobby(host.client, room.id);
     await seedReveal(host, room.id);
     round3Revealed = await roomLobby(host.client, room.id);
     skipAfterReveal = await skipRound(host.client, room.id, 3, POOL);
 
     // Round 4: Q1, Q2 and Q3 were played, so a pool of those three has nothing left; the whole pool has Q4.
     nextWithNoneLeft = await nextRound(host.client, room.id, 3, [Q1, Q2, Q3]);
+    // F3: malformed candidates are never a question, so these two leave nothing to open either.
+    nextWithOnlyMalformed = await nextRound(host.client, room.id, 3, [MALFORMED_ID, null]);
+    // F3: a list longer than the limit is refused whole, before the candidates are even looked at.
+    nextWithTooMany = await nextRound(host.client, room.id, 3, TOO_MANY);
     hostAfterNoneLeft = await roomLobby(host.client, room.id);
-    nextToLastQuestion = await nextRound(host.client, room.id, 3, POOL);
+    // F3: the filter skips the malformed candidates and takes Q4, the first good one not played yet.
+    nextToLastQuestion = await nextRound(host.client, room.id, 3, [MALFORMED_ID, null, Q4]);
     olaRound4View = await roomLobby(anon, room.id, ola.playerToken);
     // Skipping the last question: no question is left to open, and the game goes on until the host ends it (D2).
     skipLastQuestion = await skipRound(host.client, room.id, 4, POOL);
     olaSkippedView = await roomLobby(anon, room.id, ola.playerToken);
     olaVotesOnSkipped = await castVote(anon, room.id, "Bartek", ola.playerToken);
+    // "Odsłoń wynik" from a screen still on question 4, which was skipped: its votes are gone, nothing is left to show.
+    revealSkipped = await revealRound(host.client, room.id, 4);
     nextAfterLastSkip = await nextRound(host.client, room.id, 4, POOL);
 
     // "Zakończ grę" once the questions ran out.
     endAfterLastSkip = await endGame(host.client, room.id);
     olaEndView = await roomLobby(anon, room.id, ola.playerToken);
+    // Screens that still show question 4 after the end.
+    olaVotesAfterEnd = await castVote(anon, room.id, "Bartek", ola.playerToken, 4);
+    revealAfterEnd = await revealRound(host.client, room.id, 4);
   });
 
   // Positive control: the first next question must work, or a wrong address would look like a refusal everywhere.
@@ -149,10 +184,13 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     });
   });
 
-  // The deployment window (plan, Critical Implementation Details): the database ships before the Worker, whose vote
-  // carries no question number.
-  it("a vote with no question number in round 2 gets ok: true, as the Worker before S-03 sends it", () => {
-    expect(olaVotesWithNoNumber).toMatchObject({ error: null, data: { ok: true } });
+  // T1 and F2 (I2): the number is not optional; a vote without it lands in no question.
+  it("a vote with no question number in round 2 gets round_over", () => {
+    expect(olaVotesWithNoNumber).toMatchObject({ error: null, data: { ok: false, reason: "round_over" } });
+  });
+
+  it("Odsłoń wynik from a screen still on round 1, sent while round 2 is voting, gets round_over", () => {
+    expect(revealFromOldScreen).toMatchObject({ error: null, data: { ok: false, reason: "round_over" } });
   });
 
   it("next_round while round 2 is voting gets round_in_progress", () => {
@@ -163,7 +201,8 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     expect(nextFromOldScreen).toMatchObject({ error: null, data: { ok: false, reason: "round_over" } });
   });
 
-  it("after both refused next_round calls the game is still in round 2 with Q2, with Ola's vote in it", () => {
+  // I15: no refusal moved the game or touched the votes.
+  it("after the refused reveal and both refused next_round calls the game is still in round 2 with Q2, voting, with Ola's vote in it", () => {
     expect(hostRound2View).toMatchObject({
       error: null,
       data: { round: { number: 2, question_id: Q2, phase: "voting", voted: ["Ola"] } },
@@ -209,6 +248,18 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     expect(olaVotesWithNumber).toMatchObject({ error: null, data: { ok: true } });
   });
 
+  // F2: "Odsłoń wynik" carries the number of the question on the host's screen, as the vote does.
+  it("Odsłoń wynik with no question number while round 3 is voting gets round_over", () => {
+    expect(revealWithNoNumber).toMatchObject({ error: null, data: { ok: false, reason: "round_over" } });
+  });
+
+  it("after the refused reveal round 3 is still voting, with Ola's vote in it", () => {
+    expect(hostRound3AfterRefusedReveal).toMatchObject({
+      error: null,
+      data: { round: { number: 3, question_id: Q3, phase: "voting", voted: ["Ola"] } },
+    });
+  });
+
   // Only Ola's vote for Bartek in round 3 counts: her vote for Bartek in the skipped round 2 would make it 2, and
   // Bartek's late vote for Ola would give her 1.
   it("round 3 reveals only its own vote: Bartek 1, the rest 0, 1 ballot", () => {
@@ -240,18 +291,27 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     expect(nextWithNoneLeft).toMatchObject({ error: null, data: { ok: false, reason: "no_questions" } });
   });
 
-  it("after no_questions the game is still in play, in round 3, revealed", () => {
+  it("next_round with only malformed candidates (not the id format, null) gets no_questions", () => {
+    expect(nextWithOnlyMalformed).toMatchObject({ error: null, data: { ok: false, reason: "no_questions" } });
+  });
+
+  // F3: a malformed list from a client calling the database directly; no row's values in DETAIL.
+  it("next_round with 1001 candidates is refused whole with 22023", () => {
+    expect(nextWithTooMany).toMatchObject({ error: { code: "22023", details: null } });
+  });
+
+  it("after no_questions and the refused long list the game is still in play, in round 3, revealed", () => {
     expect(hostAfterNoneLeft).toMatchObject({
       error: null,
       data: { status: "playing", round: { number: 3, question_id: Q3, phase: "revealed" } },
     });
   });
 
-  it("next_round with one candidate left gets ok: true", () => {
+  it("next_round with malformed candidates before the one left gets ok: true", () => {
     expect(nextToLastQuestion).toMatchObject({ error: null, data: { ok: true } });
   });
 
-  // FR-015: Q4 is the last of the pool and the only one not played yet. Round 3 was revealed, not skipped.
+  // FR-015 and F3: Q4 is the only candidate in the id format not played yet. Round 3 was revealed, not skipped.
   it("round 4 is Q4, voting, nobody voted yet and no skip before it", () => {
     expect(olaRound4View).toMatchObject({
       error: null,
@@ -273,6 +333,11 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     expect(olaVotesOnSkipped).toMatchObject({ error: null, data: { ok: false, reason: "round_over" } });
   });
 
+  // I9 (decision 0.3 of 02-invariant-aggregate-refactor.md): an illegal move is refused, never a silent ok.
+  it("Odsłoń wynik with the number of the skipped round 4 gets round_over", () => {
+    expect(revealSkipped).toMatchObject({ error: null, data: { ok: false, reason: "round_over" } });
+  });
+
   it("next_round after the last question was skipped gets no_questions", () => {
     expect(nextAfterLastSkip).toMatchObject({ error: null, data: { ok: false, reason: "no_questions" } });
   });
@@ -284,6 +349,15 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
 
   it("after the end Ola sees the room closed and no round", () => {
     expect(olaEndView).toMatchObject({ error: null, data: { status: "closed", round: null } });
+  });
+
+  // I7 and I10: the end comes first, whatever number the screen sends.
+  it("a vote with question 4's number after the end gets room_closed", () => {
+    expect(olaVotesAfterEnd).toMatchObject({ error: null, data: { ok: false, reason: "room_closed" } });
+  });
+
+  it("Odsłoń wynik with question 4's number after the end gets room_closed", () => {
+    expect(revealAfterEnd).toMatchObject({ error: null, data: { ok: false, reason: "room_closed" } });
   });
 });
 
@@ -313,6 +387,8 @@ describe("in the lobby there is no round to move on from, skip or end", () => {
 describe("the host ends the game while round 1 is voting", () => {
   let room: OwnRoom;
   let ola: SeededGuest;
+  let skipWithTooMany: Answer;
+  let hostAfterTooMany: Answer;
   let endWhileVoting: Answer;
 
   beforeAll(async () => {
@@ -322,7 +398,22 @@ describe("the host ends the game while round 1 is voting", () => {
     await seedGuest(room.linkToken, "Bartek");
     await seedStartGame(host, room.id, Q1);
     await seedVote(anon, room.id, "Bartek", ola.playerToken);
+    // F3: the skip deletes the urn before it opens the next question; a list too long undoes both. Here, right before
+    // the end: a database without the limit skips round 1, and the end closes the room all the same.
+    skipWithTooMany = await skipRound(host.client, room.id, 1, TOO_MANY);
+    hostAfterTooMany = await roomLobby(host.client, room.id);
     endWhileVoting = await endGame(host.client, room.id);
+  });
+
+  it("skip_round with 1001 candidates while round 1 is voting is refused whole with 22023", () => {
+    expect(skipWithTooMany).toMatchObject({ error: { code: "22023", details: null } });
+  });
+
+  it("after the refused skip round 1 is still voting, with Ola's vote in it", () => {
+    expect(hostAfterTooMany).toMatchObject({
+      error: null,
+      data: { round: { number: 1, question_id: Q1, phase: "voting", voted: ["Ola"] } },
+    });
   });
 
   it("end_game while round 1 is voting gets ok: true", () => {
