@@ -37,10 +37,10 @@ interface Props {
   idPrefix: string;
   titleAs: "h1" | "h2";
   refreshFailed: boolean;
-  // The round's number goes with the vote, the skip and nothing else, so neither lands in a question this screen has
-  // not shown (round_over).
+  // The round's number goes with the vote, the reveal and the skip, so none of them lands in a question this screen
+  // has not shown (round_over).
   onVote: (target: string | null, round: number) => Promise<ActionOutcome>;
-  onReveal: () => Promise<ActionOutcome>;
+  onReveal: (round: number) => Promise<ActionOutcome>;
   onSkip: (round: number) => Promise<ActionOutcome>;
   onEnd: () => Promise<ActionOutcome>;
   preview?: VotingPreview;
@@ -280,7 +280,7 @@ export default function RoundVoting({
               Icon: Eye,
               confirmText: `Na pewno odsłonić? Zagłosowało ${votedOf}`,
               variant: "secondary",
-              run: onReveal,
+              run: () => onReveal(round.number),
             },
             {
               id: "skip",

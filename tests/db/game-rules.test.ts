@@ -106,14 +106,16 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
 
     // Round 1: Ola votes; Bartek is still choosing when the host reveals.
     await seedStartGame(host, room.id, Q1);
-    await seedVote(anon, room.id, "Bartek", ola.playerToken);
-    await seedReveal(host, room.id);
+    await seedVote(anon, room.id, "Bartek", ola.playerToken, 1);
+    await seedReveal(host, room.id, 1);
 
     // Round 2: the pool starts with Q1, which was played, so Q2 comes up.
     nextAfterReveal = await nextRound(host.client, room.id, 1, [Q1, Q2]);
     olaRound2View = await roomLobby(anon, room.id, ola.playerToken);
     // A vote with no question number: nobody can tell which question its voter saw (T1, F2).
     olaVotesWithNoNumber = await castVote(anon, room.id, "Bartek", ola.playerToken);
+    // Ola's vote with round 2's number, as her screen sends it: round 2 holds her vote until the skip.
+    await seedVote(anon, room.id, "Bartek", ola.playerToken, 2);
     // The host's second screen, still on round 1, sends "Odsłoń wynik": it must not reveal round 2, which it has not
     // shown (I8).
     revealFromOldScreen = await revealRound(host.client, room.id, 1);
@@ -138,7 +140,7 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     // just as the seed does, so the rest of the evening does not depend on the answer.
     revealWithNoNumber = await revealRound(host.client, room.id);
     hostRound3AfterRefusedReveal = await roomLobby(host.client, room.id);
-    await seedReveal(host, room.id);
+    await seedReveal(host, room.id, 3);
     round3Revealed = await roomLobby(host.client, room.id);
     skipAfterReveal = await skipRound(host.client, room.id, 3, POOL);
 
@@ -155,7 +157,8 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     // Skipping the last question: no question is left to open, and the game goes on until the host ends it (D2).
     skipLastQuestion = await skipRound(host.client, room.id, 4, POOL);
     olaSkippedView = await roomLobby(anon, room.id, ola.playerToken);
-    olaVotesOnSkipped = await castVote(anon, room.id, "Bartek", ola.playerToken);
+    // Ola's screen still shows question 4, which was skipped.
+    olaVotesOnSkipped = await castVote(anon, room.id, "Bartek", ola.playerToken, 4);
     // "Odsłoń wynik" from a screen still on question 4, which was skipped: its votes are gone, nothing is left to show.
     revealSkipped = await revealRound(host.client, room.id, 4);
     nextAfterLastSkip = await nextRound(host.client, room.id, 4, POOL);
@@ -329,7 +332,7 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     expect(roundOf(olaSkippedView)).toEqual({ number: 4, phase: "skipped" });
   });
 
-  it("a vote with no question number on the skipped round gets round_over", () => {
+  it("a vote with question 4's number on the skipped round gets round_over", () => {
     expect(olaVotesOnSkipped).toMatchObject({ error: null, data: { ok: false, reason: "round_over" } });
   });
 
@@ -397,7 +400,7 @@ describe("the host ends the game while round 1 is voting", () => {
     ola = await seedGuest(room.linkToken, "Ola");
     await seedGuest(room.linkToken, "Bartek");
     await seedStartGame(host, room.id, Q1);
-    await seedVote(anon, room.id, "Bartek", ola.playerToken);
+    await seedVote(anon, room.id, "Bartek", ola.playerToken, 1);
     // F3: the skip deletes the urn before it opens the next question; a list too long undoes both. Here, right before
     // the end: a database without the limit skips round 1, and the end closes the room all the same.
     skipWithTooMany = await skipRound(host.client, room.id, 1, TOO_MANY);

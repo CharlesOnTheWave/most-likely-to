@@ -9,7 +9,8 @@
 --
 -- The round's objects (private.rounds, round_results, ballot_boxes, round_voters, rooms.started_at, start_game,
 -- cast_vote, private.close_stale_games, the cron schema) came with S-02; the evening's (next_round, skip_round,
--- end_game, cast_vote with p_round) come with phase 2 of S-03. Each assertion about an object that may be missing must
+-- end_game, cast_vote with p_round) with phase 2 of S-03; reveal_round with p_round comes with
+-- *_round_number_required.sql (deferred-review-fixes). Each assertion about an object that may be missing must
 -- be its own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only
 -- through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are),
 -- lives_ok, and the helpers below, which run a call or a count dynamically and hand the error back as text for the TAP
@@ -21,7 +22,7 @@
 
 begin;
 
-select plan(105);
+select plan(107);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -158,10 +159,12 @@ begin
 end;
 $$;
 
--- "Odsłoń wynik" as the room's host.
-create function pg_temp.host_reveals(p_key text) returns text language plpgsql as $$
+-- "Odsłoń wynik" as the room's host: p_round is the round on the host's screen.
+create function pg_temp.host_reveals(p_key text, p_round integer) returns text language plpgsql as $$
 begin
-  return pg_temp.host_moves(p_key, format('select public.reveal_round(%L)', pg_temp.room_of(p_key)));
+  return pg_temp.host_moves(p_key, format(
+    'select public.reveal_round(%L, %s)', pg_temp.room_of(p_key), p_round
+  ));
 end;
 $$;
 
@@ -190,24 +193,25 @@ begin
 end;
 $$;
 
--- A guest of the room votes with its own token; a null target is an abstention. Like host_votes, with no question
--- number: the call of the Worker deployed before S-03, which must keep working once cast_vote takes p_round.
-create function pg_temp.guest_votes(p_key text, p_nick text, p_target text) returns text language plpgsql as $$
+-- A guest of the room votes with its own token; a null target is an abstention. Like host_votes, with the number of
+-- the question on the voter's screen (p_round), as the room screen sends it.
+create function pg_temp.guest_votes(p_key text, p_nick text, p_target text, p_round integer) returns text
+language plpgsql as $$
 declare
   v_token text;
 begin
   select g.player_token into v_token from pg_temp.test_guests g where g.room_key = p_key and g.nick = p_nick;
   return pg_temp.outcome(pg_temp.call_as('anon', null, format(
-    'select public.cast_vote(%L, %L, %L)', pg_temp.room_of(p_key), p_target, v_token
+    'select public.cast_vote(%L, %L, %L, %s)', pg_temp.room_of(p_key), p_target, v_token, p_round
   )));
 end;
 $$;
 
 -- The room's host votes by its session (no token).
-create function pg_temp.host_votes(p_key text, p_target text) returns text language plpgsql as $$
+create function pg_temp.host_votes(p_key text, p_target text, p_round integer) returns text language plpgsql as $$
 begin
   return pg_temp.outcome(pg_temp.call_as('authenticated', pg_temp.host_of(p_key), format(
-    'select public.cast_vote(%L, %L)', pg_temp.room_of(p_key), p_target
+    'select public.cast_vote(%L, %L, null, %s)', pg_temp.room_of(p_key), p_target, p_round
   )));
 end;
 $$;
@@ -582,6 +586,11 @@ select is(
   'security definer | owner postgres | search_path="" | execute: anon, authenticated',
   'cast_vote with p_round runs as postgres with an empty search_path, for anon and authenticated'
 );
+select is(
+  pg_temp.function_facts('public.reveal_round(uuid, integer)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'reveal_round with p_round runs as postgres with an empty search_path, for authenticated only'
+);
 
 -- Two versions side by side would be a back door: the one without p_round would take a vote into a skipped round.
 select is(
@@ -595,6 +604,19 @@ select is(
   'cast_vote exists in exactly one version, the one with p_round'
 );
 
+-- The same for the reveal (deferred-review-fixes, F2): the one without p_round would reveal a question the host's
+-- screen has not shown.
+select is(
+  (
+    select string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || ')', '; ')
+    from pg_catalog.pg_proc p
+    join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'reveal_round'
+  ),
+  'reveal_round(p_room_id uuid, p_round integer)',
+  'reveal_round exists in exactly one version, the one with p_round'
+);
+
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
 
 -- Host, Ola and Bartek: the third vote reveals the round by itself.
@@ -602,10 +624,10 @@ select isnt(
   pg_temp.open_room('revealed', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
 );
 select is(pg_temp.host_starts('revealed'), 'ok', 'start_game as the host starts the round');
-select is(pg_temp.guest_votes('revealed', 'Ola', 'Bartek'), 'ok', 'cast_vote as Ola is accepted');
-select is(pg_temp.guest_votes('revealed', 'Bartek', null), 'ok', 'cast_vote as Bartek, an abstention, is accepted');
+select is(pg_temp.guest_votes('revealed', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola is accepted');
+select is(pg_temp.guest_votes('revealed', 'Bartek', null, 1), 'ok', 'cast_vote as Bartek, an abstention, is accepted');
 select is(pg_temp.urn_rows('round_voters', 'revealed'), '2', 'mid-round, private.round_voters lists the 2 voters');
-select is(pg_temp.host_votes('revealed', 'Ola'), 'ok', 'cast_vote as the host, the last of 3, is accepted');
+select is(pg_temp.host_votes('revealed', 'Ola', 1), 'ok', 'cast_vote as the host, the last of 3, is accepted');
 select is(pg_temp.round_phase('revealed', 1), 'revealed', 'the last vote revealed the round');
 select is(pg_temp.urn_rows('ballot_boxes', 'revealed'), '0', 'after the reveal, no private.ballot_boxes row is left');
 select is(pg_temp.urn_rows('round_voters', 'revealed'), '0', 'after the reveal, no private.round_voters row is left');
@@ -616,7 +638,7 @@ select isnt(
   pg_temp.open_room('abandoned', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
 );
 select is(pg_temp.host_starts('abandoned'), 'ok', 'start_game as the host starts the round to abandon');
-select is(pg_temp.guest_votes('abandoned', 'Ola', 'Bartek'), 'ok', 'cast_vote as Ola is accepted');
+select is(pg_temp.guest_votes('abandoned', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola is accepted');
 select is(pg_temp.urn_rows('round_voters', 'abandoned'), '1', 'before Nowa gra, private.round_voters holds the vote');
 select is(
   pg_temp.host_opens_new_room('abandoned'), 'ok', 'setup: Nowa gra with confirmation closes the room mid-round'
@@ -630,12 +652,12 @@ select is(pg_temp.urn_rows('round_voters', 'abandoned'), '0', 'after Nowa gra, n
 -- empty urn, so only round 2's rows are counted.
 select isnt(pg_temp.open_room('skipped', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join');
 select is(pg_temp.host_starts('skipped'), 'ok', 'start_game as the host starts the evening with a skip');
-select is(pg_temp.host_reveals('skipped'), 'ok', 'setup: reveal_round as the host reveals round 1');
+select is(pg_temp.host_reveals('skipped', 1), 'ok', 'setup: reveal_round as the host reveals round 1');
 select is(
   pg_temp.host_next('skipped', 1, array['na-co-dzien-001', 'na-co-dzien-002']), 'ok',
   'next_round as the host opens round 2'
 );
-select is(pg_temp.guest_votes('skipped', 'Ola', 'Bartek'), 'ok', 'cast_vote as Ola in round 2 is accepted');
+select is(pg_temp.guest_votes('skipped', 'Ola', 'Bartek', 2), 'ok', 'cast_vote as Ola in round 2 is accepted');
 select is(
   pg_temp.urn_rows('round_voters', 'skipped', 2), '1', 'before the skip, private.round_voters of round 2 holds the vote'
 );
@@ -660,12 +682,12 @@ select is(
 -- D4: "Zakończ grę" closes the room and drops the urn of the round in progress, as "Nowa gra" does.
 select isnt(pg_temp.open_room('ended', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join');
 select is(pg_temp.host_starts('ended'), 'ok', 'start_game as the host starts the evening to end');
-select is(pg_temp.host_reveals('ended'), 'ok', 'setup: reveal_round as the host reveals round 1');
+select is(pg_temp.host_reveals('ended', 1), 'ok', 'setup: reveal_round as the host reveals round 1');
 select is(
   pg_temp.host_next('ended', 1, array['na-co-dzien-001', 'na-co-dzien-002']), 'ok',
   'next_round as the host opens round 2'
 );
-select is(pg_temp.guest_votes('ended', 'Ola', 'Bartek'), 'ok', 'cast_vote as Ola in round 2 is accepted');
+select is(pg_temp.guest_votes('ended', 'Ola', 'Bartek', 2), 'ok', 'cast_vote as Ola in round 2 is accepted');
 select is(
   pg_temp.urn_rows('round_voters', 'ended', 2), '1', 'before the end, private.round_voters of round 2 holds the vote'
 );
@@ -691,13 +713,13 @@ select isnt(
   pg_temp.open_room('crashed', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
 );
 select is(pg_temp.host_starts('crashed'), 'ok', 'start_game as the host starts the round to crash');
-select is(pg_temp.guest_votes('crashed', 'Ola', 'Ola'), 'ok', 'cast_vote as Ola before the crash is accepted');
+select is(pg_temp.guest_votes('crashed', 'Ola', 'Ola', 1), 'ok', 'cast_vote as Ola before the crash is accepted');
 select is(pg_temp.crash_urn('crashed'), 'emptied', 'setup: a crash empties the urn of the round in progress');
 select is(
-  pg_temp.guest_votes('crashed', 'Ola', 'Bartek'), 'ok', 'after the crash, Ola, whose vote it lost, votes again'
+  pg_temp.guest_votes('crashed', 'Ola', 'Bartek', 1), 'ok', 'after the crash, Ola, whose vote it lost, votes again'
 );
-select is(pg_temp.guest_votes('crashed', 'Bartek', null), 'ok', 'after the crash, Bartek abstains');
-select is(pg_temp.host_votes('crashed', 'Ola'), 'ok', 'after the crash, the host votes, the last of 3');
+select is(pg_temp.guest_votes('crashed', 'Bartek', null, 1), 'ok', 'after the crash, Bartek abstains');
+select is(pg_temp.host_votes('crashed', 'Ola', 1), 'ok', 'after the crash, the host votes, the last of 3');
 select is(pg_temp.round_phase('crashed', 1), 'revealed', 'the last vote after the crash revealed the round');
 select is(
   pg_temp.results_of('crashed', 1),
@@ -710,7 +732,7 @@ select is(
 -- Called directly: the schedule is checked by its row in cron.job, not by waiting for it.
 select isnt(pg_temp.open_room('stale', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join');
 select is(pg_temp.host_starts('stale'), 'ok', 'start_game as the host starts the stale game');
-select is(pg_temp.guest_votes('stale', 'Ola', 'Bartek'), 'ok', 'cast_vote as Ola in the stale game is accepted');
+select is(pg_temp.guest_votes('stale', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola in the stale game is accepted');
 select lives_ok(
   format(
     'update public.rooms set started_at = now() - interval %L where id = %L', '13 hours', pg_temp.room_of('stale')
@@ -720,7 +742,7 @@ select lives_ok(
 
 select isnt(pg_temp.open_room('fresh', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join');
 select is(pg_temp.host_starts('fresh'), 'ok', 'start_game as the host starts a game now');
-select is(pg_temp.guest_votes('fresh', 'Ola', 'Bartek'), 'ok', 'cast_vote as Ola in the fresh game is accepted');
+select is(pg_temp.guest_votes('fresh', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola in the fresh game is accepted');
 
 -- The clock runs from the start of the game, not from the room: an old lobby is not a stale game.
 select isnt(pg_temp.open_room('old-lobby', array[]::text[]), null, 'setup: a host opens a room with no guests');
@@ -731,13 +753,13 @@ select isnt(
   pg_temp.open_room('stale-round-2', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join'
 );
 select is(pg_temp.host_starts('stale-round-2'), 'ok', 'start_game as the host starts the stale evening');
-select is(pg_temp.host_reveals('stale-round-2'), 'ok', 'setup: reveal_round as the host reveals round 1');
+select is(pg_temp.host_reveals('stale-round-2', 1), 'ok', 'setup: reveal_round as the host reveals round 1');
 select is(
   pg_temp.host_next('stale-round-2', 1, array['na-co-dzien-001', 'na-co-dzien-002']), 'ok',
   'next_round as the host opens round 2 of the stale evening'
 );
 select is(
-  pg_temp.guest_votes('stale-round-2', 'Ola', 'Bartek'), 'ok',
+  pg_temp.guest_votes('stale-round-2', 'Ola', 'Bartek', 2), 'ok',
   'cast_vote as Ola in round 2 of the stale evening is accepted'
 );
 select lives_ok(

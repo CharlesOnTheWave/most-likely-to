@@ -463,13 +463,13 @@ Treści, tytułów Progress ani kryteriów planu K1 nie zmieniamy (`progress-for
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 Push gałęzi i draft PR (za zgodą Karola); w CI joby `ci`, `smoke` i `e2e` zielone
-- [ ] 1.3 W CI job `db`: czerwone dokładnie przypadki wymienione wyżej jako czerwone, reszta Vitest i cały pgTAP zielone
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 04192d1
+- [x] 1.2 Push gałęzi i draft PR (za zgodą Karola); w CI joby `ci`, `smoke` i `e2e` zielone — 04192d1
+- [x] 1.3 W CI job `db`: czerwone dokładnie przypadki wymienione wyżej jako czerwone, reszta Vitest i cały pgTAP zielone — 04192d1
 
 #### Manual
 
-- [ ] 1.4 Karol przyjmuje do wiadomości czerwony `db` na draft PR jako dowód dziury (bez scalania)
+- [x] 1.4 Karol przyjmuje do wiadomości czerwony `db` na draft PR jako dowód dziury (bez scalania) — 04192d1
 
 ### Phase 2: Migracja, Worker i ekran (F2 + F3)
 
