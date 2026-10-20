@@ -110,16 +110,31 @@ export function castVote(
   });
 }
 
-export function revealRound(client: TestClient, roomId: string): Promise<Answer> {
-  return call(client, "reveal_round", { p_room_id: roomId });
+// round: the number of the round on the host's screen; without it the call carries no p_round at all.
+export function revealRound(client: TestClient, roomId: string, round?: number): Promise<Answer> {
+  return call(client, "reveal_round", {
+    p_room_id: roomId,
+    ...(round === undefined ? {} : { p_round: round }),
+  });
 }
 
-// round: the number of the round on the host's screen. candidates: the game's pool in the Worker's order.
-export function nextRound(client: TestClient, roomId: string, round: number, candidates: string[]): Promise<Answer> {
+// round: the number of the round on the host's screen. candidates: the game's pool in the Worker's order; null and
+// malformed ids only in the probes of the candidates' filter.
+export function nextRound(
+  client: TestClient,
+  roomId: string,
+  round: number,
+  candidates: (string | null)[],
+): Promise<Answer> {
   return call(client, "next_round", { p_room_id: roomId, p_round: round, p_candidates: candidates });
 }
 
-export function skipRound(client: TestClient, roomId: string, round: number, candidates: string[]): Promise<Answer> {
+export function skipRound(
+  client: TestClient,
+  roomId: string,
+  round: number,
+  candidates: (string | null)[],
+): Promise<Answer> {
   return call(client, "skip_round", { p_room_id: roomId, p_round: round, p_candidates: candidates });
 }
 
