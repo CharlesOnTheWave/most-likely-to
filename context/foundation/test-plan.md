@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-20
+> Last updated: 2026-10-21
 
 ## 1. Strategy
 
@@ -53,7 +53,8 @@ nigdy plik jako „miejsce awarii” (§1, zasada 3).
 Poza mapą świadomie: awaria dostawcy logowania albo uśpiony projekt
 Supabase to wysoki wpływ × niskie prawdopodobieństwo; należy do listy
 kontrolnej przed wieczorem i obserwowalności, nie do testu. Logowanie
-hosta pokrywa już smoke (§4).
+hosta pokrywa już smoke (§4). Od 2026-10-21 uśpieniu zapobiega workflow
+`keep-supabase-awake`, a jego czerwony przebieg jest sygnałem (§7).
 
 ### Risk Response Guidance
 
@@ -318,7 +319,7 @@ Wykluczenia uzgodnione podczas wdrożenia. Kolejne osoby i agenci trzymają
 się ich, dopóki nie zmieni się założenie.
 
 - **Treść i jakość pytań** — czy pytanie jest dobre i śmieszne, ocenia ręcznie twórca gry. Format bazy pytań i stałe numery pytań NIE są wykluczone. Re-evaluate if pytania zaczną trafiać do bazy bez ręcznego przeglądu (propozycje gości, generowanie). (Source: Phase 2 interview Q5.)
-- **Awaria dostawców logowania i uśpienie Supabase** — wysoki wpływ × niskie prawdopodobieństwo; zamiast testu lista kontrolna przed prawdziwym wieczorem (obudzenie projektu, próbne logowanie). Re-evaluate if pojawi się monitoring albo płatny plan. (Source: brief zaakceptowany 2026-10-08, kontrola challengera.)
+- **Awaria dostawców logowania i uśpienie Supabase** — wysoki wpływ × niskie prawdopodobieństwo; zamiast testu lista kontrolna przed prawdziwym wieczorem (obudzenie projektu, próbne logowanie). Od 2026-10-21 uśpieniu zapobiega workflow `keep-supabase-awake` (co 6 h jedno zapytanie do bazy), a czerwony przebieg i mail z GitHuba są sygnałem, że projekt śpi albo klucz przestał działać. Lista kontrolna zostaje jako zapas, bo GitHub wyłącza harmonogram po 60 dniach bez aktywności w repo. Re-evaluate if pojawi się monitoring logowania, płatny plan albo projekt zaśnie mimo zielonych przebiegów. (Source: brief zaakceptowany 2026-10-08, kontrola challengera; decyzja 2026-10-21, roadmapa Open Question 9.)
 - **Gra z czytnikiem ekranu (TalkBack, VoiceOver)** — PRD nie wymaga dostępności dla czytnika, a w ekipie nikt z niego nie korzysta. Kod ogłoszeń zostaje i pilnują go testy jednostkowe (`tests/unit/announce.test.ts`: każda zmiana ekranu ma własny komunikat) oraz lint `jsx-a11y`. Nikt nie słyszał ich w prawdziwym czytniku. Re-evaluate if do gry dołączy ktoś z czytnikiem albo ktoś zgłosi, że ekran jest nieczytelny. (Source: decyzja Karola 2026-10-15, F7 przeglądu S-02.)
 
 ## 8. Freshness Ledger

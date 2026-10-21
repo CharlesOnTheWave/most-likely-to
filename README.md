@@ -61,6 +61,7 @@ npm run dev
 - `npm run test:db` - Run the database tests (`tests/db/`) as a guest and as a host; only against a local Supabase (`TEST_SUPABASE_URL` on `127.0.0.1`/`localhost`, `TEST_SUPABASE_KEY` publishable), so it needs Docker and runs in CI
 - `npm run smoke` - Smoke test the auth and room flows against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
 - `npm run live-probe` - Measure live-sync delivery with simulated players (`--base-url`, defaults to `http://localhost:4321`); signs in with the smoke test account from `.dev.vars` and rings through the app, so it asks first
+- `npm run keep-awake` - Ping Supabase once with `SUPABASE_URL` / `SUPABASE_KEY` from `.dev.vars`, as the Keep Supabase awake workflow (`.github/workflows/keep-supabase-awake.yml`) does every 6 hours so the free project does not pause; it reaches production, so it asks first
 
 ## Project Structure
 
@@ -73,7 +74,7 @@ npm run dev
 │ ├── components/ # UI components (Astro & React)
 │ └── assets/ # Static assets
 ├── public/ # Public assets
-├── scripts/ # Smoke test, live-sync probe, UI literal scan
+├── scripts/ # Smoke test, live-sync probe, Supabase keep-awake ping, UI literal scan
 ├── supabase/migrations/ # Database tables and functions
 ├── wrangler.jsonc # Cloudflare Workers config
 ```
@@ -220,6 +221,8 @@ GitHub Actions runs four jobs on every push and PR to `main`:
 - **smoke** — starts a local Supabase via the Supabase CLI, which applies every migration in `supabase/migrations/` to a fresh database, and takes its `API_URL` and `PUBLISHABLE_KEY` (`sb_publishable_…`, as in production). It then creates the smoke test account there with a plain sign-up, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. Realtime is not started, so the room screens fall back to polling. No secrets required.
 - **db** — starts its own local Supabase the same way, passes its `API_URL` and `PUBLISHABLE_KEY` to the tests as `TEST_SUPABASE_URL` and `TEST_SUPABASE_KEY` and runs `npm run test:db`: the database grants, policies and functions through REST/RPC as a guest and as a signed-in host. A known hole, when there is one, shows in the log as an expected failure ("znana dziura … → …"). Then `supabase test db` (pgTAP, `supabase/tests/`) reads the same database as its owner: catalog, grants, publication and the rows a round leaves behind. Runs in parallel with smoke. No secrets required.
 - **e2e** — starts its own local Supabase with Realtime, signs up a host account there, builds and runs `npx playwright test` (`tests/e2e/`): several players in one room in real browsers. No secrets required.
+
+A separate workflow, **Keep Supabase awake** (`.github/workflows/keep-supabase-awake.yml`), runs `scripts/keep-supabase-awake.mjs` every 6 hours and on demand, so the free Supabase project does not pause. It needs the same two repository secrets (the publishable key only); a red run means the project is paused or the key stopped working.
 
 ## Database migrations
 

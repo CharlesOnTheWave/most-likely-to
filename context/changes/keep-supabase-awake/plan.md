@@ -338,25 +338,25 @@ Agent sprawdza tylko nazwy: `gh secret list` (bez wartości).
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build`
-- [x] 1.2 `npx prettier --check .github/workflows/keep-supabase-awake.yml .claude/settings.json package.json` przechodzi
-- [x] 1.3 Odmowy bez sieci: brak zmiennych, klucz `sb_secret_x` i adres `http://…` dają kod 2 bez żądania
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build` — c5dac7f
+- [x] 1.2 `npx prettier --check .github/workflows/keep-supabase-awake.yml .claude/settings.json package.json` przechodzi — c5dac7f
+- [x] 1.3 Odmowy bez sieci: brak zmiennych, klucz `sb_secret_x` i adres `http://…` dają kod 2 bez żądania — c5dac7f
 
 #### Manual
 
-- [x] 1.4 Karol zgadza się na jedno `npm run keep-awake` do produkcji (z `.dev.vars`); wynik: linia „ok”, kod 0
-- [x] 1.5 Karol czyta workflow: co, kiedy i z jakimi sekretami się uruchamia
+- [x] 1.4 Karol zgadza się na jedno `npm run keep-awake` do produkcji (z `.dev.vars`); wynik: linia „ok”, kod 0 — c5dac7f
+- [x] 1.5 Karol czyta workflow: co, kiedy i z jakimi sekretami się uruchamia — c5dac7f
 
 ### Phase 2: Dokumenty
 
 #### Automated
 
-- [ ] 2.1 `npx prettier --check context/foundation/roadmap.md context/foundation/infrastructure.md context/deployment/deploy-plan.md context/foundation/test-plan.md README.md AGENTS.md` przechodzi
-- [ ] 2.2 `npm run lint` przechodzi
+- [x] 2.1 `npx prettier --check context/foundation/roadmap.md context/foundation/infrastructure.md context/deployment/deploy-plan.md context/foundation/test-plan.md README.md AGENTS.md` przechodzi
+- [x] 2.2 `npm run lint` przechodzi
 
 #### Manual
 
-- [ ] 2.3 Karol akceptuje zmianę w roadmapie (zgoda w `/10x-roadmap`)
+- [x] 2.3 Karol akceptuje zmianę w roadmapie (zgoda w `/10x-roadmap`)
 
 ### Phase 3: Sekrety, PR, scalenie i pierwszy przebieg
 
