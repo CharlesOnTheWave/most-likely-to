@@ -11,8 +11,10 @@ const OP = "next";
 // The body carries that round's number ({round}), so a double click or a resent request never moves past a question
 // nobody has seen (round_over). The Worker sends the game's whole pool in random order (src/lib/rounds/draw.ts), and
 // next_round opens the first question not played in this game yet (FR-015; decision D1 of
-// context/archive/2026-10-15-full-game-evening/research.md). JSON from the room screen: {ok: true} or {error: code}
-// (src/lib/rooms/json-route.ts).
+// context/archive/2026-10-15-full-game-evening/research.md). When none is left, next_round answers no_questions, the
+// start's code, whose text tells the host to set up a new game; that would close the game in play. So this route
+// answers questions_ran_out instead, whose text says the game can be ended (F5 of the S-03 review). JSON from the room
+// screen: {ok: true} or {error: code} (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
@@ -37,5 +39,8 @@ export const POST: APIRoute = async (context) => {
 
   const result = await nextRound(supabase, roomId, round, shuffledQuestions(room.selection, Math.random));
   if (result.ok) await ringLobby(context.locals, supabase, roomId);
+  if (!result.ok && result.reason === "no_questions") {
+    return actionAnswer(OP, roomId, { ok: false, reason: "questions_ran_out" });
+  }
   return actionAnswer(OP, roomId, result);
 };

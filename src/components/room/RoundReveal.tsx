@@ -229,7 +229,8 @@ export default function RoundReveal({
 
       {isHost && (
         <HostActions
-          // null: the Worker could not tell, so the button stays and next_round has the final word (no_questions).
+          // null: the Worker could not tell, so the button stays and next_round has the final word: with no question
+          // left, the route answers questions_ran_out (src/pages/api/rooms/[id]/next.ts).
           {...afterRoundActions(view.questionsLeft !== false, () => onNext(round.number), onEnd)}
           placement="bar"
           preview={hostPreview}

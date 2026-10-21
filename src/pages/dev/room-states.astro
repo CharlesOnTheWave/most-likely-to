@@ -997,6 +997,42 @@ const allForOne: [string, number][] = [
             />
           </section>
 
+          <section id="evening-questions-ran-out" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              62. Host: „Następne pytanie” odrzucone, pytania się skończyły
+            </h2>
+            {/* As the host sees it after the refusal: the state refreshed to the note, which says what the refusal says,
+                so the sentence shows once, in grey (HostActions). */}
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1, QUESTION, false)}
+              realtime={null}
+              preview={{
+                idPrefix: "evening-questions-ran-out",
+                host: { error: roomErrorMessage("questions_ran_out") },
+              }}
+              client:load
+            />
+          </section>
+
+          <section id="evening-questions-ran-out-unknown" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              63. Host: „Następne pytanie” odrzucone, Worker znów nie wie, czy zostały pytania
+            </h2>
+            {/* The refreshed state still has questionsLeft null (the categories could not be read again), so no note:
+                the refusal says it alone, in the same grey. */}
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{
+                idPrefix: "evening-questions-ran-out-unknown",
+                host: { error: roomErrorMessage("questions_ran_out") },
+              }}
+              client:load
+            />
+          </section>
+
           <section id="evening-skipped-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
             <h2 class="text-muted-foreground text-sm font-medium">57. Host: pominięte ostatnie pytanie</h2>
             <RoomScreen

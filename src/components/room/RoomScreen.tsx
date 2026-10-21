@@ -122,7 +122,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   );
   const start = useCallback(() => act("start", {}), [act]);
   const vote = useCallback((target: string | null, round: number) => act("vote", { target, round }), [act]);
-  const reveal = useCallback(() => act("reveal", {}), [act]);
+  const reveal = useCallback((round: number) => act("reveal", { round }), [act]);
   const next = useCallback((round: number) => act("next", { round }), [act]);
   const skip = useCallback((round: number) => act("skip", { round }), [act]);
   const end = useCallback(() => act("end", {}), [act]);

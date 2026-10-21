@@ -5,8 +5,8 @@ import { questionPool, questionText, type QuestionSelection } from "@/lib/rounds
 import { parseLobbyState, type LobbyState, type RoomView } from "@/lib/rooms/shared";
 
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
-// *_first_live_round.sql and *_full_game_evening.sql; failures come back as codes for the URL or the JSON answer
-// (src/lib/rooms/errors.ts).
+// *_first_live_round.sql, *_full_game_evening.sql and *_round_number_required.sql; failures come back as codes for the
+// URL or the JSON answer (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes and
 // a vote's target.
 
@@ -208,9 +208,10 @@ export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boole
 // so the screen offers "Następne pytanie" or says the questions ran out. Each round of a game has its own question of
 // the pool (FR-015), so round N has played N of them. null in every other state, for a guest, and when the room's
 // categories could not be read (logged by hostRoomCategories). On null the two screens differ on purpose: after a
-// reveal (RoundReveal) the screen still offers "Następne pytanie", and the database answers no_questions if none is
-// left; a skipped latest round (RoundSkipped) offers only "Zakończ grę", because skip_round opens the next question
-// whenever there is one, so a skip that stayed the latest round means the pool had run out.
+// reveal (RoundReveal) the screen still offers "Następne pytanie", and if none is left the route answers
+// questions_ran_out (next_round's no_questions, src/pages/api/rooms/[id]/next.ts); a skipped latest round
+// (RoundSkipped) offers only "Zakończ grę", because skip_round opens the next question whenever there is one, so a skip
+// that stayed the latest round means the pool had run out.
 export async function hostQuestionsLeft(
   supabase: SupabaseClient,
   lobby: LobbyState,
@@ -238,27 +239,27 @@ export async function startGame(supabase: SupabaseClient, roomId: string, questi
 
 // A vote: the host by the session (no token), a guest by the room's cookie. target is a nick of the room or null for
 // an abstention; it travels only in this POST's body, and the answer never carries it back. round is the number of the
-// question on the voter's screen: another one than the latest round's is round_over. null for a screen loaded before
-// S-03, which sends none: the call then has no p_round, and the vote goes to the latest round.
+// question on the voter's screen: another one than the latest round's is round_over.
 export async function castVote(
   supabase: SupabaseClient,
   roomId: string,
   target: string | null,
   playerToken: string | null,
-  round: number | null,
+  round: number,
 ): Promise<ActionResult> {
   const result = await callRpc(
     supabase,
     "cast_vote",
-    { p_room_id: roomId, p_target: target, p_player_token: playerToken, ...(round === null ? {} : { p_round: round }) },
+    { p_room_id: roomId, p_target: target, p_player_token: playerToken, p_round: round },
     roomId,
   );
   return result.ok ? actionResult("cast_vote", result.data, roomId) : result;
 }
 
-// "Odsłoń wynik": the host's session, at any time; a second reveal is ok too.
-export async function revealRound(supabase: SupabaseClient, roomId: string): Promise<ActionResult> {
-  const result = await callRpc(supabase, "reveal_round", { p_room_id: roomId }, roomId);
+// "Odsłoń wynik": the host's session, at any time; a second reveal is ok too. round is the number of the round on the
+// host's screen: another one than the latest round's, or a skipped round, is round_over.
+export async function revealRound(supabase: SupabaseClient, roomId: string, round: number): Promise<ActionResult> {
+  const result = await callRpc(supabase, "reveal_round", { p_room_id: roomId, p_round: round }, roomId);
   return result.ok ? actionResult("reveal_round", result.data, roomId) : result;
 }
 

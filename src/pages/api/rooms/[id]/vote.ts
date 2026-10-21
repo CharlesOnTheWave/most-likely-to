@@ -20,7 +20,7 @@ function voteTarget(body: unknown): string | null | undefined {
 // {ok: true} or {error: code} (src/lib/rooms/json-route.ts). The screen confirms the vote from this answer at once
 // (PRD NFR: "Oddany głos jest potwierdzony na ekranie gracza natychmiast"). The body's round is the number of the
 // question on the voter's screen, so a vote never lands in a question the voter has not seen (round_over; T1 of
-// context/archive/2026-10-15-full-game-evening/research.md); a screen loaded before S-03 sends none and still votes.
+// context/archive/2026-10-15-full-game-evening/research.md). A body without one is not our screen's (invalid_body).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);
   if (refused) return refused;
@@ -32,7 +32,7 @@ export const POST: APIRoute = async (context) => {
   if (!body.ok) return body.response;
   const target = voteTarget(body.body);
   const round = bodyRound(body.body);
-  if (target === undefined || round === undefined) {
+  if (target === undefined || typeof round !== "number") {
     return actionAnswer(OP, roomId, { ok: false, reason: "invalid_body" });
   }
 
