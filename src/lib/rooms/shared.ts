@@ -65,7 +65,7 @@ export interface LobbyState {
 export type RoundView = ((VotingRound | RevealedRound) & { question: string | null }) | SkippedRound;
 
 // questionsLeft: for the host once the latest round is revealed or skipped, whether the game's pool has a question not
-// played yet ("Następne pytanie" or "Pytania z wybranych kategorii się skończyły."); null in every other state, for a
+// played yet ("Następne pytanie" or "Pytań już nie ma. Możesz zakończyć grę."); null in every other state, for a
 // guest, and when the Worker could not tell.
 export interface RoomView extends LobbyState {
   round: RoundView | null;

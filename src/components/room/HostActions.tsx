@@ -4,6 +4,7 @@ import { ServerError } from "@/components/auth/ServerError";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { QUESTIONS_RAN_OUT } from "@/lib/rooms/errors";
 import { cn } from "@/lib/utils";
 
 // The host's buttons that move the game on: "Odsłoń wynik", "Pomiń pytanie", "Zakończ grę", "Następne pytanie". An
@@ -59,7 +60,7 @@ export function afterRoundActions(
   onEnd: () => Promise<ActionOutcome>,
 ): { actions: HostAction[]; note?: string } {
   if (!questionsLeft) {
-    return { actions: [endGameAction(onEnd)], note: "Pytania z wybranych kategorii się skończyły." };
+    return { actions: [endGameAction(onEnd)], note: QUESTIONS_RAN_OUT };
   }
   return { actions: [nextQuestionAction(onNext), endGameAction(onEnd)] };
 }
@@ -96,6 +97,10 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
   const buttons = useRef(new Map<HostActionId, HTMLButtonElement>());
   const asking = actions.find((action) => action.id === confirming && busy === null);
   const inLine = placement !== "stack";
+  // Running out of questions is news, not a failure (Karol, deferred-review-fixes phase 3): a refused "Następne
+  // pytanie" says so in the note's grey, and once the refreshed state shows the note, only there.
+  const ranOut = error === QUESTIONS_RAN_OUT;
+  const quiet = note ?? (ranOut ? QUESTIONS_RAN_OUT : undefined);
 
   async function run(action: HostAction) {
     setBusy(action.id);
@@ -182,12 +187,13 @@ export function HostActions({ actions, note, placement = "stack", preview }: Pro
           );
         })}
       </div>
-      {note && <p className="text-muted-foreground text-sm">{note}</p>}
-      {/* A screen reader may not read a focused button again when its name changes; this says the question. */}
+      {quiet && <p className="text-muted-foreground text-sm">{quiet}</p>}
+      {/* A screen reader may not read a focused button again when its name changes; this says the question, and the
+          refusal shown in grey, which is not an alert. */}
       <p aria-live="polite" className="sr-only">
-        {asking?.confirmText ?? ""}
+        {asking?.confirmText ?? (ranOut ? QUESTIONS_RAN_OUT : "")}
       </p>
-      <ServerError message={error} />
+      <ServerError message={ranOut ? null : error} />
     </div>
   );
 }

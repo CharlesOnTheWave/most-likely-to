@@ -475,24 +475,24 @@ Treści, tytułów Progress ani kryteriów planu K1 nie zmieniamy (`progress-for
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`, a do tego `npx prettier --check context/foundation/test-plan.md`
-- [ ] 2.2 Push gałęzi (za zgodą); CI na PR zielone we wszystkich jobach: `ci`, `smoke` (z 4 nowymi krokami), `db` (Vitest z przypadkami z fazy 1 i pgTAP z `plan(107)`), `e2e`
-- [ ] 2.3 `git diff --stat origin/main -- supabase/migrations` pokazuje tylko jeden nowy plik migracji
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`, a do tego `npx prettier --check context/foundation/test-plan.md` — d75f4f8
+- [x] 2.2 Push gałęzi (za zgodą); CI na PR zielone we wszystkich jobach: `ci`, `smoke` (z 4 nowymi krokami), `db` (Vitest z przypadkami z fazy 1 i pgTAP z `plan(107)`), `e2e` — d75f4f8
+- [x] 2.3 `git diff --stat origin/main -- supabase/migrations` pokazuje tylko jeden nowy plik migracji — d75f4f8
 
 #### Manual
 
-- [ ] 2.4 Karol czyta streszczenie migracji (co odmawia, w jakiej kolejności) i akceptuje przed `db push` w fazie 4
+- [x] 2.4 Karol czyta streszczenie migracji (co odmawia, w jakiej kolejności) i akceptuje przed `db push` w fazie 4 — d75f4f8
 
 ### Phase 3: F5, pytania skończyły się w trakcie gry
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test` (w tym `room-errors.test.ts` z nowym kodem), `npm run build`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test` (w tym `room-errors.test.ts` z nowym kodem), `npm run build`
 - [ ] 3.2 Push gałęzi (za zgodą); CI na PR zielone we wszystkich jobach
 
 #### Manual
 
-- [ ] 3.3 Karol ocenia zrzut nowego podglądu (strona „Co oceniasz”, laptop jako całe okno 1:1, telefon w prawdziwej wielkości)
+- [x] 3.3 Karol ocenia zrzut nowego podglądu (strona „Co oceniasz”, laptop jako całe okno 1:1, telefon w prawdziwej wielkości)
 
 ### Phase 4: Dokumenty i wdrożenie
 
