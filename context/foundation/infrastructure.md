@@ -17,6 +17,7 @@ tech_stack:
 Workers to jedyna z sześciu badanych platform z oceną Pass we wszystkich pięciu kryteriach. Darmowy plan (100 000 żądań dziennie, zimny start rzędu milisekund, bez usypiania) pokrywa grę dla około 100 osób, a w wywiadzie priorytetem był najniższy koszt. Projekt jest już skonfigurowany pod Workers (`@astrojs/cloudflare` 14.3.1, `wrangler.jsonc`), więc nie trzeba wymieniać adaptera. Test anti-bias sprawdził, czy wygrana nie wynika tylko z tej wygody: bez niej Workers i tak prowadzą. Runda na żywo idzie przez Supabase Realtime: przeglądarka subskrybuje publiczny kanał kluczem publishable, a stan pobiera z naszego serwera, więc platforma nie musi trzymać połączeń. Sprawdzone w F-01 (2026-10-04): runda na żywo to publiczny kanał-dzwonek + stan z serwera; na produkcji 20 graczy dostało każdy dzwonek ze stanem w 2 s, najwolniejszy w 247 ms (`context/archive/2026-09-27-live-sync-spike/measurements.md`). Durable Objects zostają planem B, na razie niepotrzebnym.
 
 Odpowiedzi z wywiadu (2026-09-26):
+
 - połączenia na żywo po stronie serwera: nie wiem;
 - koszt: minimalizuj;
 - znajomość platform: brak;
@@ -29,21 +30,23 @@ Decyzja Karola po testach anti-bias (2026-09-26): zostajemy przy Cloudflare Work
 
 Twarde filtry nie odrzuciły żadnej platformy: każda ma oficjalny adapter dla Astro 7, a odpowiedź „nie wiem” o połączeniach na żywo nie uruchamia filtra.
 
-| Platforma | CLI-first | Managed/Serverless | Dokumentacja dla agenta | Stabilne API wdrożeń | MCP / integracja | Suma |
-|---|---|---|---|---|---|---|
-| Cloudflare Workers | Pass | Pass | Pass | Pass | Pass | 5 Pass |
-| Vercel | Pass | Pass | Pass | Pass | Partial | 4 Pass, 1 Partial |
-| Render | Partial | Pass | Pass | Pass | Pass | 4 Pass, 1 Partial |
-| Fly.io | Pass | Pass | Pass | Partial | Partial | 3 Pass, 2 Partial |
-| Netlify | Partial | Pass | Pass | Partial | Partial | 2 Pass, 3 Partial |
-| Railway | Partial | Pass | Pass | Partial | Partial | 2 Pass, 3 Partial |
+| Platforma          | CLI-first | Managed/Serverless | Dokumentacja dla agenta | Stabilne API wdrożeń | MCP / integracja | Suma              |
+| ------------------ | --------- | ------------------ | ----------------------- | -------------------- | ---------------- | ----------------- |
+| Cloudflare Workers | Pass      | Pass               | Pass                    | Pass                 | Pass             | 5 Pass            |
+| Vercel             | Pass      | Pass               | Pass                    | Pass                 | Partial          | 4 Pass, 1 Partial |
+| Render             | Partial   | Pass               | Pass                    | Pass                 | Pass             | 4 Pass, 1 Partial |
+| Fly.io             | Pass      | Pass               | Pass                    | Partial              | Partial          | 3 Pass, 2 Partial |
+| Netlify            | Partial   | Pass               | Pass                    | Partial              | Partial          | 2 Pass, 3 Partial |
+| Railway            | Partial   | Pass               | Pass                    | Partial              | Partial          | 2 Pass, 3 Partial |
 
 Wagi z wywiadu i PRD:
+
 - **Minimalizuj koszt:** kara dla Fly.io (brak darmowego planu), Railway (realnie plan Hobby za 5 $/mies.) i Rendera (bez usypiania 7 $/mies.).
 - **PRD** („gość dołącza w mniej niż 30 s”, „10 pytań bez awarii”): kara dla darmowego Rendera (pobudka ok. 1 min) i darmowego Netlify (po wyczerpaniu kredytów strona staje).
 - Jeden region i zewnętrzna baza nie zmieniły kolejności.
 
 **Cloudflare Workers.**
+
 - **CLI:** wrangler 4.x obsługuje cały cykl: `deploy`, `versions upload/deploy`, `rollback [version-id]`, `tail`, `secret put/list`, `deployments list`. Polecenia sprawdzone na lokalnym wranglerze 4.131.1.
 - **Darmowy plan:**
   - 100 000 żądań dziennie;
@@ -56,6 +59,7 @@ Wagi z wywiadu i PRD:
 - **Wdrożenia z gita:** Workers Builds wdraża po każdym pushu i publikuje Preview URL dla gałęzi innych niż produkcyjna. Strona dokumentacji nie oznacza go jako beta (2026-09-26).
 
 **Vercel.**
+
 - **Plusy:**
   - kompletne CLI (`vercel deploy --prod`, `rollback`, `logs`, `env`);
   - `@astrojs/vercel` 11.x wspiera Astro 7;
@@ -69,11 +73,13 @@ Wagi z wywiadu i PRD:
   - MCP i WebSockets są w [public beta], przy czym WebSockets nie są nam potrzebne.
 
 **Render.**
+
 - **Plusy:** CLI [GA] (wdrożenia, rollback, logi; zmienne środowiskowe tylko w panelu albo `render.yaml`), MCP [GA], dokumentacja jako Markdown i `llms.txt`, region we Frankfurcie.
 - **Darmowy plan:** usypia po 15 min, a pobudka trwa około minuty. Podglądy PR są dopiero od planu Pro. Najtańszy plan bez usypiania (Starter) kosztuje około 7 $/mies.
 - **Migracja:** wymiana na `@astrojs/node` i `HOST=0.0.0.0`.
 
 **Fly.io.**
+
 - **Plusy:** kompletne flyctl, natywne WebSockets, regiony EU (`fra`, `ams`), automatyczne zatrzymywanie maszyn.
 - **Minusy:**
   - brak darmowego planu dla nowych kont: trial to 2 h maszyny albo 7 dni, potem karta;
@@ -83,6 +89,7 @@ Wagi z wywiadu i PRD:
   - kontener z Dockerfile.
 
 **Netlify.**
+
 - **Plusy:** `@astrojs/netlify` 8.x wspiera Astro 7, podglądy PR w pakiecie.
 - **Minusy:**
   - CLI nie ma polecenia rollback;
@@ -91,6 +98,7 @@ Wagi z wywiadu i PRD:
   - brak WebSockets.
 
 **Railway.**
+
 - **Plusy:** CLI obsługuje wdrożenia, logi i zmienne.
 - **Minusy:**
   - rollback tylko w panelu, a obrazy na planie Free są trzymane 24 h;
@@ -144,7 +152,7 @@ Jest marzec 2027. Gra umarła po trzecim wieczorze i nikt do niej nie wraca. Pie
 
 ### Unknown Unknowns
 
-- **Darmowy Supabase usypia projekt po 7 dniach bez aktywności bazy.** Uśpiony projekt trzeba wznowić ręcznie w panelu. Przy grze co 1–2 tygodnie to prawie pewne (sprawdzone 2026-09-26).
+- **Darmowy Supabase usypia projekt po 7 dniach bez aktywności bazy.** Uśpiony projekt trzeba wznowić ręcznie w panelu. Przy grze co 1–2 tygodnie to prawie pewne (sprawdzone 2026-09-26). Od 2026-10-21 przed uśpieniem chroni go pukanie z GitHub Actions: co 6 h jedno zapytanie do bazy (rejestr ryzyk, wiersz 1).
 - **Kanały Supabase Realtime są domyślnie publiczne.** Każdy z kluczem anon, który i tak jest w przeglądarce, może słuchać i nadawać na publicznym kanale. Prywatne kanały wymagają reguł RLS na `realtime.messages`, a goście nie mają kont. Trzeba to zaprojektować przy rundzie na żywo, razem z zasadą „nigdy kto na kogo”.
 - **Adres gry bierze się z nazwy Workera i subdomeny konta.** `wrangler.jsonc` ma dziś `name: "10x-astro-starter"`, a subdomenę `*.workers.dev` wybiera się raz na konto.
 - **`wrangler secret put` od razu tworzy i wdraża nową wersję.** Ustawienie sekretu jest więc wdrożeniem na produkcję.
@@ -161,7 +169,7 @@ Jest marzec 2027. Gra umarła po trzecim wieczorze i nikt do niej nie wraca. Pie
   - Na produkcji ustawiamy je przez `npx wrangler secret put SUPABASE_URL` i `npx wrangler secret put SUPABASE_KEY`. Wartości wpisuje Karol we własnym terminalu, nigdy przez czat.
   - `SUPABASE_KEY` to klucz publiczny anon/publishable, nigdy secret/service_role.
   - Dostęp ma tylko właściciel konta Cloudflare.
-  - GitHub Secrets pojawią się dopiero wtedy, gdy wdrażać będzie CI. Wtedy token API ma być zawężony do tego jednego Workera.
+  - Od 2026-10-21 repo ma sekrety Actions `SUPABASE_URL` i `SUPABASE_KEY` (tylko klucz publishable) dla workflow `keep-supabase-awake`; dodaje je Karol w ustawieniach repo. Token API Cloudflare trafi do GitHub Secrets dopiero wtedy, gdy wdrażać będzie CI, i ma być zawężony do tego jednego Workera.
 - **Rollback:**
   - `npx wrangler deployments list`, potem `npx wrangler rollback [version-id]`. Trwa kilka sekund.
   - Migracje bazy Supabase się nie cofają, można je tylko poprawić kolejną migracją. Zmiany schematu wdrażamy osobno i ostrożnie.
@@ -171,6 +179,7 @@ Jest marzec 2027. Gra umarła po trzecim wieczorze i nikt do niej nie wraca. Pie
     - `wrangler secret put/delete`, `wrangler delete`;
     - `supabase db push/reset`;
     - `git push`, jeśli push uruchamia wdrożenie;
+    - `npm run keep-awake`, `gh workflow run/enable/disable`, `gh secret`, `gh variable` (od 2026-10-21);
     - domena, DNS i ustawienia kont.
   - Agent sam:
     - `wrangler whoami`, `deployments list`, `versions list`, `tail`, `secret list` (tylko nazwy);
@@ -183,19 +192,19 @@ Jest marzec 2027. Gra umarła po trzecim wieczorze i nikt do niej nie wraca. Pie
 
 ## Risk Register
 
-| Risk | Source | Likelihood | Impact | Mitigation |
-|---|---|---|---|---|
-| Darmowy Supabase usypia projekt po 7 dniach bez aktywności, więc wieczór gry pada | Unknown unknowns / Pre-mortem | H | H | Przed pierwszą prawdziwą grą wybrać jedno: ręczne budzenie z checklistą hosta, cykliczne zapytanie (Cron Trigger; najpierw sprawdzić zasady Supabase) albo plan Pro |
-| Publiczne kanały Realtime: podsłuch, fałszywe zdarzenia, ryzyko ujawnienia „kto na kogo” | Unknown unknowns / Pre-mortem | M | H | Kanał niesie tylko dzwonek `{ seq }`; stan, w tym liczby głosów dopiero przy odsłonie, przychodzi z serwera; fałszywy dzwonek wywoła najwyżej zbędne odświeżenie (F-01) |
-| Polecenia zmieniające produkcję bez pytania (`wrangler rollback`, `versions deploy`, `delete`) | Research finding | M | H | Dopisać je do `ask` w `.claude/settings.json` przed pierwszym wdrożeniem (lekcja z `lessons.md`) |
-| Paczka npm niezgodna z workerd wykłada się dopiero na produkcji; agent pisze `Astro.locals.runtime` | Devil's advocate | M | M | Przed każdym wdrożeniem `astro dev` (lokalnie w workerd) i `npm run build`; smoke na publicznym adresie; sekrety tylko przez `astro:env/server` |
-| Zepsuty automatyczny deploy tuż przed wieczorem gry | Pre-mortem | M | M | Znać `wrangler rollback` przed pierwszą grą; nie wdrażać tuż przed grą; smoke po każdym wdrożeniu |
-| Pomylenie Pages i Workers (materiały kursu, `tech-stack.md`), czyli `wrangler pages` | Devil's advocate | M | M | Reguła w `AGENTS.md` już jest; poprawić `tech-stack.md` na Workers |
-| Limit 10 ms CPU przy 20 graczach wracających naraz | Devil's advocate / Pre-mortem | L | M | Po wieczorze testowym `wrangler tail --status error`; przy błędach CPU plan Workers Paid (5 $/mies.) albo lżejszy kod |
-| Plan B dla rundy na żywo (Durable Objects) to kod tylko pod Cloudflare | Devil's advocate | L | M | Najpierw Supabase Realtime; Durable Objects dopiero wtedy, gdy test z 20 graczami go obali. F-01 (2026-10-04) go nie obalił |
-| Przekroczenie 100 000 żądań dziennie, czyli błąd 1027 do końca doby | Unknown unknowns | L | M | Przy tej skali nierealne bez bota; w razie potrzeby ograniczenie zapytań (WAF) albo plan płatny |
-| Adres gry pochodzi od nazwy `10x-astro-starter` | Unknown unknowns | H | L | Zmienić `name` w `wrangler.jsonc` przed pierwszym wdrożeniem; świadomie wybrać subdomenę `workers.dev` |
-| Code Mode MCP [eksperymentalny]; nowsze „Worker Previews” według researchu w [open beta] od 2026-09-22 | Research finding | L | L | Na MVP wystarczy wrangler; MCP i izolowane podglądy gałęzi nie są potrzebne |
+| Risk                                                                                                   | Source                        | Likelihood | Impact | Mitigation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------ | ----------------------------- | ---------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Darmowy Supabase usypia projekt po 7 dniach bez aktywności, więc wieczór gry pada                      | Unknown unknowns / Pre-mortem | H          | H      | Przed pierwszą prawdziwą grą wybrać jedno: ręczne budzenie z checklistą hosta, cykliczne zapytanie (Cron Trigger; najpierw sprawdzić zasady Supabase) albo plan Pro. Rozstrzygnięte 2026-10-21: cykliczne zapytanie, ale z GitHub Actions, nie z Cron Trigger. Workflow `keep-supabase-awake` co 6 h woła w bazie `room_link` ze zmyślonym kodem; czerwony przebieg (i mail z GitHuba) znaczy, że projekt śpi, klucz przestał działać albo zmienił się `room_link`. Zapas: przed wieczorem sprawdzić, czy panel nie pokazuje „Paused” (`deploy-plan.md`, Sytuacje brzegowe). GitHub wyłącza harmonogram po 60 dniach bez aktywności w repo; włącza się go w zakładce Actions |
+| Publiczne kanały Realtime: podsłuch, fałszywe zdarzenia, ryzyko ujawnienia „kto na kogo”               | Unknown unknowns / Pre-mortem | M          | H      | Kanał niesie tylko dzwonek `{ seq }`; stan, w tym liczby głosów dopiero przy odsłonie, przychodzi z serwera; fałszywy dzwonek wywoła najwyżej zbędne odświeżenie (F-01)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Polecenia zmieniające produkcję bez pytania (`wrangler rollback`, `versions deploy`, `delete`)         | Research finding              | M          | H      | Dopisać je do `ask` w `.claude/settings.json` przed pierwszym wdrożeniem (lekcja z `lessons.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Paczka npm niezgodna z workerd wykłada się dopiero na produkcji; agent pisze `Astro.locals.runtime`    | Devil's advocate              | M          | M      | Przed każdym wdrożeniem `astro dev` (lokalnie w workerd) i `npm run build`; smoke na publicznym adresie; sekrety tylko przez `astro:env/server`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Zepsuty automatyczny deploy tuż przed wieczorem gry                                                    | Pre-mortem                    | M          | M      | Znać `wrangler rollback` przed pierwszą grą; nie wdrażać tuż przed grą; smoke po każdym wdrożeniu                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Pomylenie Pages i Workers (materiały kursu, `tech-stack.md`), czyli `wrangler pages`                   | Devil's advocate              | M          | M      | Reguła w `AGENTS.md` już jest; poprawić `tech-stack.md` na Workers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Limit 10 ms CPU przy 20 graczach wracających naraz                                                     | Devil's advocate / Pre-mortem | L          | M      | Po wieczorze testowym `wrangler tail --status error`; przy błędach CPU plan Workers Paid (5 $/mies.) albo lżejszy kod                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Plan B dla rundy na żywo (Durable Objects) to kod tylko pod Cloudflare                                 | Devil's advocate              | L          | M      | Najpierw Supabase Realtime; Durable Objects dopiero wtedy, gdy test z 20 graczami go obali. F-01 (2026-10-04) go nie obalił                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Przekroczenie 100 000 żądań dziennie, czyli błąd 1027 do końca doby                                    | Unknown unknowns              | L          | M      | Przy tej skali nierealne bez bota; w razie potrzeby ograniczenie zapytań (WAF) albo plan płatny                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Adres gry pochodzi od nazwy `10x-astro-starter`                                                        | Unknown unknowns              | H          | L      | Zmienić `name` w `wrangler.jsonc` przed pierwszym wdrożeniem; świadomie wybrać subdomenę `workers.dev`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Code Mode MCP [eksperymentalny]; nowsze „Worker Previews” według researchu w [open beta] od 2026-09-22 | Research finding              | L          | L      | Na MVP wystarczy wrangler; MCP i izolowane podglądy gałęzi nie są potrzebne                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## Getting Started
 
@@ -213,6 +222,7 @@ Jest marzec 2027. Gra umarła po trzecim wieczorze i nikt do niej nie wraca. Pie
 ## Out of Scope
 
 The following were not evaluated in this research:
+
 - Docker image configuration
 - CI/CD pipeline setup
 - Production-scale architecture (multi-region, HA, DR)
