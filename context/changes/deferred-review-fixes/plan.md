@@ -498,12 +498,12 @@ Treści, tytułów Progress ani kryteriów planu K1 nie zmieniamy (`progress-for
 
 #### Automated
 
-- [x] 4.1 `npx prettier --check context/changes/refactor-opportunities/plan.md context/changes/refactor-opportunities/plan-brief.md` przechodzi po notce w planie K1 (`npm run lint` nie czyta Markdownu)
-- [ ] 4.2 `npx supabase db push --dry-run` pokazuje dokładnie jedną nową migrację `*_round_number_required.sql`
-- [ ] 4.3 `npx supabase migration list` po `db push` pokazuje tę migrację lokalnie i zdalnie
-- [ ] 4.4 Smoke na produkcji zielony, z 4 nowymi krokami (3 odmowy F2 i udana odsłona)
+- [x] 4.1 `npx prettier --check context/changes/refactor-opportunities/plan.md context/changes/refactor-opportunities/plan-brief.md` przechodzi po notce w planie K1 (`npm run lint` nie czyta Markdownu) — 88bb289
+- [x] 4.2 `npx supabase db push --dry-run` pokazuje dokładnie jedną nową migrację `*_round_number_required.sql` — 88bb289
+- [x] 4.3 `npx supabase migration list` po `db push` pokazuje tę migrację lokalnie i zdalnie — 88bb289
+- [x] 4.4 Smoke na produkcji zielony, z 4 nowymi krokami (3 odmowy F2 i udana odsłona) — 88bb289
 
 #### Manual
 
-- [ ] 4.5 Karol potwierdza przed `db push`, że nikt nie gra
-- [ ] 4.6 Karol na telefonie i laptopie: gra z 3 graczami; w trakcie głosowania host klika „Odsłoń wynik” i wynik się odsłania; potem „Następne pytanie”, głos, „Pomiń pytanie”, odświeżenie karty i „Zakończ grę” działają jak wcześniej
+- [x] 4.5 Karol potwierdza przed `db push`, że nikt nie gra — 88bb289
+- [x] 4.6 Karol na telefonie i laptopie: gra z 3 graczami; w trakcie głosowania host klika „Odsłoń wynik” i wynik się odsłania; potem „Następne pytanie”, głos, „Pomiń pytanie”, odświeżenie karty i „Zakończ grę” działają jak wcześniej — 88bb289
