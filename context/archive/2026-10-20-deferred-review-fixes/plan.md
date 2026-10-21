@@ -455,6 +455,18 @@ Treści, tytułów Progress ani kryteriów planu K1 nie zmieniamy (`progress-for
 - Kolejność wdrożenia z migracją: `context/archive/2026-10-15-full-game-evening/plan.md:82-83`
 - Zasady testów: `context/foundation/test-plan.md` §6
 
+## Addendum (21.10.2026): decyzja Karola w fazie 3
+
+Wbrew „What We're NOT Doing” (notka bez zmian) Karol po ocenie zrzutu zdecydował:
+
+- notka po ostatnim pytaniu to to samo zdanie co odmowa: „Pytań już nie ma. Możesz zakończyć grę.” (stała
+  `QUESTIONS_RAN_OUT` w `src/lib/rooms/errors.ts`), zamiast „Pytania z wybranych kategorii się skończyły.”;
+- odmowa `questions_ran_out` jest szara jak notka, nie czerwona, i pokazuje się raz; czytnik ekranu czyta ją z regionu
+  `aria-live` (`src/components/room/HostActions.tsx`);
+- podgląd 63 w `/dev/room-states`: odmowa, gdy Worker znów nie odczytał kategorii (bez notki).
+
+Commit `420414a`; przegląd implementacji F1 (`reviews/impl-review.md`).
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
@@ -498,12 +510,12 @@ Treści, tytułów Progress ani kryteriów planu K1 nie zmieniamy (`progress-for
 
 #### Automated
 
-- [x] 4.1 `npx prettier --check context/changes/refactor-opportunities/plan.md context/changes/refactor-opportunities/plan-brief.md` przechodzi po notce w planie K1 (`npm run lint` nie czyta Markdownu)
-- [ ] 4.2 `npx supabase db push --dry-run` pokazuje dokładnie jedną nową migrację `*_round_number_required.sql`
-- [ ] 4.3 `npx supabase migration list` po `db push` pokazuje tę migrację lokalnie i zdalnie
-- [ ] 4.4 Smoke na produkcji zielony, z 4 nowymi krokami (3 odmowy F2 i udana odsłona)
+- [x] 4.1 `npx prettier --check context/changes/refactor-opportunities/plan.md context/changes/refactor-opportunities/plan-brief.md` przechodzi po notce w planie K1 (`npm run lint` nie czyta Markdownu) — 88bb289
+- [x] 4.2 `npx supabase db push --dry-run` pokazuje dokładnie jedną nową migrację `*_round_number_required.sql` — 88bb289
+- [x] 4.3 `npx supabase migration list` po `db push` pokazuje tę migrację lokalnie i zdalnie — 88bb289
+- [x] 4.4 Smoke na produkcji zielony, z 4 nowymi krokami (3 odmowy F2 i udana odsłona) — 88bb289
 
 #### Manual
 
-- [ ] 4.5 Karol potwierdza przed `db push`, że nikt nie gra
-- [ ] 4.6 Karol na telefonie i laptopie: gra z 3 graczami; w trakcie głosowania host klika „Odsłoń wynik” i wynik się odsłania; potem „Następne pytanie”, głos, „Pomiń pytanie”, odświeżenie karty i „Zakończ grę” działają jak wcześniej
+- [x] 4.5 Karol potwierdza przed `db push`, że nikt nie gra — 88bb289
+- [x] 4.6 Karol na telefonie i laptopie: gra z 3 graczami; w trakcie głosowania host klika „Odsłoń wynik” i wynik się odsłania; potem „Następne pytanie”, głos, „Pomiń pytanie”, odświeżenie karty i „Zakończ grę” działają jak wcześniej — 88bb289

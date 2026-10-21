@@ -265,8 +265,8 @@ function skippedBy(steps, reason) {
 // host, Ola and the second guest. The votes: Ola for herself, the second guest abstains, and the host, last, for "ola"
 // (not Ola: case counts); the last vote reveals the round by itself. Every vote carries question 1's number, as the
 // room screen sends it; a vote or a reveal without one is refused before the database (F2 of
-// context/changes/deferred-review-fixes/plan.md). The targets live only in the request bodies: no step's name and
-// nothing the script prints says who voted for whom. Skipped with SMOKE_ROUND=0.
+// context/archive/2026-10-20-deferred-review-fixes/plan.md). The targets live only in the request bodies: no step's
+// name and nothing the script prints says who voted for whom. Skipped with SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
@@ -316,10 +316,9 @@ const GAME_OVER = new RegExp(['"status":"closed"', '"round":null'].map((part) =>
 // room: the next question, a vote that comes late, a skip and the end. Ola votes at question 2 with its number, as the
 // room screen sends it. The second guest's screen is still on question 1, so its vote carries 1 and must not land in
 // question 2, which it has not shown (round_over); nor may "Odsłoń wynik" from a host's screen still on question 1
-// (F2 of context/changes/deferred-review-fixes/plan.md), and Ola's vote right after it shows question 2 still voting.
-// The host reveals question 3 with its number before the end: a route that refused every reveal would pass the
-// refusals too. Skipped with SMOKE_GAME=0 (production between `npx supabase db push` and the merge: a Worker without
-// next, skip and end) and with SMOKE_ROUND=0.
+// (F2 of context/archive/2026-10-20-deferred-review-fixes/plan.md), and Ola's vote right after it shows question 2
+// still voting. The host reveals question 3 with its number before the end: a route that refused every reveal would
+// pass the refusals too. Skipped with SMOKE_GAME=0 and with SMOKE_ROUND=0.
 function gameSteps() {
   const game = [
     ["host opens the next question", () => act("next", { round: 1 }, hostJar), { status: 200, body: ACCEPTED }],

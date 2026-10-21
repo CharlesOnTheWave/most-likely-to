@@ -1,10 +1,10 @@
 ---
 change_id: deferred-review-fixes
 title: Deferred review fixes before the first real game evening
-status: implementing
+status: archived
 created: 2026-10-20
 updated: 2026-10-21
-archived_at: null
+archived_at: 2026-10-21T07:51:49Z
 ---
 
 ## Notes
