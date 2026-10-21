@@ -49,7 +49,17 @@
       "Bash(SMOKE_GAME=* npm*smoke*)",
       "Bash(node scripts/smoke*)",
       "Bash(node ./scripts/smoke*)",
-      "Bash(node *smoke.mjs*)"
+      "Bash(node *smoke.mjs*)",
+      "Bash(npm run keep-awake*)",
+      "Bash(npm *keep-awake*)",
+      "Bash(node scripts/keep-supabase-awake*)",
+      "Bash(node ./scripts/keep-supabase-awake*)",
+      "Bash(node *keep-supabase-awake*)",
+      "Bash(gh workflow run*)",
+      "Bash(gh workflow enable*)",
+      "Bash(gh workflow disable*)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)"
     ],
     "deny": ["Bash(rm -rf *)"]
   },

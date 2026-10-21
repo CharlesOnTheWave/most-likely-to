@@ -1,0 +1,36 @@
+# The free Supabase plan pauses a project after 7 days without enough database activity, and the game is played every
+# week or two. Every 6 hours, and on demand, one harmless call to the production database, with its answer checked:
+# a red run means the project is paused, the key stopped working or room_link changed.
+# Plan: context/changes/keep-supabase-awake/plan.md. Supabase "Project Pausing":
+# https://supabase.com/docs/guides/platform/free-project-pausing
+# In a public repository GitHub disables a schedule after 60 days without repository activity. Turn it back on in the
+# Actions tab or with `gh workflow enable keep-supabase-awake.yml` (ask first).
+name: Keep Supabase awake
+
+on:
+  schedule:
+    # UTC, off the full hour: GitHub delays scheduled jobs at :00 most and may drop some under load.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-supabase-awake
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # No npm cache and no npm ci: the script has no dependencies.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Secrets are masked in the log, and the script prints neither the key nor the address.
+      - run: node scripts/keep-supabase-awake.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
