@@ -208,9 +208,10 @@ export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boole
 // so the screen offers "Następne pytanie" or says the questions ran out. Each round of a game has its own question of
 // the pool (FR-015), so round N has played N of them. null in every other state, for a guest, and when the room's
 // categories could not be read (logged by hostRoomCategories). On null the two screens differ on purpose: after a
-// reveal (RoundReveal) the screen still offers "Następne pytanie", and the database answers no_questions if none is
-// left; a skipped latest round (RoundSkipped) offers only "Zakończ grę", because skip_round opens the next question
-// whenever there is one, so a skip that stayed the latest round means the pool had run out.
+// reveal (RoundReveal) the screen still offers "Następne pytanie", and if none is left the route answers
+// questions_ran_out (next_round's no_questions, src/pages/api/rooms/[id]/next.ts); a skipped latest round
+// (RoundSkipped) offers only "Zakończ grę", because skip_round opens the next question whenever there is one, so a skip
+// that stayed the latest round means the pool had run out.
 export async function hostQuestionsLeft(
   supabase: SupabaseClient,
   lobby: LobbyState,

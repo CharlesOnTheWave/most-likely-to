@@ -15,9 +15,14 @@ export const ROUND_REFUSALS = [
   "no_round",
   "round_over",
   "round_in_progress",
+  "questions_ran_out",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
+
+// The game's questions ran out: the host's note after the last question (HostActions) and the refusal of "Następne
+// pytanie" (questions_ran_out) say the same sentence, so the screen shows it once.
+export const QUESTIONS_RAN_OUT = "Pytań już nie ma. Możesz zakończyć grę.";
 
 const MESSAGES: Record<string, string> = {
   invalid_nick: "Nick musi mieć od 1 do 20 znaków.",
@@ -40,6 +45,7 @@ const MESSAGES: Record<string, string> = {
   no_round: "Teraz nie trwa żadna runda.",
   round_over: "To pytanie już się zmieniło.",
   round_in_progress: "Głosowanie jeszcze trwa. Najpierw odsłoń wynik.",
+  questions_ran_out: QUESTIONS_RAN_OUT,
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";
