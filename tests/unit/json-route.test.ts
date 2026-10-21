@@ -93,9 +93,9 @@ describe("readJsonRequest", () => {
   });
 });
 
-// T1 of context/archive/2026-10-15-full-game-evening/research.md: a vote, "Następne pytanie" and "Pomiń pytanie" carry
-// the number of the question on the screen. Without one, a vote from a screen loaded before S-03 still counts (the
-// database takes the latest round); anything else in its place is not our screen.
+// T1 of context/archive/2026-10-15-full-game-evening/research.md and F2 of
+// context/changes/deferred-review-fixes/plan.md: a vote, "Odsłoń wynik", "Następne pytanie" and "Pomiń pytanie" carry
+// the number of the question on the screen. A body without one, or with anything else in its place, is not our screen.
 describe("bodyRound", () => {
   it.each([
     { body: { round: 1 }, round: 1 },
@@ -107,9 +107,9 @@ describe("bodyRound", () => {
   });
 
   it.each([{ body: { target: "Ola" } }, { body: {} }, { body: null }, { body: [] }, { body: "round" }])(
-    "gives null when $body has no round",
+    "gives undefined when $body has no round",
     ({ body }) => {
-      expect(bodyRound(body)).toBeNull();
+      expect(bodyRound(body)).toBeUndefined();
     },
   );
 

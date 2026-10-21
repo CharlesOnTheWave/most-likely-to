@@ -14,10 +14,12 @@ const GUEST_REFUSALS = [
   "game_started",
 ];
 
-// The round's codes as the plans list them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4, and
+// The round's codes as the plans list them (context/archive/2026-10-13-first-live-round/plan.md, Faza 3 #4;
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #4: round_over for a question that changed under the
-// screen, round_in_progress for "Następne pytanie" while the round is voting), written out by hand: a code dropped from
-// ROUND_REFUSALS would otherwise drop out of this test too.
+// screen, round_in_progress for "Następne pytanie" while the round is voting; and
+// context/changes/deferred-review-fixes/plan.md, Faza 3: questions_ran_out for "Następne pytanie" once the game's
+// questions ran out), written out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test
+// too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -29,6 +31,7 @@ const PLANNED_ROUND_REFUSALS = [
   "no_round",
   "round_over",
   "round_in_progress",
+  "questions_ran_out",
 ];
 
 const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];

@@ -82,21 +82,23 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
     await seedStartGame(hostA, room.id, QUESTION_ID);
 
     // Strangers first, while the round is open: a vote of theirs that counted would show up as Ola's in the reveal.
-    hostBForOla = await castVote(hostB.client, room.id, "Ola");
-    zosiaForOla = await castVote(anon, room.id, "Ola", zosia.playerToken);
+    // The votes carry round 1's number, as the room screen sends it; the one with no token is refused before the
+    // number is read.
+    hostBForOla = await castVote(hostB.client, room.id, "Ola", undefined, 1);
+    zosiaForOla = await castVote(anon, room.id, "Ola", zosia.playerToken, 1);
     noTokenForOla = await castVote(anon, room.id, "Ola");
 
-    hostForOla = await castVote(hostA.client, room.id, "Ola");
+    hostForOla = await castVote(hostA.client, room.id, "Ola", undefined, 1);
     // Second tries go to Bartek, so a second vote that counted would show up as Bartek's vote in the reveal.
-    hostAgain = await castVote(hostA.client, room.id, "Bartek");
-    olaForOla = await castVote(anon, room.id, "Ola", ola.playerToken);
-    olaAgain = await castVote(anon, room.id, "Bartek", ola.playerToken);
-    bartekForOla = await castVote(anon, room.id, "Ola", bartek.playerToken);
+    hostAgain = await castVote(hostA.client, room.id, "Bartek", undefined, 1);
+    olaForOla = await castVote(anon, room.id, "Ola", ola.playerToken, 1);
+    olaAgain = await castVote(anon, room.id, "Bartek", ola.playerToken, 1);
+    bartekForOla = await castVote(anon, room.id, "Ola", bartek.playerToken, 1);
     // Kuba has not voted yet, so the target is the only thing these two can be refused for.
-    kubaForStranger = await castVote(anon, room.id, "Zenon", kuba.playerToken);
-    kubaForOtherRoom = await castVote(anon, room.id, "Zosia", kuba.playerToken);
+    kubaForStranger = await castVote(anon, room.id, "Zenon", kuba.playerToken, 1);
+    kubaForOtherRoom = await castVote(anon, room.id, "Zosia", kuba.playerToken, 1);
     // The fourth of four eligible players: the round reveals itself.
-    kubaAbstains = await castVote(anon, room.id, null, kuba.playerToken);
+    kubaAbstains = await castVote(anon, room.id, null, kuba.playerToken, 1);
 
     hostView = await roomLobby(hostA.client, room.id);
     guestView = await roomLobby(anon, room.id, kuba.playerToken);
@@ -201,7 +203,7 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
   });
 
   it("host B revealing host A's round gets room_unknown", async () => {
-    const answer = await revealRound(hostB.client, room.id);
+    const answer = await revealRound(hostB.client, room.id, 1);
 
     expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "room_unknown" } });
   });
@@ -210,7 +212,7 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
   // only 42501 (G2).
   it.each([
     { fn: "start_game", attempt: () => startGame(anon, room.id, OTHER_QUESTION_ID) },
-    { fn: "reveal_round", attempt: () => revealRound(anon, room.id) },
+    { fn: "reveal_round", attempt: () => revealRound(anon, room.id, 1) },
     { fn: "next_round", attempt: () => nextRound(anon, room.id, 1, [OTHER_QUESTION_ID]) },
     { fn: "skip_round", attempt: () => skipRound(anon, room.id, 1, [OTHER_QUESTION_ID]) },
     { fn: "end_game", attempt: () => endGame(anon, room.id) },
@@ -250,13 +252,13 @@ describe("the host reveals after one vote", () => {
     const ola = await seedGuest(room.linkToken, "Ola");
     const bartek = await seedGuest(room.linkToken, "Bartek");
     await seedStartGame(hostA, room.id, QUESTION_ID);
-    await seedVote(anon, room.id, "Ola", bartek.playerToken);
+    await seedVote(anon, room.id, "Ola", bartek.playerToken, 1);
 
-    firstReveal = await revealRound(hostA.client, room.id);
+    firstReveal = await revealRound(hostA.client, room.id, 1);
     firstView = await roomLobby(hostA.client, room.id);
-    // Ola has not voted, so the reveal is the only thing this can be refused for.
-    lateVote = await castVote(anon, room.id, "Bartek", ola.playerToken);
-    secondReveal = await revealRound(hostA.client, room.id);
+    // Ola has not voted and sends round 1's number, so the reveal is the only thing this can be refused for.
+    lateVote = await castVote(anon, room.id, "Bartek", ola.playerToken, 1);
+    secondReveal = await revealRound(hostA.client, room.id, 1);
     secondView = await roomLobby(anon, room.id, ola.playerToken);
   });
 
@@ -314,13 +316,13 @@ describe("refusals before a round: a closed room, the lobby, too few players, a 
   });
 
   it("a vote in the lobby gets no_round", async () => {
-    const answer = await castVote(anon, lobbyRoom.id, "Ola", lobbyGuest.playerToken);
+    const answer = await castVote(anon, lobbyRoom.id, "Ola", lobbyGuest.playerToken, 1);
 
     expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "no_round" } });
   });
 
   it("the host's reveal in the lobby gets no_round", async () => {
-    const answer = await revealRound(hostA.client, lobbyRoom.id);
+    const answer = await revealRound(hostA.client, lobbyRoom.id, 1);
 
     expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "no_round" } });
   });

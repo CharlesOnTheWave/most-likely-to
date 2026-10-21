@@ -1,5 +1,16 @@
 # Strażnicy bramy RPC i anonimowości w przeglądarce — Plan Brief
 
+> Po `deferred-review-fixes`:
+>
+> - `reveal_round(p_room_id, p_round default null)`: brak numeru albo inny numer daje `round_over`, tak jak w
+>   `cast_vote`.
+> - Przypadek „`castVote` bez numeru pytania” (`plan.md:141, :322`) odpada, bo Worker odmawia 400 przed bazą.
+> - Krok smoke K1 (`plan.md:288`) wysyła numer pytania: `act("reveal", { round: <numer> }, hostJar)`.
+> - Smoke ma już udaną odsłonę przez Workera („host reveals question 3 with its number”), więc przy starcie K1 sprawdź,
+>   czy krok smoke z fazy 4 jest jeszcze potrzebny.
+> - Smoke ma nowe kroki tej zmiany, więc liczby przypadków i kroków smoke przelicz przy starcie K1, z `smoke.mjs` i z
+>   testu.
+
 > Full plan: `context/changes/refactor-opportunities/plan.md`
 > Research: `context/changes/refactor-opportunities/research.md`
 
@@ -27,29 +38,31 @@ dziś pomija). Gra działa dokładnie jak dziś.
 
 ## Key Decisions Made
 
-| Decision | Choice | Why (1 sentence) | Source |
-| --- | --- | --- | --- |
-| Opcja z rankingu | K1 + tani zysk D7 | K1 łata jedyną potwierdzoną dziurę, D7 kosztuje kilka linii i chroni miejsce, które S-04 może kusić zapamiętaniem głosu | Plan (Karol) |
-| Kształt K1 | Strażnik (test), bez przebudowy | Kopie kontraktu są świadome: niezależna wyrocznia, obrona w głąb, kolejność wdrożeń | Research |
-| Wyrocznia K1 | Ręczna tabela z sygnatur SQL | Prosta i niezależna od `server.ts` (`test-plan.md` §6.1); zmianę samego SQL łapią db i smoke w CI | Plan |
-| Sprawdzenie wartości | Wartości-wartownicy w każdym przypadku | Zamiana dwóch argumentów miejscami też świeci, nie tylko nazwa i klucze | Plan |
-| „Odsłoń wynik” w CI | Krok smoke po automatycznej odsłonie | Prawdziwa ścieżka bez zmiany scenariusza; drugie odsłonięcie niczego nie zmienia (SQL `:721`) | Plan (Karol) |
-| Wyjątek D7 | Komentarz z powodem przy każdej z 3 linii | Nowy zapis, także w tym samym pliku, świeci; wyjątek widać przy kodzie | Plan (Karol) |
-| Mechanizm D7 | ESLint z rdzenia (`no-restricted-globals`, `no-restricted-properties`) | Hooki i CI już go uruchamiają; wzór zakazu jest w `eslint.config.js:94-109` | Plan |
-| Wejście D7 | Najpierw ostrzeżenie, potem błąd | Mechanizm przy zielonym lincie, egzekwowanie osobnym, odwracalnym krokiem | Plan (lekcja) |
-| Weryfikacja W26 | Reguła nie może być „zero sessionStorage” | Znacznik przeładowania istnieje; bez wyjątku strażnik byłby czerwony od pierwszego dnia | Research |
-| Zasięg D7 | `.ts`, `.tsx`, frontmatter `.astro`; skrypty `<script>` w `.astro` poza zasięgiem | Lint ich dziś nie parsuje (cichy błąd parsera); naprawa osobną zmianą, luka zapisana w §6.3 | Przegląd planu (F1) |
-| Kolejność faz | Fazy lokalne (test bramy, D7) przed krokiem smoke | Pierwszy push dopiero w ostatniej fazie: jeden push i jeden przebieg CI mniej | Przegląd planu (F2) |
-| Wynik w teście bramy | Każdy przypadek sprawdza też `ok: true` | Zła odpowiedź atrapy świeci, zamiast tylko zaśmiecić log | Przegląd planu (F3) |
+| Decision             | Choice                                                                            | Why (1 sentence)                                                                                                        | Source              |
+| -------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Opcja z rankingu     | K1 + tani zysk D7                                                                 | K1 łata jedyną potwierdzoną dziurę, D7 kosztuje kilka linii i chroni miejsce, które S-04 może kusić zapamiętaniem głosu | Plan (Karol)        |
+| Kształt K1           | Strażnik (test), bez przebudowy                                                   | Kopie kontraktu są świadome: niezależna wyrocznia, obrona w głąb, kolejność wdrożeń                                     | Research            |
+| Wyrocznia K1         | Ręczna tabela z sygnatur SQL                                                      | Prosta i niezależna od `server.ts` (`test-plan.md` §6.1); zmianę samego SQL łapią db i smoke w CI                       | Plan                |
+| Sprawdzenie wartości | Wartości-wartownicy w każdym przypadku                                            | Zamiana dwóch argumentów miejscami też świeci, nie tylko nazwa i klucze                                                 | Plan                |
+| „Odsłoń wynik” w CI  | Krok smoke po automatycznej odsłonie                                              | Prawdziwa ścieżka bez zmiany scenariusza; drugie odsłonięcie niczego nie zmienia (SQL `:721`)                           | Plan (Karol)        |
+| Wyjątek D7           | Komentarz z powodem przy każdej z 3 linii                                         | Nowy zapis, także w tym samym pliku, świeci; wyjątek widać przy kodzie                                                  | Plan (Karol)        |
+| Mechanizm D7         | ESLint z rdzenia (`no-restricted-globals`, `no-restricted-properties`)            | Hooki i CI już go uruchamiają; wzór zakazu jest w `eslint.config.js:94-109`                                             | Plan                |
+| Wejście D7           | Najpierw ostrzeżenie, potem błąd                                                  | Mechanizm przy zielonym lincie, egzekwowanie osobnym, odwracalnym krokiem                                               | Plan (lekcja)       |
+| Weryfikacja W26      | Reguła nie może być „zero sessionStorage”                                         | Znacznik przeładowania istnieje; bez wyjątku strażnik byłby czerwony od pierwszego dnia                                 | Research            |
+| Zasięg D7            | `.ts`, `.tsx`, frontmatter `.astro`; skrypty `<script>` w `.astro` poza zasięgiem | Lint ich dziś nie parsuje (cichy błąd parsera); naprawa osobną zmianą, luka zapisana w §6.3                             | Przegląd planu (F1) |
+| Kolejność faz        | Fazy lokalne (test bramy, D7) przed krokiem smoke                                 | Pierwszy push dopiero w ostatniej fazie: jeden push i jeden przebieg CI mniej                                           | Przegląd planu (F2) |
+| Wynik w teście bramy | Każdy przypadek sprawdza też `ok: true`                                           | Zła odpowiedź atrapy świeci, zamiast tylko zaśmiecić log                                                                | Przegląd planu (F3) |
 
 ## Scope
 
 **In scope:**
+
 - `tests/unit/room-rpc-gate.test.ts` (12 przypadków), krok w `scripts/smoke.mjs`
 - reguła w `eslint.config.js`, 3 komentarze wyjątku w `src/components/room/useRoomState.ts`
 - po jednym punkcie w `context/foundation/test-plan.md` §6.1, §6.3, §6.5
 
 **Out of scope:**
+
 - K3, K2, K4, K5, wygenerowane typy bazy, porównanie tabeli z tekstem migracji
 - testy gałęzi awarii `server.ts` (P6), poprawka komentarza `server.ts:7-9` (P17)
 - przebudowa rundy w smoke, P12 i P13 (decyzje S-04)
@@ -65,12 +78,12 @@ gałąź, jeden PR, cztery commity faz; fazy 1–3 lokalnie, pierwszy push w faz
 
 ## Phases at a Glance
 
-| Phase | What it delivers | Key risk |
-| --- | --- | --- |
-| 1. Test bramy RPC (K1) | lokalny sygnał dla nazw, argumentów i wartości 10 akcji | zła odpowiedź atrapy (test sprawdza `ok: true`, więc świeci) |
-| 2. Reguła D7 jako ostrzeżenie | mechanizm, dokładnie 3 ostrzeżenia, lint zielony | hooki lintu (`--quiet`) nie widzą ostrzeżeń, tylko `npx eslint src` |
-| 3. Reguła D7 jako błąd | egzekwowanie z wyjątkiem przy 3 liniach | dotyka pliku gry (same komentarze) |
-| 4. Krok smoke „Odsłoń wynik” (K1) | prawdziwa ścieżka Worker → baza w CI i na produkcji; pierwszy push i PR | próbny alarm w CI wymaga push gałęzi i revertu |
+| Phase                             | What it delivers                                                        | Key risk                                                            |
+| --------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1. Test bramy RPC (K1)            | lokalny sygnał dla nazw, argumentów i wartości 10 akcji                 | zła odpowiedź atrapy (test sprawdza `ok: true`, więc świeci)        |
+| 2. Reguła D7 jako ostrzeżenie     | mechanizm, dokładnie 3 ostrzeżenia, lint zielony                        | hooki lintu (`--quiet`) nie widzą ostrzeżeń, tylko `npx eslint src` |
+| 3. Reguła D7 jako błąd            | egzekwowanie z wyjątkiem przy 3 liniach                                 | dotyka pliku gry (same komentarze)                                  |
+| 4. Krok smoke „Odsłoń wynik” (K1) | prawdziwa ścieżka Worker → baza w CI i na produkcji; pierwszy push i PR | próbny alarm w CI wymaga push gałęzi i revertu                      |
 
 **Prerequisites:** research zweryfikowany (`eb0cb60`); `main` lokalnie ahead 2 bez push; zgoda Karola na push gałęzi.
 **Estimated effort:** jedna sesja na 4 fazy plus czas CI (dwa przebiegi przy próbnym alarmie z fazy 2).

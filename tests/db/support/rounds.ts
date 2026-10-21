@@ -18,12 +18,14 @@ import { isRecord } from "./rooms";
 // cast_vote(p_room_id uuid, p_target text, p_player_token text default null, p_round integer default null): anon and
 //   authenticated, in one version only (S-03 drops the one without p_round). The voter is the host by auth.uid() or a
 //   guest by token, as in room_lobby. p_target is a nick of the room or null (an abstention). p_round is the number of
-//   the question the voter saw; without it (the Worker deployed before S-03) the vote goes to the latest round.
+//   the question the voter saw; its default only makes a call without it a refusal (deferred-review-fixes, F2).
 //   { ok: true } and nothing else, or { ok: false, reason } with reason in room_unknown, room_closed, no_round,
-//   round_revealed, round_over (the round was skipped, or p_round is not the latest round's number), already_voted,
-//   unknown_target. A malformed token raises 22023, as in join_room.
-// reveal_round(p_room_id uuid): authenticated only. { ok: true }, also when already revealed, or { ok: false, reason }
-//   with reason in room_unknown, room_closed, no_round.
+//   round_revealed, round_over (p_round missing or not the latest round's number, or the round was skipped),
+//   already_voted, unknown_target. A malformed token raises 22023, as in join_room.
+// reveal_round(p_room_id uuid, p_round integer default null): authenticated only, in one version only. p_round is the
+//   number of the round on the host's screen. { ok: true }, also when already revealed, or { ok: false, reason } with
+//   reason in room_unknown, room_closed, no_round, round_over (p_round missing or not the latest round's number, or the
+//   round was skipped).
 // next_round(p_room_id uuid, p_round integer, p_candidates text[]): authenticated only. "Następne pytanie": p_round is
 //   the number of the round on the host's screen, which must be the latest one, revealed or skipped; the new round
 //   takes the first candidate not yet played in this room. { ok: true } or { ok: false, reason } with reason in
@@ -93,8 +95,8 @@ export function startGame(client: TestClient, roomId: string, questionId: string
 }
 
 // The host votes by its session (no token); a guest sends its player token. null target: an abstention. round: the
-// number of the question the voter saw; without it the call carries no p_round at all, exactly as the Worker deployed
-// before S-03 sends it.
+// number of the question the voter saw, as the room screen sends it; without it the call carries no p_round at all,
+// only in the probes of that refusal.
 export function castVote(
   client: TestClient,
   roomId: string,
@@ -110,16 +112,32 @@ export function castVote(
   });
 }
 
-export function revealRound(client: TestClient, roomId: string): Promise<Answer> {
-  return call(client, "reveal_round", { p_room_id: roomId });
+// round: the number of the round on the host's screen; without it the call carries no p_round at all, only in the
+// probes of that refusal.
+export function revealRound(client: TestClient, roomId: string, round?: number): Promise<Answer> {
+  return call(client, "reveal_round", {
+    p_room_id: roomId,
+    ...(round === undefined ? {} : { p_round: round }),
+  });
 }
 
-// round: the number of the round on the host's screen. candidates: the game's pool in the Worker's order.
-export function nextRound(client: TestClient, roomId: string, round: number, candidates: string[]): Promise<Answer> {
+// round: the number of the round on the host's screen. candidates: the game's pool in the Worker's order; null and
+// malformed ids only in the probes of the candidates' filter.
+export function nextRound(
+  client: TestClient,
+  roomId: string,
+  round: number,
+  candidates: (string | null)[],
+): Promise<Answer> {
   return call(client, "next_round", { p_room_id: roomId, p_round: round, p_candidates: candidates });
 }
 
-export function skipRound(client: TestClient, roomId: string, round: number, candidates: string[]): Promise<Answer> {
+export function skipRound(
+  client: TestClient,
+  roomId: string,
+  round: number,
+  candidates: (string | null)[],
+): Promise<Answer> {
   return call(client, "skip_round", { p_room_id: roomId, p_round: round, p_candidates: candidates });
 }
 
@@ -161,22 +179,24 @@ export async function seedStartGame(host: Host, roomId: string, questionId: stri
   }
 }
 
-// A vote that is a precondition, not the thing under test. Throws on any failure: beforeAll only.
+// A vote that is a precondition, not the thing under test, with the number of the question the voter saw. playerToken
+// undefined: the host's vote. Throws on any failure: beforeAll only.
 export async function seedVote(
   client: TestClient,
   roomId: string,
   target: string | null,
-  playerToken?: string,
+  playerToken: string | undefined,
+  round: number,
 ): Promise<void> {
-  const answer = await castVote(client, roomId, target, playerToken);
+  const answer = await castVote(client, roomId, target, playerToken, round);
   if (!accepted(answer)) {
     throw new Error(`cast_vote refused the seed vote: ${refusalOf(answer)}`);
   }
 }
 
-// "Odsłoń wynik" as the host, as a precondition. Throws on any failure: beforeAll only.
-export async function seedReveal(host: Host, roomId: string): Promise<void> {
-  const answer = await revealRound(host.client, roomId);
+// "Odsłoń wynik" of round `round` as the host, as a precondition. Throws on any failure: beforeAll only.
+export async function seedReveal(host: Host, roomId: string, round: number): Promise<void> {
+  const answer = await revealRound(host.client, roomId, round);
   if (!accepted(answer)) {
     throw new Error(`reveal_round refused the seed reveal: ${refusalOf(answer)}`);
   }

@@ -1,5 +1,16 @@
 # Strażnicy bramy RPC i anonimowości w przeglądarce — plan implementacji
 
+> Po `deferred-review-fixes`:
+>
+> - `reveal_round(p_room_id, p_round default null)`: brak numeru albo inny numer daje `round_over`, tak jak w
+>   `cast_vote`.
+> - Przypadek „`castVote` bez numeru pytania” (`:141, :322`) odpada, bo Worker odmawia 400 przed bazą.
+> - Krok smoke K1 (`:288`) wysyła numer pytania: `act("reveal", { round: <numer> }, hostJar)`.
+> - Smoke ma już udaną odsłonę przez Workera („host reveals question 3 with its number”), więc przy starcie K1 sprawdź,
+>   czy krok smoke z fazy 4 jest jeszcze potrzebny.
+> - Smoke ma nowe kroki tej zmiany, więc liczby przypadków i kroków smoke przelicz przy starcie K1, z `smoke.mjs` i z
+>   testu.
+
 ## Overview
 
 Plan realizuje dwie pozycje z rankingu `research.md` tej zmiany, wybrane przez Karola 20.10.2026: **K1** (strażnik
@@ -17,11 +28,11 @@ Jedyna zmiana w `src` to trzy komentarze wyjątku przy znaczniku przeładowania 
   ostatnim głosem (`tests/e2e/round.spec.ts:48-49`), testy db wołają `reveal_round` własną kopią nazwy
   (`tests/db/support/rounds.ts:114`). Literówka w nazwie albo zmiana parametru przeszłaby wszystkie joby.
 - Aktualne sygnatury SQL (research, W2): `create_room(p_nick, p_link_token, p_categories, p_adult_categories,
-  p_confirm_close default false)` (`20261014101922_first_live_round.sql:220-226`), `join_room(p_link_token, p_nick,
-  p_player_token)` (`:308`), `room_link(p_link_token)` (`:384`), `start_game(p_room_id, p_question_id)` (`:540`),
+p_confirm_close default false)` (`20261014101922_first_live_round.sql:220-226`), `join_room(p_link_token, p_nick,
+p_player_token)` (`:308`), `room_link(p_link_token)` (`:384`), `start_game(p_room_id, p_question_id)` (`:540`),
   `reveal_round(p_room_id)` (`:723`), `next_round(p_room_id, p_round, p_candidates)` i `skip_round(…tak samo)`
   (`20261015122252_full_game_evening.sql:79,140`), `end_game(p_room_id)` (`:207`), `cast_vote(p_room_id, p_target,
-  p_player_token default null, p_round default null)` (`:255-260`), `room_lobby(p_room_id, p_player_token default null)`
+p_player_token default null, p_round default null)` (`:255-260`), `room_lobby(p_room_id, p_player_token default null)`
   (`:403`).
 - Zapis w przeglądarce w całym `src` to dziś tylko znacznik przeładowania pokoju: `window.sessionStorage` w
   `src/components/room/useRoomState.ts:99,100,110` (klucz `mlt-room-reloaded:<roomId>`, wartość `"1"`, `:51`, `:94-114`).
