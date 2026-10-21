@@ -455,6 +455,18 @@ Treści, tytułów Progress ani kryteriów planu K1 nie zmieniamy (`progress-for
 - Kolejność wdrożenia z migracją: `context/archive/2026-10-15-full-game-evening/plan.md:82-83`
 - Zasady testów: `context/foundation/test-plan.md` §6
 
+## Addendum (21.10.2026): decyzja Karola w fazie 3
+
+Wbrew „What We're NOT Doing” (notka bez zmian) Karol po ocenie zrzutu zdecydował:
+
+- notka po ostatnim pytaniu to to samo zdanie co odmowa: „Pytań już nie ma. Możesz zakończyć grę.” (stała
+  `QUESTIONS_RAN_OUT` w `src/lib/rooms/errors.ts`), zamiast „Pytania z wybranych kategorii się skończyły.”;
+- odmowa `questions_ran_out` jest szara jak notka, nie czerwona, i pokazuje się raz; czytnik ekranu czyta ją z regionu
+  `aria-live` (`src/components/room/HostActions.tsx`);
+- podgląd 63 w `/dev/room-states`: odmowa, gdy Worker znów nie odczytał kategorii (bez notki).
+
+Commit `420414a`; przegląd implementacji F1 (`reviews/impl-review.md`).
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.

@@ -318,8 +318,7 @@ const GAME_OVER = new RegExp(['"status":"closed"', '"round":null'].map((part) =>
 // question 2, which it has not shown (round_over); nor may "Odsłoń wynik" from a host's screen still on question 1
 // (F2 of context/changes/deferred-review-fixes/plan.md), and Ola's vote right after it shows question 2 still voting.
 // The host reveals question 3 with its number before the end: a route that refused every reveal would pass the
-// refusals too. Skipped with SMOKE_GAME=0 (production between `npx supabase db push` and the merge: a Worker without
-// next, skip and end) and with SMOKE_ROUND=0.
+// refusals too. Skipped with SMOKE_GAME=0 and with SMOKE_ROUND=0.
 function gameSteps() {
   const game = [
     ["host opens the next question", () => act("next", { round: 1 }, hostJar), { status: 200, body: ACCEPTED }],
