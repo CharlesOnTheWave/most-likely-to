@@ -94,8 +94,9 @@ describe("readJsonRequest", () => {
 });
 
 // T1 of context/archive/2026-10-15-full-game-evening/research.md and F2 of
-// context/changes/deferred-review-fixes/plan.md: a vote, "Odsłoń wynik", "Następne pytanie" and "Pomiń pytanie" carry
-// the number of the question on the screen. A body without one, or with anything else in its place, is not our screen.
+// context/archive/2026-10-20-deferred-review-fixes/plan.md: a vote, "Odsłoń wynik", "Następne pytanie" and "Pomiń
+// pytanie" carry the number of the question on the screen. A body without one, or with anything else in its place, is
+// not our screen.
 describe("bodyRound", () => {
   it.each([
     { body: { round: 1 }, round: 1 },
