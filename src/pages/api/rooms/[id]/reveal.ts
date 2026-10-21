@@ -9,7 +9,7 @@ const OP = "reveal";
 // "Odsłoń wynik", for the room's host (the session), at any time and with no threshold (PRD FR-009, decision D3); a
 // second reveal is ok too. The body carries the number of the round on the host's screen ({round}), so a screen behind
 // the game never reveals a question it has not shown, and a skipped one has nothing to reveal (round_over; F2 of
-// context/changes/deferred-review-fixes/plan.md). JSON from the room screen: {ok: true} or {error: code}
+// context/archive/2026-10-20-deferred-review-fixes/plan.md). JSON from the room screen: {ok: true} or {error: code}
 // (src/lib/rooms/json-route.ts).
 export const POST: APIRoute = async (context) => {
   const refused = refuseForeignPost(context, OP);

@@ -25,7 +25,7 @@ import {
 // database takes the first question not played yet), D2 (a skip only while voting, with the next question at once;
 // skipping the last question does not end the game), D3 (a skipped round keeps no count), D4 (ending the game closes
 // the room) and T1 (a vote and the host's moves carry the number of the question on screen; another number is
-// round_over), plus the fixes of context/changes/deferred-review-fixes/plan.md with the cases of
+// round_over), plus the fixes of context/archive/2026-10-20-deferred-review-fixes/plan.md with the cases of
 // context/domain/02-invariant-aggregate-refactor.md §5.3: F2 (a vote and "Odsłoń wynik" with no question number or
 // another one are round_over, and so is a reveal of a skipped round; I2, I7-I10, I15) and F3 (malformed candidates are
 // ignored like played ones, and a list longer than 1000 is refused whole with 22023). Every expected question, round
