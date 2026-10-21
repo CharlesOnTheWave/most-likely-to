@@ -487,18 +487,18 @@ Treści, tytułów Progress ani kryteriów planu K1 nie zmieniamy (`progress-for
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test` (w tym `room-errors.test.ts` z nowym kodem), `npm run build`
-- [ ] 3.2 Push gałęzi (za zgodą); CI na PR zielone we wszystkich jobach
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test` (w tym `room-errors.test.ts` z nowym kodem), `npm run build` — 420414a
+- [x] 3.2 Push gałęzi (za zgodą); CI na PR zielone we wszystkich jobach — 420414a
 
 #### Manual
 
-- [x] 3.3 Karol ocenia zrzut nowego podglądu (strona „Co oceniasz”, laptop jako całe okno 1:1, telefon w prawdziwej wielkości)
+- [x] 3.3 Karol ocenia zrzut nowego podglądu (strona „Co oceniasz”, laptop jako całe okno 1:1, telefon w prawdziwej wielkości) — 420414a
 
 ### Phase 4: Dokumenty i wdrożenie
 
 #### Automated
 
-- [ ] 4.1 `npx prettier --check context/changes/refactor-opportunities/plan.md context/changes/refactor-opportunities/plan-brief.md` przechodzi po notce w planie K1 (`npm run lint` nie czyta Markdownu)
+- [x] 4.1 `npx prettier --check context/changes/refactor-opportunities/plan.md context/changes/refactor-opportunities/plan-brief.md` przechodzi po notce w planie K1 (`npm run lint` nie czyta Markdownu)
 - [ ] 4.2 `npx supabase db push --dry-run` pokazuje dokładnie jedną nową migrację `*_round_number_required.sql`
 - [ ] 4.3 `npx supabase migration list` po `db push` pokazuje tę migrację lokalnie i zdalnie
 - [ ] 4.4 Smoke na produkcji zielony, z 4 nowymi krokami (3 odmowy F2 i udana odsłona)
