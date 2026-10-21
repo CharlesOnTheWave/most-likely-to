@@ -28,7 +28,7 @@ import {
 // round_over), plus the fixes of context/changes/deferred-review-fixes/plan.md with the cases of
 // context/domain/02-invariant-aggregate-refactor.md §5.3: F2 (a vote and "Odsłoń wynik" with no question number or
 // another one are round_over, and so is a reveal of a skipped round; I2, I7-I10, I15) and F3 (malformed candidates are
-// skipped like played ones, and a list longer than 1000 is refused whole with 22023). Every expected question, round
+// ignored like played ones, and a list longer than 1000 is refused whole with 22023). Every expected question, round
 // number and count is written out by hand from the scenario, never computed.
 //
 // next_round, skip_round, end_game and cast_vote's p_round come from supabase/migrations/*_full_game_evening.sql,
@@ -43,7 +43,7 @@ const anon = anonClient();
 const [Q1, Q2, Q3, Q4] = EVENING_QUESTION_IDS;
 // The whole pool, as the Worker would send it at any point of this file's evening.
 const POOL = [Q1, Q2, Q3, Q4];
-// A real id in capitals: not the id format, so the candidates' filter skips it, as it skips null.
+// A real id in capitals: not the id format, so the candidates' filter ignores it, as it ignores null.
 const MALFORMED_ID = "NA-CO-DZIEN-001";
 // More candidates than the limit (a game sends at most 216): Q1, in the id format and played in every room here, so a
 // database without the limit answers no_questions and writes nothing.
@@ -151,7 +151,7 @@ describe("an evening: Host, Ola and Bartek through four questions", () => {
     // F3: a list longer than the limit is refused whole, before the candidates are even looked at.
     nextWithTooMany = await nextRound(host.client, room.id, 3, TOO_MANY);
     hostAfterNoneLeft = await roomLobby(host.client, room.id);
-    // F3: the filter skips the malformed candidates and takes Q4, the first good one not played yet.
+    // F3: the filter ignores the malformed candidates and takes Q4, the first good one not played yet.
     nextToLastQuestion = await nextRound(host.client, room.id, 3, [MALFORMED_ID, null, Q4]);
     olaRound4View = await roomLobby(anon, room.id, ola.playerToken);
     // Skipping the last question: no question is left to open, and the game goes on until the host ends it (D2).
