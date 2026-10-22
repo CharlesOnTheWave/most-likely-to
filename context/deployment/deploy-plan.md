@@ -188,7 +188,7 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
   - sprawdzić wersję Node: `.nvmrc` to 22.14.0, a w razie potrzeby można dodać zmienną builda `NODE_VERSION=22`;
   - **nie** dodawać sekretów Supabase jako zmiennych builda. W `astro:env` są opcjonalne i czytane dopiero w działającej aplikacji.
 - **Logowanie na produkcji nie działa:**
-  - czy projekt Supabase nie jest uśpiony (panel pokazuje „Paused”);
+  - czy projekt Supabase nie jest uśpiony (panel pokazuje „Paused”) i czy ostatnie przebiegi „Keep Supabase awake” w zakładce Actions na GitHubie są zielone;
   - czy `SUPABASE_KEY` to klucz publishable/anon;
   - czy konto ma potwierdzony e-mail. Confirm email jest **włączone** od 07.10.2026 (S-05) i ma takie zostać; konto testowe zakłada się z „Auto Confirm User”;
   - podgląd w `npx wrangler tail`.
@@ -202,6 +202,7 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
 ## Poza tym planem (decyzje na później)
 
 - Usypianie darmowego Supabase po 7 dniach, czyli ryzyko nr 1 z `infrastructure.md`. Do rozstrzygnięcia przed pierwszym prawdziwym wieczorem gry.
+  - → 21.10.2026 (keep-supabase-awake): rozstrzygnięte, opcja 2 z roadmapy (Open Question 9). Workflow „Keep Supabase awake” (`.github/workflows/keep-supabase-awake.yml`) co 6 h (`17 */6 * * *`, UTC) i na żądanie uruchamia `scripts/keep-supabase-awake.mjs`: jedno wywołanie `room_link` ze zmyślonym kodem. Przebieg jest zielony tylko przy HTTP 200 i `status: "unknown"`. Czerwony przebieg (i mail z GitHuba) znaczy, że projekt śpi, klucz przestał działać albo zmienił się `room_link`. Adres i klucz publishable to sekrety Actions repo `SUPABASE_URL` i `SUPABASE_KEY`, dodane przez właściciela w ustawieniach repo. W publicznym repo GitHub wyłącza harmonogram po 60 dniach bez aktywności: włączyć go w zakładce Actions albo `gh workflow enable keep-supabase-awake.yml` (ask). Lokalnie to samo robi `npm run keep-awake` (ask, z `.dev.vars`). Zapas: punkt „Paused” w „Sytuacjach brzegowych”.
 - Własny SMTP, projekt rundy na żywo (kanały Realtime, goście), własna domena, Cloudflare Access dla podglądów.
 - Minimalne uprawnienia: `wrangler login` dał token OAuth z dostępem do całego konta. Docelowo token API ograniczony do Workers tego projektu.
 - Wtyczka Cloudflare dla Claude Code (zainstalowana lokalnie, tylko w tym projekcie): po `/reload-plugins` dopisać regułę ask dla serwerów MCP, które mogą zmieniać konto.
