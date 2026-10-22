@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-21
+updated: 2026-10-22
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -49,8 +49,8 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | proposed |
 | S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                           | —                | FR-001                                                    | done     |
 | S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | proposed |
-| S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006                                            | proposed |
-| S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-07             | FR-020                                                    | proposed |
+| S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | proposed |
+| S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | ready    |
 | S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | proposed |
 | S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | proposed |
 | S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | proposed |
@@ -61,12 +61,12 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 
 Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanoniczna kolejność to graf zależności niżej; ta tabela to proponowana kolejność czytania równoległych ścieżek.
 
-| Stream | Theme               | Chain                                      | Note                                                                                    |
-| ------ | ------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------- |
-| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04` | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór. |
-| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03.              |
-| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`          | Rusza po S-03 ze ścieżki A; S-08, S-09 i S-10 mogą iść równolegle.                      |
-| D      | Logowanie hosta     | `S-05`                                     | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                         |
+| Stream | Theme               | Chain                                      | Note                                                                                           |
+| ------ | ------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| A      | Runda na żywo       | `F-01` → `S-01` → `S-02` → `S-03` → `S-04` | Najpierw technika na żywo (cel „nauka”), potem gwiazda przewodnia S-02 i pełny wieczór.        |
+| B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03.                     |
+| C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`          | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07. |
+| D      | Logowanie hosta     | `S-05`                                     | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                |
 
 ## Baseline
 
@@ -190,25 +190,25 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 
 - **Outcome:** Host nadaje i odbiera rolę współhosta graczowi w pokoju; współhost może startować, pomijać i kończyć rundy, więc wieczór trwa dalej, gdy host wyjdzie.
 - **Change ID:** co-host-role
-- **PRD refs:** FR-003, FR-006
+- **PRD refs:** FR-003, FR-006, FR-020
 - **Prerequisites:** S-03
-- **Parallel with:** S-04, S-05, S-06
+- **Parallel with:** S-04, S-05, S-06, S-08
 - **Blockers:** —
 - **Unknowns:** —
-- **Risk:** Wprowadza drugą rolę prowadzącego, na której opierają się S-08, S-09 i S-10; lepiej ustalić uprawnienia raz, niż dokładać je w każdym z tych elementów.
+- **Risk:** Wprowadza drugą rolę prowadzącego, na której opierają się S-09 i S-10; S-08 idzie wcześniej z samym hostem (decyzja 2026-10-22), a S-07 dopisze współhosta do wpuszczania spóźnionych.
 - **Status:** proposed
 
 ### S-08: Wpuszczanie spóźnionych
 
-- **Outcome:** Spóźniony gracz prosi o wejście do trwającej gry z wybranym nickiem; prośba jest widoczna dla hosta i współhosta na każdym ekranie, także w trakcie głosowania; wpuszczony widzi bieżącą rundę i głosuje od następnej.
+- **Outcome:** Spóźniony gracz prosi o wejście do trwającej gry z wybranym nickiem; prośba jest widoczna dla hosta na każdym ekranie (współhosta dopisze S-07), także w trakcie głosowania; wpuszczony widzi bieżącą rundę i głosuje od następnej.
 - **Change ID:** latecomer-admission
 - **PRD refs:** FR-020
-- **Prerequisites:** S-07
-- **Parallel with:** S-09, S-10, S-11
+- **Prerequisites:** S-03
+- **Parallel with:** S-04, S-06, S-07, S-09, S-10, S-11
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Powiadomienie „na każdym ekranie” to kolejne zdarzenie na żywo; sprawdza, czy synchronizacja z F-01 działa także poza samą rundą.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-09: Usunięcie gracza i nowy link
 
@@ -288,7 +288,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-05       | one-click-host-login         | Logowanie hosta jednym kliknięciem                                     | no                    | Zablokowane: wybór dostawców logowania                                     |
 | S-06       | question-list-review         | Opcjonalny przegląd listy pytań przed startem                          | no                    | Czeka na S-02                                                              |
 | S-07       | co-host-role                 | Rola współhosta                                                        | no                    | Czeka na S-03                                                              |
-| S-08       | latecomer-admission          | Wpuszczanie spóźnionych graczy                                         | no                    | Czeka na S-07                                                              |
+| S-08       | latecomer-admission          | Wpuszczanie spóźnionych graczy                                         | yes                   | Run `/10x-plan latecomer-admission`; wpuszcza sam host, współhost w S-07   |
 | S-09       | remove-player-new-link       | Usunięcie gracza i nowy link do pokoju                                 | no                    | Czeka na S-07                                                              |
 | S-10       | guest-question-proposals     | Propozycje pytań od gości z zatwierdzaniem                             | no                    | Czeka na S-07                                                              |
 | S-11       | question-reactions-play-data | Kciuki na odsłonie i zbiorcze dane o pytaniach                         | no                    | Czeka na S-03 i S-06                                                       |
