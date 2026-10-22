@@ -242,7 +242,8 @@ function act(action, body, cookies) {
 
 // An accepted action answers exactly this: a vote's answer carries no target and no count.
 const ACCEPTED = /^\{"ok":true\}$/;
-const GAME_STARTED = /^\/j\/[A-Za-z0-9_-]{22}\?error=game_started$/;
+// Back to the link's own page, with no error: after a latecomer's request it shows the waiting screen.
+const LINK_PAGE = /^\/j\/[A-Za-z0-9_-]{22}$/;
 // The reveal the votes below make, every player in seat order: Smoke host 0, Ola 1, ola 1; one abstention, three
 // ballots. Each part is checked on its own, so the order of the round's keys does not matter.
 const REVEALED = new RegExp(
@@ -266,7 +267,10 @@ function skippedBy(steps, reason) {
 // (not Ola: case counts); the last vote reveals the round by itself. Every vote carries question 1's number, as the
 // room screen sends it; a vote or a reveal without one is refused before the database (F2 of
 // context/archive/2026-10-20-deferred-review-fixes/plan.md). The targets live only in the request bodies: no step's
-// name and nothing the script prints says who voted for whom. Skipped with SMOKE_ROUND=0.
+// name and nothing the script prints says who voted for whom. A new guest during the round asks the host to let them in
+// (S-08, context/changes/latecomer-admission/plan.md, Faza 2 #10): the form answers 303 back to the link, whose page
+// shows the waiting screen, and sets the room's cookie with the request's token. Nobody answers Kuba's request: it
+// waits, out of the round's votes, until the room closes at the end of the evening. Skipped with SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
@@ -280,7 +284,11 @@ function roundSteps() {
       () => act("reveal", {}, hostJar),
       { status: 400, body: /^\{"error":"invalid_body"\}$/ },
     ],
-    ["a new guest cannot join a game in play", () => join("Kuba", new Map()), { status: 302, location: GAME_STARTED }],
+    [
+      "a new guest asks to join a game in play and gets the room's cookie",
+      () => join("Kuba", new Map()),
+      () => ({ status: 303, location: LINK_PAGE, cookie: `mlt_player_${room.id}` }),
+    ],
     ["Ola votes", () => act("vote", { target: "Ola", round: 1 }, olaJar), { status: 200, body: ACCEPTED }],
     [
       "the second guest votes",

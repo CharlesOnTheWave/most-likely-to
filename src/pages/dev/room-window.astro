@@ -67,6 +67,7 @@ const fiveResults: [string, number][] = [
 const twentyCounts = [3, 2, 0, 3, 1, 0, 2, 1, 0, 0, 1, 0, 0, 2, 0, 1, 0, 0, 1, 0];
 const twentyResults: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, twentyCounts[index]]);
 
+// Every player was in the room when the round opened, so all of them may vote in it; no latecomer is waiting.
 function voting(role: "host" | "guest", me: string, players: LobbyPlayer[], voted: string[]): RoomView {
   return {
     status: "playing",
@@ -77,11 +78,13 @@ function voting(role: "host" | "guest", me: string, players: LobbyPlayer[], vote
       number: 1,
       question_id: QUESTION_ID,
       phase: "voting",
+      eligible: players.map(({ nick }) => nick),
       voted,
       me_voted: voted.includes(me),
       after_skip: false,
       question: QUESTION,
     },
+    requests: [],
     questionsLeft: null,
   };
 }
@@ -102,6 +105,7 @@ function revealed(players: LobbyPlayer[], results: [string, number][], abstained
       ballots: votes + abstained,
       question,
     },
+    requests: [],
     questionsLeft: true,
   };
 }
@@ -118,18 +122,42 @@ interface Sample {
 const SAMPLES: Record<string, Sample> = {
   "lobby-host": {
     label: "Poczekalnia: host, 8 graczy",
-    initial: { status: "lobby", role: "host", me: "Ola", players: eightPlayers, round: null, questionsLeft: null },
+    initial: {
+      status: "lobby",
+      role: "host",
+      me: "Ola",
+      players: eightPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+    },
     linkUrl: LINK_URL,
   },
   // A list longer than a laptop's window: the game's column stays in view while the players scroll.
   "lobby-host-20": {
     label: "Poczekalnia: host, 20 graczy",
-    initial: { status: "lobby", role: "host", me: "Ola", players: twentyPlayers, round: null, questionsLeft: null },
+    initial: {
+      status: "lobby",
+      role: "host",
+      me: "Ola",
+      players: twentyPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+    },
     linkUrl: LINK_URL,
   },
   "lobby-guest": {
     label: "Poczekalnia: gość, 8 graczy",
-    initial: { status: "lobby", role: "guest", me: "Bartek", players: eightPlayers, round: null, questionsLeft: null },
+    initial: {
+      status: "lobby",
+      role: "guest",
+      me: "Bartek",
+      players: eightPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+    },
   },
   "vote-guest": {
     label: "Głosowanie: gość przed głosem",
@@ -177,12 +205,21 @@ const SAMPLES: Record<string, Sample> = {
       me: "Ola",
       players: roundPlayers,
       round: { number: 7, phase: "skipped" },
+      requests: [],
       questionsLeft: false,
     },
   },
   "end-host": {
     label: "Koniec wieczoru: host",
-    initial: { status: "closed", role: "host", me: "Ola", players: roundPlayers, round: null, questionsLeft: null },
+    initial: {
+      status: "closed",
+      role: "host",
+      me: "Ola",
+      players: roundPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+    },
   },
 };
 

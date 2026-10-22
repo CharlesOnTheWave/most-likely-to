@@ -2,6 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import JoinForm from "@/components/room/JoinForm";
+import JoinWaiting from "@/components/room/JoinWaiting";
 import Landing from "@/components/room/Landing.astro";
 import NewGameForm from "@/components/room/NewGameForm";
 import OpenRoomNotice from "@/components/room/OpenRoomNotice.astro";
@@ -32,6 +33,12 @@ const newGameCard = {
   description: "Wpisz swój nick i wybierz kategorie. Link dla graczy dostaniesz od razu.",
 };
 const joinCard = { title: "Dołącz do gry", description: "Wpisz nick i jesteś w grze. Konto nie jest potrzebne." };
+// /j/… during a game (S-08): the latecomer's request form, and the same after "Odrzuć".
+const requestCard = {
+  title: "Poproś o wejście",
+  description: "Gra już trwa, więc host musi cię wpuścić. Wpisz nick i poproś o wejście.",
+};
+const requestAgainCard = { title: "Host cię nie wpuścił.", description: "Możesz poprosić o wejście jeszcze raz." };
 
 // Sample room, link and players; the link has the real length (22 base64url characters after /j/).
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
@@ -104,10 +111,11 @@ const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, ż
 const QUESTION_ID = "na-co-dzien-001";
 
 function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
-  return { status: "lobby", role, me, players, round: null, questionsLeft: null };
+  return { status: "lobby", role, me, players, round: null, requests: [], questionsLeft: null };
 }
 
-// round: the question's number in the game and whether the host skipped the one before it (S-03).
+// round: the question's number in the game and whether the host skipped the one before it (S-03). Every player was in
+// the room when the round opened, so all of them may vote in it (eligible), and no latecomer is waiting (requests).
 function voting(
   role: "host" | "guest",
   me: string,
@@ -125,11 +133,13 @@ function voting(
       number: round.number ?? 1,
       question_id: QUESTION_ID,
       phase: "voting",
+      eligible: players.map(({ nick }) => nick),
       voted,
       me_voted: voted.includes(me),
       after_skip: round.afterSkip ?? false,
       question,
     },
+    requests: [],
     questionsLeft: null,
   };
 }
@@ -159,6 +169,7 @@ function revealed(
       ballots: votes + abstained,
       question,
     },
+    requests: [],
     // Only the host learns whether the game's pool has a question left.
     questionsLeft: role === "host" ? questionsLeft : null,
   };
@@ -172,13 +183,14 @@ function skipped(role: "host" | "guest", me: string, players: LobbyPlayer[]): Ro
     me,
     players,
     round: { number: 7, phase: "skipped" },
+    requests: [],
     questionsLeft: role === "host" ? false : null,
   };
 }
 
 // The end of the evening: the room is closed, no round, no counts.
 function closed(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
-  return { status: "closed", role, me, players, round: null, questionsLeft: null };
+  return { status: "closed", role, me, players, round: null, requests: [], questionsLeft: null };
 }
 
 // Ola 2, Kasia 2 (a tie, in seat order), three zeros, one abstention: 5 ballots from 5 players.
@@ -223,14 +235,14 @@ const allForOne: [string, number][] = [
       <h1 class="text-2xl font-semibold">Stany pokoju</h1>
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
-        graczy stoją w miejscu. Hover i focus-visible sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42 i 45f: najedź myszą
-        na pola i przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany
-        host założy pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”,
-        „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”) niczego nie wysyłają: głos od razu pokazuje
-        „Głos oddany”, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a wysłana akcja hosta zostaje w stanie
-        wysyłania. Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Od 1024 px stany
-        pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje
-        /dev/room-window.
+        graczy stoją w miejscu, a ekran czekania na hosta sam nigdzie nie przechodzi. Hover i focus-visible sprawdzasz
+        na stanach 2, 9, 14, 25, 28, 36, 42, 45f i 64: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie
+        formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę
+        wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne
+        pytanie”) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, pytania „Na pewno…?” i „Anuluj” działają
+        naprawdę, a wysłana akcja hosta zostaje w stanie wysyłania. Przełącznik „Koło” / „Paski” w odsłonie działa
+        naprawdę, tylko na swoim ekranie. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w
+        prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -399,6 +411,50 @@ const allForOne: [string, number][] = [
             <h2 class="text-muted-foreground text-sm font-medium">13. Gra skończona</h2>
             <RoomMessage titleAs="h2" title="Ta gra już się skończyła." text="Poproś hosta o nowy link." />
           </section>
+
+          <section id="join-request" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              64. Gra w toku: prośba o wejście · hover · focus-visible
+            </h2>
+            <RoomCard titleAs="h2" {...requestCard}>
+              <JoinForm linkToken={LINK_TOKEN} variant="request" preview={{ idPrefix: "join-request" }} client:load />
+            </RoomCard>
+          </section>
+
+          <section id="join-request-waiting" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">65. Prośba wysłana: czekanie na hosta</h2>
+            <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kuba" preview={{}} client:load />
+          </section>
+
+          <section id="join-request-waiting-error" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">66. Czekanie: błąd odświeżania (nick 20 znaków)</h2>
+            <JoinWaiting
+              roomId={ROOM_ID}
+              linkToken={LINK_TOKEN}
+              nick="Najdłuższy nick 20zn"
+              preview={{ refreshFailed: true }}
+              client:load
+            />
+          </section>
+
+          <section id="join-request-rejected" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">67. Host nie wpuścił: „Poproś jeszcze raz”</h2>
+            {/* The nick asked with before, as the real page has it from the latecomer's own request. */}
+            <RoomCard titleAs="h2" {...requestAgainCard}>
+              <JoinForm
+                linkToken={LINK_TOKEN}
+                variant="request-again"
+                initialNick="Kuba"
+                preview={{ idPrefix: "join-request-rejected" }}
+                client:load
+              />
+            </RoomCard>
+          </section>
+
+          <section id="join-request-closed" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">68. Czekający: gra się skończyła</h2>
+            <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kuba" preview={{ closed: true }} client:load />
+          </section>
         </div>
       </div>
 
@@ -486,6 +542,7 @@ const allForOne: [string, number][] = [
                 me: "Ola",
                 players: fewPlayers,
                 round: null,
+                requests: [],
                 questionsLeft: null,
               }}
               realtime={null}
@@ -504,6 +561,7 @@ const allForOne: [string, number][] = [
                 me: "Ola",
                 players: guestView,
                 round: null,
+                requests: [],
                 questionsLeft: null,
               }}
               realtime={null}
