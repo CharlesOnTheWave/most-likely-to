@@ -14,13 +14,16 @@ export interface LobbyPlayer {
 }
 
 // The round's keys as room_lobby names them (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
-// context/archive/2026-10-15-full-game-evening/plan.md, Faza 2 #4). The latest round of the game only. While it is
-// open: who has voted, in seat order (never the order of voting), never a count, and whether the round before it was
-// skipped (public to everyone, tied to no one's vote).
+// context/archive/2026-10-15-full-game-evening/plan.md, Faza 2 #4; context/changes/latecomer-admission/plan.md,
+// Faza 1 #1). The latest round of the game only. While it is open: who may vote in it (eligible: the players when it
+// opened, in seat order, so a latecomer let in since then is among the players but not here until the next question),
+// who has voted, in seat order (never the order of voting), never a count, and whether the round before it was skipped
+// (public to everyone, tied to no one's vote).
 export interface VotingRound {
   number: number;
   question_id: string;
   phase: "voting";
+  eligible: string[];
   voted: string[];
   me_voted: boolean;
   after_skip: boolean;
@@ -50,12 +53,15 @@ export interface SkippedRound {
 export type RoundState = VotingRound | RevealedRound | SkippedRound;
 
 // What room_lobby returns: nicks in join order, no ids, hashes or link code; a round only while a game is in play.
+// requests: the nicks of the latecomers waiting for the host to let them in, in the order of asking; only the host sees
+// them, a guest always gets [] (and so does the host before the start and once the room is closed).
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
   me: string;
   players: LobbyPlayer[];
   round: RoundState | null;
+  requests: string[];
 }
 
 // What the room screen gets: the round with its question's text, which the Worker adds from the question base. The
@@ -130,6 +136,7 @@ function parseRound(value: Record<string, unknown>): ParseResult<RoundState> {
   if (typeof questionId !== "string") return fail("round.question_id");
 
   if (phase === "voting") {
+    if (!isStringList(value.eligible)) return fail("round.eligible");
     if (!isStringList(value.voted)) return fail("round.voted");
     if (typeof value.me_voted !== "boolean") return fail("round.me_voted");
     if (typeof value.after_skip !== "boolean") return fail("round.after_skip");
@@ -139,6 +146,7 @@ function parseRound(value: Record<string, unknown>): ParseResult<RoundState> {
         number,
         question_id: questionId,
         phase,
+        eligible: [...value.eligible],
         voted: [...value.voted],
         me_voted: value.me_voted,
         after_skip: value.after_skip,
@@ -171,17 +179,37 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (typeof me !== "string") return fail("me");
   const players = parsePlayers(value.players);
   if (!players.ok) return players;
+  if (!isStringList(value.requests)) return fail("requests");
+  const requests = [...value.requests];
 
   const { round: rawRound } = value;
   if (rawRound === undefined) return fail("round");
   if (status !== "playing") {
     if (rawRound !== null) return fail("round");
-    return { ok: true, value: { status, role, me, players: players.value, round: null } };
+    return { ok: true, value: { status, role, me, players: players.value, round: null, requests } };
   }
   if (!isRecord(rawRound)) return fail("round");
   const round = parseRound(rawRound);
   if (!round.ok) return round;
-  return { ok: true, value: { status, role, me, players: players.value, round: round.value } };
+  return { ok: true, value: { status, role, me, players: players.value, round: round.value, requests } };
+}
+
+// How a latecomer's own request stands (join_request_state, through GET /api/rooms/<id>/request), for the /j/<code>
+// page and its waiting screen: pending or rejected with the nick it asked with; admitted once the host let them in;
+// closed once the room is closed; none when the room's cookie has nothing in this room. Never the question, the
+// players or anyone else's request.
+export type JoinRequestState =
+  { state: "pending" | "rejected"; nick: string } | { state: "admitted" | "closed" | "none" };
+
+// Copies only the contract's keys, as parseLobbyState does: a key the database might add by mistake stays here.
+export function parseJoinRequestState(value: unknown): ParseResult<JoinRequestState> {
+  if (!isRecord(value)) return fail("root");
+  const { state, nick } = value;
+  if (state === "pending" || state === "rejected") {
+    return typeof nick === "string" ? { ok: true, value: { state, nick } } : fail("nick");
+  }
+  if (state === "admitted" || state === "closed" || state === "none") return { ok: true, value: { state } };
+  return fail("state");
 }
 
 // The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state plus the round's question,

@@ -2,11 +2,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ringRoom } from "@/lib/live-sync/server";
 import { logEvent } from "@/lib/log";
 import { questionPool, questionText, type QuestionSelection } from "@/lib/rounds/draw";
-import { parseLobbyState, type LobbyState, type RoomView } from "@/lib/rooms/shared";
+import {
+  parseJoinRequestState,
+  parseLobbyState,
+  type JoinRequestState,
+  type LobbyState,
+  type RoomView,
+} from "@/lib/rooms/shared";
 
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
-// *_first_live_round.sql, *_full_game_evening.sql and *_round_number_required.sql; failures come back as codes for the
-// URL or the JSON answer (src/lib/rooms/errors.ts).
+// *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql and *_latecomer_admission.sql; failures
+// come back as codes for the URL or the JSON answer (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes and
 // a vote's target.
 
@@ -15,13 +21,13 @@ export interface RoomFailure {
   reason: string;
 }
 
-// A game's action (start, vote, reveal, next, skip, end): the database answers { ok: true } and nothing else, or its
-// refusal.
+// A game's action (start, vote, reveal, next, skip, end), a latecomer's request to join and the host's answer to it
+// ("Wpuść", "Odrzuć"): the database answers { ok: true } and nothing else, or its refusal.
 export type ActionResult = { ok: true } | RoomFailure;
 
 export type CreateRoomResult = { ok: true; roomId: string; closedRoomId: string | null } | RoomFailure;
-// "started": a game in play; the /j/<code> page lets the room's own players back in. One member per status, so a
-// check of one status narrows the rest.
+// "started": a game in play; the /j/<code> page lets the room's own players back in, and anyone else asks the host to
+// let them in (request_join). One member per status, so a check of one status narrows the rest.
 export type RoomLinkResult =
   | { ok: true; status: "open"; roomId: string }
   | { ok: true; status: "started"; roomId: string }
@@ -31,6 +37,7 @@ export type RoomLinkResult =
 export type JoinRoomResult = { ok: true; roomId: string } | RoomFailure;
 // lobby is null for anyone who is neither the host nor a player of the room, and for a room that does not exist.
 export type RoomLobbyResult = { ok: true; lobby: LobbyState | null } | RoomFailure;
+export type JoinRequestStateResult = { ok: true; request: JoinRequestState } | RoomFailure;
 // selection is null when the signed-in user does not see the room (not its host, or no such room).
 export type RoomCategoriesResult = { ok: true; selection: QuestionSelection | null } | RoomFailure;
 
@@ -168,6 +175,43 @@ export async function joinRoom(
   return refusal(data) ?? unexpectedShape("join_room", "ok");
 }
 
+// A latecomer asks the host to let them into a game in play (S-08), with the token the Worker keeps in the room's
+// cookie: it becomes the player's token once the host lets them in. { ok: true } also when nothing changed (a request
+// already waiting, or a player already). The database raises on a token in another form, so the caller passes one that
+// matches PLAYER_TOKEN_PATTERN.
+export async function requestJoin(
+  supabase: SupabaseClient,
+  linkToken: string,
+  nick: string,
+  playerToken: string,
+): Promise<ActionResult> {
+  const result = await callRpc(supabase, "request_join", {
+    p_link_token: linkToken,
+    p_nick: nick,
+    p_player_token: playerToken,
+  });
+  return result.ok ? actionResult("request_join", result.data) : result;
+}
+
+// How the latecomer's own request stands, by the token from the room's cookie: never the question, the players or
+// anyone else's request. Writes nothing, so the /j/<code> page may ask it on a GET.
+export async function joinRequestState(
+  supabase: SupabaseClient,
+  roomId: string,
+  playerToken: string,
+): Promise<JoinRequestStateResult> {
+  const result = await callRpc(
+    supabase,
+    "join_request_state",
+    { p_room_id: roomId, p_player_token: playerToken },
+    roomId,
+  );
+  if (!result.ok) return result;
+
+  const parsed = parseJoinRequestState(result.data);
+  return parsed.ok ? { ok: true, request: parsed.value } : unexpectedShape("join_request_state", parsed.field, roomId);
+}
+
 // The host is recognised by the session (auth.uid()), a guest by the token from their cookie.
 export async function roomLobby(
   supabase: SupabaseClient,
@@ -224,8 +268,9 @@ export async function hostQuestionsLeft(
   return questionPool(room.selection).length > round.number;
 }
 
-// A round's answer: { ok: true } and nothing else, or the function's refusal.
-function actionResult(fn: string, data: unknown, roomId: string): ActionResult {
+// A round's answer: { ok: true } and nothing else, or the function's refusal. roomId only for the log line: a request
+// to join knows the room only by its link code, which never goes into a log.
+function actionResult(fn: string, data: unknown, roomId?: string): ActionResult {
   if (!isRecord(data)) return unexpectedShape(fn, "root", roomId);
   if (data.ok === true) return { ok: true };
   return refusal(data) ?? unexpectedShape(fn, "ok", roomId);
@@ -302,6 +347,20 @@ export async function skipRound(
 export async function endGame(supabase: SupabaseClient, roomId: string): Promise<ActionResult> {
   const result = await callRpc(supabase, "end_game", { p_room_id: roomId }, roomId);
   return result.ok ? actionResult("end_game", result.data, roomId) : result;
+}
+
+// "Wpuść": the host's session, while the game is in play. nick is one on the host's list of requests; the latecomer
+// becomes a player at the next seat and votes from the next question on. It travels only in this POST's body.
+export async function admitLatecomer(supabase: SupabaseClient, roomId: string, nick: string): Promise<ActionResult> {
+  const result = await callRpc(supabase, "admit_latecomer", { p_room_id: roomId, p_nick: nick }, roomId);
+  return result.ok ? actionResult("admit_latecomer", result.data, roomId) : result;
+}
+
+// "Odrzuć": the host's session, as "Wpuść". The request stays, turned away: the latecomer's screen says so, and they
+// may ask again.
+export async function rejectLatecomer(supabase: SupabaseClient, roomId: string, nick: string): Promise<ActionResult> {
+  const result = await callRpc(supabase, "reject_latecomer", { p_room_id: roomId, p_nick: nick }, roomId);
+  return result.ok ? actionResult("reject_latecomer", result.data, roomId) : result;
 }
 
 // The host's open room, read through RLS: a host has at most one room in the lobby or with a game in play.

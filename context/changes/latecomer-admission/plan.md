@@ -448,26 +448,26 @@ Jedna mała tabela, prośby najwyżej 5 naraz na pokój, odczyt po unikalnym ind
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 `npx prettier --check` dla nowych i zmienionych plików `.md` przechodzi
-- [ ] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `latecomers.test.ts` i nowe asercje pgTAP przechodzą
-- [ ] 1.4 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy `latecomers.test.ts` i 3 asercje resztek pgTAP; po `git revert` CI zielone
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 682d5a5
+- [x] 1.2 `npx prettier --check` dla nowych i zmienionych plików `.md` przechodzi — 682d5a5
+- [x] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `latecomers.test.ts` i nowe asercje pgTAP przechodzą — 682d5a5
+- [x] 1.4 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy `latecomers.test.ts` i 3 asercje resztek pgTAP; po `git revert` CI zielone — 75831a4
 
 #### Manual
 
-- [x] 1.5 Karol czyta streszczenie migracji (tabela, 4 funkcje, co widzi host, co spóźniony) i je akceptuje
+- [x] 1.5 Karol czyta streszczenie migracji (tabela, 4 funkcje, co widzi host, co spóźniony) i je akceptuje — 682d5a5
 
 ### Phase 2: Strona linku i serwer gry
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 `npx prettier --check README.md context/foundation/test-plan.md` przechodzi
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.2 `npx prettier --check README.md context/foundation/test-plan.md` przechodzi
 - [ ] 2.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`)
 
 #### Manual
 
-- [ ] 2.4 Karol ocenia zrzuty `/dev/room-states` dla formularza prośby, ekranu czekania i odrzucenia (strona HTML „Co oceniasz”, telefon w prawdziwej wielkości)
+- [x] 2.4 Karol ocenia zrzuty `/dev/room-states` dla formularza prośby, ekranu czekania i odrzucenia (strona HTML „Co oceniasz”, telefon w prawdziwej wielkości)
 
 ### Phase 3: Ekrany gry
 

@@ -2,9 +2,10 @@ import type { APIContext } from "astro";
 import { logEvent } from "@/lib/log";
 import type { ActionResult, RoomFailure } from "@/lib/rooms/server";
 
-// What the JSON routes of the room screen share: the game's actions (start, vote, reveal, next, skip, end;
-// src/pages/api/rooms/[id]/*.ts), the room's state and the screens' reports (src/pages/api/client-events.ts). Every
-// answer is JSON and never cached; an error is a code from src/lib/rooms/errors.ts, never free text.
+// What the JSON routes of the room screen share: the game's actions (start, vote, reveal, next, skip, end, and the
+// host's "Wpuść" and "Odrzuć": admit, reject; src/pages/api/rooms/[id]/*.ts), the room's state, a latecomer's request
+// state and the screens' reports (src/pages/api/client-events.ts). Every answer is JSON and never cached; an error is a
+// code from src/lib/rooms/errors.ts, never free text.
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
@@ -115,6 +116,17 @@ export function bodyRound(body: unknown): number | undefined {
   }
   const { round } = body as Record<string, unknown>;
   return typeof round === "number" && Number.isInteger(round) && round >= 1 && round <= MAX_ROUND ? round : undefined;
+}
+
+// The latecomer's nick from the body of the host's "Wpuść" or "Odrzuć" ({nick}): a text, as it stands on the host's list
+// of requests (the database compares it by the nick rule). undefined when the body has no nick, is not an object, or
+// holds something else than a text. Never logged.
+export function bodyNick(body: unknown): string | undefined {
+  if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "nick")) {
+    return undefined;
+  }
+  const { nick } = body as Record<string, unknown>;
+  return typeof nick === "string" ? nick : undefined;
 }
 
 function statusFor(reason: string): number {
