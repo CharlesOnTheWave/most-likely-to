@@ -181,7 +181,7 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   - jedyne, co może zawieść, to końcowe `expect`;
   - gdy wyrocznia oczekuje danych, a nie odmowy błędem: jeśli końcowe wywołanie zwróciło `error` (awaria, a nie odpowiedź funkcji), ciało robi `return` przed `expect`. Test wtedy przechodzi i `test.fails` pokazuje go na czerwono, zamiast liczyć awarię jako oczekiwaną porażkę;
   - asercja sprawdza tylko pola z wyroczni (`toMatchObject`, nie `toEqual`), żeby po naprawie test zrobił się czerwony, nawet gdy odpowiedź dostanie nowe pole.
-- **Sign-up limit**: lokalny Supabase przyjmuje 30 rejestracji i logowań na 5 minut z jednego IP (`sign_in_sign_ups` w `supabase/config.toml`). Jeden przebieg zakłada dziś 11 kont: `canary` 0, `roles` 6, `nicks` 1, `round-anonymity` 1, `round-rules` 2, `game-rules` 1. pgTAP nie rejestruje kont (hosty wstawia wprost do `auth.users`).
+- **Sign-up limit**: lokalny Supabase przyjmuje 30 rejestracji i logowań na 5 minut z jednego IP (`sign_in_sign_ups` w `supabase/config.toml`). Jeden przebieg zakłada dziś 12 kont: `canary` 0, `roles` 6, `nicks` 1, `round-anonymity` 1, `round-rules` 2, `game-rules` 1, `latecomers` 1. pgTAP nie rejestruje kont (hosty wstawia wprost do `auth.users`).
   - Nowy plik: jeden host na plik.
   - Host ma najwyżej jeden otwarty pokój, więc kolejny pokój tego samego hosta zakładaj przez `seedRoom(host, { confirmClose: true })`; zamyka on poprzedni.
   - Pliki biegną po kolei (`fileParallelism: false`).
