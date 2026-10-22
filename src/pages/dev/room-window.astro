@@ -67,7 +67,15 @@ const fiveResults: [string, number][] = [
 const twentyCounts = [3, 2, 0, 3, 1, 0, 2, 1, 0, 0, 1, 0, 0, 2, 0, 1, 0, 0, 1, 0];
 const twentyResults: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, twentyCounts[index]]);
 
-function voting(role: "host" | "guest", me: string, players: LobbyPlayer[], voted: string[]): RoomView {
+// By default every player was in the room when the round opened, so all of them may vote in it (eligible); no
+// latecomer is waiting (requests, set by the samples of S-08).
+function voting(
+  role: "host" | "guest",
+  me: string,
+  players: LobbyPlayer[],
+  voted: string[],
+  eligible = players.map(({ nick }) => nick),
+): RoomView {
   return {
     status: "playing",
     role,
@@ -77,11 +85,13 @@ function voting(role: "host" | "guest", me: string, players: LobbyPlayer[], vote
       number: 1,
       question_id: QUESTION_ID,
       phase: "voting",
+      eligible,
       voted,
       me_voted: voted.includes(me),
       after_skip: false,
       question: QUESTION,
     },
+    requests: [],
     questionsLeft: null,
   };
 }
@@ -102,6 +112,7 @@ function revealed(players: LobbyPlayer[], results: [string, number][], abstained
       ballots: votes + abstained,
       question,
     },
+    requests: [],
     questionsLeft: true,
   };
 }
@@ -118,18 +129,42 @@ interface Sample {
 const SAMPLES: Record<string, Sample> = {
   "lobby-host": {
     label: "Poczekalnia: host, 8 graczy",
-    initial: { status: "lobby", role: "host", me: "Ola", players: eightPlayers, round: null, questionsLeft: null },
+    initial: {
+      status: "lobby",
+      role: "host",
+      me: "Ola",
+      players: eightPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+    },
     linkUrl: LINK_URL,
   },
   // A list longer than a laptop's window: the game's column stays in view while the players scroll.
   "lobby-host-20": {
     label: "Poczekalnia: host, 20 graczy",
-    initial: { status: "lobby", role: "host", me: "Ola", players: twentyPlayers, round: null, questionsLeft: null },
+    initial: {
+      status: "lobby",
+      role: "host",
+      me: "Ola",
+      players: twentyPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+    },
     linkUrl: LINK_URL,
   },
   "lobby-guest": {
     label: "Poczekalnia: gość, 8 graczy",
-    initial: { status: "lobby", role: "guest", me: "Bartek", players: eightPlayers, round: null, questionsLeft: null },
+    initial: {
+      status: "lobby",
+      role: "guest",
+      me: "Bartek",
+      players: eightPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+    },
   },
   "vote-guest": {
     label: "Głosowanie: gość przed głosem",
@@ -169,6 +204,24 @@ const SAMPLES: Record<string, Sample> = {
     label: "Odsłona: gość, 5 graczy",
     initial: { ...revealed(roundPlayers, fiveResults, 1, QUESTION), role: "guest", me: "Bartek", questionsLeft: null },
   },
+  // S-08: latecomers waiting above the host's view, in the order of asking.
+  "vote-host-requests": {
+    label: "Głosowanie: host po głosie, 2 prośby o wejście",
+    initial: {
+      ...voting("host", "Ola", roundPlayers, ["Ola", "Bartek", "Zosia"]),
+      requests: ["Marta", "Najdłuższy nick 20zn"],
+    },
+    myVote: { target: "Bartek" },
+  },
+  "reveal-host-request": {
+    label: "Odsłona: host, 1 prośba o wejście",
+    initial: { ...revealed(roundPlayers, fiveResults, 1, QUESTION), requests: ["Marta"] },
+  },
+  // Kuba (the last seat) was let in while question 1 was voting: the note in place of the vote, and his mark in the list.
+  "vote-latecomer": {
+    label: "Głosowanie: wpuszczony w trakcie pytania",
+    initial: voting("guest", "Kuba", roundPlayers, ["Ola", "Zosia"], ["Ola", "Bartek", "Kasia 🎉", "Zosia"]),
+  },
   "skipped-host": {
     label: "Pominięte ostatnie pytanie: host",
     initial: {
@@ -177,12 +230,21 @@ const SAMPLES: Record<string, Sample> = {
       me: "Ola",
       players: roundPlayers,
       round: { number: 7, phase: "skipped" },
+      requests: [],
       questionsLeft: false,
     },
   },
   "end-host": {
     label: "Koniec wieczoru: host",
-    initial: { status: "closed", role: "host", me: "Ola", players: roundPlayers, round: null, questionsLeft: null },
+    initial: {
+      status: "closed",
+      role: "host",
+      me: "Ola",
+      players: roundPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+    },
   },
 };
 

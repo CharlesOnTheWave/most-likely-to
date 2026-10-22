@@ -39,7 +39,8 @@ async function loadPage(roomId: string): Promise<Page> {
     return { kind: "outside" };
   }
 
-  // Only the host reads the link code (RLS on rooms), and only in the lobby: a game in play takes no one new.
+  // Only the host reads the link code (RLS on rooms), and only in the lobby, where the screen shows it. During a game the
+  // same link still works: a latecomer asks there, and the host answers on this screen (S-08).
   let linkUrl: string | null = null;
   if (result.lobby.role === "host" && result.lobby.status === "lobby") {
     const link = await hostLinkToken(supabase, roomId);

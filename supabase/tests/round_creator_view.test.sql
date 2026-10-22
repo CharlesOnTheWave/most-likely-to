@@ -10,7 +10,10 @@
 -- The round's objects (private.rounds, round_results, ballot_boxes, round_voters, rooms.started_at, start_game,
 -- cast_vote, private.close_stale_games, the cron schema) came with S-02; the evening's (next_round, skip_round,
 -- end_game, cast_vote with p_round) with phase 2 of S-03; reveal_round with p_round comes with
--- *_round_number_required.sql (deferred-review-fixes). Each assertion about an object that may be missing must
+-- *_round_number_required.sql (deferred-review-fixes); public.join_requests, request_join, join_request_state,
+-- admit_latecomer and reject_latecomer with *_latecomer_admission.sql (S-08, context/changes/latecomer-admission,
+-- plan Faza 1 #3: a request to join a game in play, reached only through those functions, outside the publication, and
+-- gone from its room once the room closes). Each assertion about an object that may be missing must
 -- be its own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only
 -- through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are),
 -- lives_ok, and the helpers below, which run a call or a count dynamically and hand the error back as text for the TAP
@@ -22,7 +25,7 @@
 
 begin;
 
-select plan(107);
+select plan(128);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -466,6 +469,70 @@ exception when others then
 end;
 $$;
 
+-- Every version of a function of schema public as 'name(arguments)', '; ' between them: one version is one of them.
+create function pg_temp.versions_of(p_name text) returns text language sql as $$
+  select coalesce(
+    string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || ')', '; '),
+    'no function public.' || p_name
+  )
+  from pg_catalog.pg_proc p
+  join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public' and p.proname = p_name
+$$;
+
+-- S-08: two latecomers ask to join the room's game in play through request_join, as anon with fresh 43-character
+-- tokens, and the room's host turns the second one away through reject_latecomer, so the room holds one pending and one
+-- rejected request. 'ok', or the first answer that was not.
+create function pg_temp.latecomers_ask(p_key text) returns text language plpgsql as $$
+declare
+  v_link text;
+  v_nick text;
+  v_outcome text;
+begin
+  select r.link_token into v_link from public.rooms r where r.id = pg_temp.room_of(p_key);
+  foreach v_nick in array array['Kuba', 'Wiktor'] loop
+    v_outcome := pg_temp.outcome(pg_temp.call_as('anon', null, format(
+      'select public.request_join(%L, %L, %L)',
+      v_link, v_nick, md5(random()::text) || substr(md5(random()::text), 1, 11)
+    )));
+    if v_outcome <> 'ok' then
+      return 'request_join as ' || v_nick || ': ' || v_outcome;
+    end if;
+  end loop;
+  v_outcome := pg_temp.outcome(pg_temp.call_as('authenticated', pg_temp.host_of(p_key), format(
+    'select public.reject_latecomer(%L, %L)', pg_temp.room_of(p_key), 'Wiktor'
+  )));
+  if v_outcome <> 'ok' then
+    return 'reject_latecomer as the host: ' || v_outcome;
+  end if;
+  return 'ok';
+end;
+$$;
+
+-- The room's rows in public.join_requests per status, as one line ('pending 1, rejected 1'), 'none', or why there is
+-- no count to give.
+create function pg_temp.join_request_rows(p_key text) returns text language plpgsql as $$
+declare
+  v_rows text;
+begin
+  if to_regclass('public.join_requests') is null then
+    return 'no table public.join_requests';
+  end if;
+  if pg_temp.room_of(p_key) is null then
+    return 'no room ' || p_key;
+  end if;
+  execute $q$
+    select string_agg(s.status || ' ' || s.n, ', ' order by s.status)
+    from (
+      select q.status, count(*) as n from public.join_requests q where q.room_id = $1 group by q.status
+    ) s
+  $q$ into v_rows using pg_temp.room_of(p_key);
+  return coalesce(v_rows, 'none');
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
 -- Positive control (green from day one) -------------------------------------------------------------------------------
 
 -- If this fails, the file reads the wrong database or the owner's view is broken: nothing below means anything.
@@ -617,6 +684,79 @@ select is(
   'reveal_round exists in exactly one version, the one with p_round'
 );
 
+-- Catalog: requests to join a game in play (S-08) -------------------------------------------------------------------
+
+-- A request holds a latecomer's token hash: like public.player_secrets, no API role reaches the table, only the
+-- functions do, and Postgres Changes never sends its rows to anyone holding the publishable key.
+select table_privs_are(
+  'public', 'join_requests', 'anon', array[]::name[], 'anon has no privilege on public.join_requests'
+);
+select table_privs_are(
+  'public', 'join_requests', 'authenticated', array[]::name[], 'authenticated has no privilege on public.join_requests'
+);
+select is(
+  (select c.relrowsecurity from pg_catalog.pg_class c where c.oid = to_regclass('public.join_requests')),
+  true,
+  'public.join_requests has row level security on'
+);
+select is(
+  case
+    when to_regclass('public.join_requests') is null then 'no table public.join_requests'
+    when exists (
+      select 1 from pg_catalog.pg_publication_tables t
+      where t.pubname = 'supabase_realtime' and t.schemaname = 'public' and t.tablename = 'join_requests'
+    ) then 'in supabase_realtime'
+    else 'not published'
+  end,
+  'not published',
+  'public.join_requests is not in supabase_realtime'
+);
+
+-- The latecomer has no session: asking and its own request's state are public endpoints, with every check inside;
+-- letting in and turning away are the signed-in host's.
+select is(
+  pg_temp.function_facts('public.request_join(text, text, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'request_join runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.function_facts('public.join_request_state(uuid, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'join_request_state runs as postgres with an empty search_path, for anon and authenticated'
+);
+select is(
+  pg_temp.function_facts('public.admit_latecomer(uuid, text)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'admit_latecomer runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.function_facts('public.reject_latecomer(uuid, text)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'reject_latecomer runs as postgres with an empty search_path, for authenticated only'
+);
+
+-- A second version beside any of these would be a door its checks do not guard.
+select is(
+  pg_temp.versions_of('request_join'),
+  'request_join(p_link_token text, p_nick text, p_player_token text)',
+  'request_join exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('join_request_state'),
+  'join_request_state(p_room_id uuid, p_player_token text)',
+  'join_request_state exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('admit_latecomer'),
+  'admit_latecomer(p_room_id uuid, p_nick text)',
+  'admit_latecomer exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('reject_latecomer'),
+  'reject_latecomer(p_room_id uuid, p_nick text)',
+  'reject_latecomer exists in exactly one version'
+);
+
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
 
 -- Host, Ola and Bartek: the third vote reveals the round by itself.
@@ -640,11 +780,22 @@ select isnt(
 select is(pg_temp.host_starts('abandoned'), 'ok', 'start_game as the host starts the round to abandon');
 select is(pg_temp.guest_votes('abandoned', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola is accepted');
 select is(pg_temp.urn_rows('round_voters', 'abandoned'), '1', 'before Nowa gra, private.round_voters holds the vote');
+-- S-08: a latecomer waiting and one turned away when the room closes; both requests go with it.
+select is(
+  pg_temp.latecomers_ask('abandoned'), 'ok', 'setup: Kuba asks to join, Wiktor asks and the host turns him away'
+);
+select is(
+  pg_temp.join_request_rows('abandoned'), 'pending 1, rejected 1',
+  'before Nowa gra, public.join_requests holds a pending and a rejected request of the room'
+);
 select is(
   pg_temp.host_opens_new_room('abandoned'), 'ok', 'setup: Nowa gra with confirmation closes the room mid-round'
 );
 select is(pg_temp.urn_rows('ballot_boxes', 'abandoned'), '0', 'after Nowa gra, no private.ballot_boxes row is left');
 select is(pg_temp.urn_rows('round_voters', 'abandoned'), '0', 'after Nowa gra, no private.round_voters row is left');
+select is(
+  pg_temp.join_request_rows('abandoned'), 'none', 'after Nowa gra, no public.join_requests row of the room is left'
+);
 
 -- A round skipped while voting keeps nothing of its votes -------------------------------------------------------
 
@@ -691,6 +842,13 @@ select is(pg_temp.guest_votes('ended', 'Ola', 'Bartek', 2), 'ok', 'cast_vote as 
 select is(
   pg_temp.urn_rows('round_voters', 'ended', 2), '1', 'before the end, private.round_voters of round 2 holds the vote'
 );
+select is(
+  pg_temp.latecomers_ask('ended'), 'ok', 'setup: Kuba asks to join, Wiktor asks and the host turns him away'
+);
+select is(
+  pg_temp.join_request_rows('ended'), 'pending 1, rejected 1',
+  'before the end, public.join_requests holds a pending and a rejected request of the room'
+);
 select is(pg_temp.host_ends('ended'), 'ok', 'end_game as the host ends the game while round 2 is voting');
 select is(pg_temp.room_status('ended'), 'closed', 'end_game closes the room');
 select is(
@@ -702,6 +860,9 @@ select is(
 select is(
   pg_temp.round_counts('ended', 2), 'abstained none | ballots none | results 0',
   'the round ended without a reveal keeps no count'
+);
+select is(
+  pg_temp.join_request_rows('ended'), 'none', 'after the end, no public.join_requests row of the room is left'
 );
 
 -- A crash mid-round loses the votes cast before it, and only those -------------------------------------------------
@@ -733,6 +894,9 @@ select is(
 select isnt(pg_temp.open_room('stale', array['Ola', 'Bartek']), null, 'setup: a host opens a room and 2 guests join');
 select is(pg_temp.host_starts('stale'), 'ok', 'start_game as the host starts the stale game');
 select is(pg_temp.guest_votes('stale', 'Ola', 'Bartek', 1), 'ok', 'cast_vote as Ola in the stale game is accepted');
+select is(
+  pg_temp.latecomers_ask('stale'), 'ok', 'setup: Kuba asks to join the stale game, Wiktor asks and is turned away'
+);
 select lives_ok(
   format(
     'update public.rooms set started_at = now() - interval %L where id = %L', '13 hours', pg_temp.room_of('stale')
@@ -775,11 +939,16 @@ select is(
   pg_temp.urn_rows('round_voters', 'stale-round-2', 2), '1',
   'before the sweep, round 2 of the stale evening holds its vote'
 );
+select is(
+  pg_temp.join_request_rows('stale'), 'pending 1, rejected 1',
+  'before the sweep, public.join_requests holds a pending and a rejected request of the stale game'
+);
 select lives_ok('select private.close_stale_games()', 'private.close_stale_games() runs as the owner');
 
 select is(pg_temp.room_status('stale'), 'closed', 'the sweep closes a game started 13 hours ago');
 select is(pg_temp.urn_rows('ballot_boxes', 'stale'), '0', 'the sweep leaves no private.ballot_boxes row of it');
 select is(pg_temp.urn_rows('round_voters', 'stale'), '0', 'the sweep leaves no private.round_voters row of it');
+select is(pg_temp.join_request_rows('stale'), 'none', 'the sweep leaves no public.join_requests row of it');
 select is(
   pg_temp.urn_rows('ballot_boxes', 'stale-round-2', 2), '0',
   'the sweep leaves no private.ballot_boxes row of the stale evening''s round 2'

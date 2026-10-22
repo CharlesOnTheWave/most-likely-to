@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { parseLobbyState, parseRoomView } from "@/lib/rooms/shared";
+import { parseJoinRequestState, parseLobbyState, parseRoomView } from "@/lib/rooms/shared";
 
 // The room's state as room_lobby returns it, and as the room screen gets it from the Worker (with the question's
 // text). Every new state goes through one parser that names the field that did not pass (audit P6, L4): a database and
 // a Worker out of step must give a log line that says which field, not "an unexpected shape", and an island must not
 // render a shape it does not know. The fixtures are written by hand from the round's contract
 // (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
-// context/archive/2026-10-15-full-game-evening/plan.md, Faza 1 #2 and Faza 3 #2; tests/db/support/rounds.ts, the exact
-// key sets), never from the parser.
+// context/archive/2026-10-15-full-game-evening/plan.md, Faza 1 #2 and Faza 3 #2;
+// context/changes/latecomer-admission/plan.md, Faza 1 #1: requests and round.eligible; tests/db/support/rounds.ts, the
+// exact key sets), never from the parser.
 
 const PLAYERS = [
   { nick: "Ola", host: true },
@@ -15,17 +16,30 @@ const PLAYERS = [
   { nick: "Kuba", host: false },
 ];
 
-const LOBBY = { status: "lobby", role: "host", me: "Ola", players: PLAYERS, round: null };
-const CLOSED = { status: "closed", role: "guest", me: "Bartek", players: PLAYERS, round: null };
+// requests: the latecomers waiting, for the host only; a guest always gets [].
+const LOBBY = { status: "lobby", role: "host", me: "Ola", players: PLAYERS, round: null, requests: [] };
+const CLOSED = { status: "closed", role: "guest", me: "Bartek", players: PLAYERS, round: null, requests: [] };
 const VOTING_ROUND = {
   number: 1,
   question_id: "na-co-dzien-001",
   phase: "voting",
+  eligible: ["Ola", "Bartek", "Kuba"],
   voted: ["Ola", "Kuba"],
   me_voted: true,
   after_skip: false,
 };
-const VOTING = { status: "playing", role: "guest", me: "Kuba", players: PLAYERS, round: VOTING_ROUND };
+const VOTING = { status: "playing", role: "guest", me: "Kuba", players: PLAYERS, round: VOTING_ROUND, requests: [] };
+// S-08: Kuba was let in after the round opened, so he is among the players but not among those who may vote in it;
+// the host sees two latecomers still waiting, in the order of asking.
+const LATECOMER_ROUND = { ...VOTING_ROUND, eligible: ["Ola", "Bartek"], voted: ["Ola"], me_voted: true };
+const HOST_WITH_REQUESTS = {
+  status: "playing",
+  role: "host",
+  me: "Ola",
+  players: PLAYERS,
+  round: LATECOMER_ROUND,
+  requests: ["Zosia", "Igor"],
+};
 // Every eligible player in seat order, zeros included; one abstention among four ballots.
 const REVEALED_ROUND = {
   number: 1,
@@ -39,11 +53,18 @@ const REVEALED_ROUND = {
   abstained: 1,
   ballots: 4,
 };
-const REVEALED = { status: "playing", role: "host", me: "Ola", players: PLAYERS, round: REVEALED_ROUND };
+const REVEALED = { status: "playing", role: "host", me: "Ola", players: PLAYERS, round: REVEALED_ROUND, requests: [] };
 // S-03: the host skipped the last question of the pool, so the skipped round stays the latest one. Its votes are gone:
 // only its number and phase.
 const SKIPPED_ROUND = { number: 4, phase: "skipped" };
-const SKIPPED = { status: "playing", role: "guest", me: "Bartek", players: PLAYERS, round: SKIPPED_ROUND };
+const SKIPPED = {
+  status: "playing",
+  role: "guest",
+  me: "Bartek",
+  players: PLAYERS,
+  round: SKIPPED_ROUND,
+  requests: [],
+};
 // The round after a skip says so to every screen, including one that slept through the skip.
 const AFTER_SKIP_ROUND = { ...VOTING_ROUND, number: 3, after_skip: true };
 const AFTER_SKIP = { ...VOTING, round: AFTER_SKIP_ROUND };
@@ -66,6 +87,7 @@ describe("parseLobbyState", () => {
     { why: "a revealed round", state: REVEALED },
     { why: "a skipped round", state: SKIPPED },
     { why: "a round after a skip", state: AFTER_SKIP },
+    { why: "a round with a latecomer let in after it opened, for the host with requests", state: HOST_WITH_REQUESTS },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -82,9 +104,18 @@ describe("parseLobbyState", () => {
     expect(parseLobbyState({ ...LOBBY, status })).toEqual({ ok: false, field: "status" });
   });
 
-  it.each(["status", "role", "me", "players", "round"])("names the missing field %s", (field) => {
+  it.each(["status", "role", "me", "players", "round", "requests"])("names the missing field %s", (field) => {
     expect(parseLobbyState(without(LOBBY, field))).toEqual({ ok: false, field });
   });
+
+  // A database without requests (the Worker deployed before the migration) is refused in every status, not read as
+  // "nobody waits".
+  it.each([{ state: VOTING }, { state: SKIPPED }, { state: CLOSED }])(
+    "names requests when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "requests"))).toEqual({ ok: false, field: "requests" });
+    },
+  );
 
   it.each([
     { field: "role", state: { ...LOBBY, role: "admin" } },
@@ -93,6 +124,11 @@ describe("parseLobbyState", () => {
     { field: "players", state: { ...LOBBY, players: [null] } },
     { field: "players.nick", state: { ...LOBBY, players: [{ nick: 1, host: true }] } },
     { field: "players.host", state: { ...LOBBY, players: [{ nick: "Ola", host: "yes" }] } },
+    { field: "requests", state: { ...LOBBY, requests: null } },
+    { field: "requests", state: { ...LOBBY, requests: "Zosia" } },
+    { field: "requests", state: { ...LOBBY, requests: [1] } },
+    // A nick only: a request with anything next to it (a token hash, a time) is not ours.
+    { field: "requests", state: { ...LOBBY, requests: [{ nick: "Zosia" }] } },
   ])("names $field for a wrong type", ({ field, state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: false, field });
   });
@@ -107,7 +143,7 @@ describe("parseLobbyState", () => {
     expect(parseLobbyState(state)).toEqual({ ok: false, field: "round" });
   });
 
-  it.each(["number", "question_id", "phase", "voted", "me_voted", "after_skip"])(
+  it.each(["number", "question_id", "phase", "eligible", "voted", "me_voted", "after_skip"])(
     "names the missing voting field round.%s",
     (key) => {
       expect(parseLobbyState(withRound(VOTING, without(VOTING_ROUND, key)))).toEqual({
@@ -140,6 +176,9 @@ describe("parseLobbyState", () => {
     { field: "round.number", round: { ...VOTING_ROUND, number: "1" } },
     { field: "round.question_id", round: { ...VOTING_ROUND, question_id: 1 } },
     { field: "round.phase", round: { ...VOTING_ROUND, phase: "counting" } },
+    { field: "round.eligible", round: { ...VOTING_ROUND, eligible: null } },
+    { field: "round.eligible", round: { ...VOTING_ROUND, eligible: "Ola" } },
+    { field: "round.eligible", round: { ...VOTING_ROUND, eligible: [1] } },
     { field: "round.voted", round: { ...VOTING_ROUND, voted: "Ola" } },
     { field: "round.voted", round: { ...VOTING_ROUND, voted: [1] } },
     { field: "round.me_voted", round: { ...VOTING_ROUND, me_voted: "yes" } },
@@ -164,6 +203,7 @@ describe("parseLobbyState", () => {
     { field: "round.abstained", round: { ...SKIPPED_ROUND, abstained: 0 } },
     { field: "round.ballots", round: { ...SKIPPED_ROUND, ballots: 1 } },
     { field: "round.voted", round: { ...SKIPPED_ROUND, voted: ["Ola"] } },
+    { field: "round.eligible", round: { ...SKIPPED_ROUND, eligible: ["Ola"] } },
     { field: "round.me_voted", round: { ...SKIPPED_ROUND, me_voted: true } },
     { field: "round.question_id", round: { ...SKIPPED_ROUND, question_id: "na-co-dzien-004" } },
   ])("names $field for a skipped round that carries it", ({ field, round }) => {
@@ -178,6 +218,7 @@ describe("parseLobbyState", () => {
       link_token: "planted",
       round: { ...VOTING_ROUND, tally: { Ola: 2 }, votes: 2 },
       players: [{ nick: "Ola", host: true, id: "planted" }],
+      request_tokens: ["planted"],
     };
 
     expect(parseLobbyState(leaky)).toEqual({
@@ -238,5 +279,57 @@ describe("parseRoomView", () => {
 
   it("names the field the lobby parser names", () => {
     expect(parseRoomView(view({ ...LOBBY, status: "paused" }))).toEqual({ ok: false, field: "status" });
+  });
+});
+
+// A latecomer's own request as join_request_state returns it (context/changes/latecomer-admission/plan.md, Faza 1 #1),
+// for the /j/<code> page and its waiting screen: the state, and the nick only while a request exists.
+describe("parseJoinRequestState", () => {
+  it.each([
+    { why: "a request waiting", state: { state: "pending", nick: "Kuba" } },
+    { why: "a request turned away", state: { state: "rejected", nick: "Kuba" } },
+    { why: "a latecomer let in", state: { state: "admitted" } },
+    { why: "a room closed", state: { state: "closed" } },
+    { why: "no request", state: { state: "none" } },
+  ])("accepts $why as it came", ({ state }) => {
+    expect(parseJoinRequestState(state)).toEqual({ ok: true, value: state });
+  });
+
+  it.each([{ value: null }, { value: [] }, { value: "pending" }, { value: 1 }])(
+    "names the root for a value that is not an object: $value",
+    ({ value }) => {
+      expect(parseJoinRequestState(value)).toEqual({ ok: false, field: "root" });
+    },
+  );
+
+  it.each(["waiting", "admit", "", null, 1, undefined])("names state for the unknown state %j", (state) => {
+    expect(parseJoinRequestState({ state, nick: "Kuba" })).toEqual({ ok: false, field: "state" });
+  });
+
+  it.each([
+    { why: "missing from a request waiting", state: { state: "pending" } },
+    { why: "missing from a request turned away", state: { state: "rejected" } },
+    { why: "not a text", state: { state: "pending", nick: 1 } },
+    { why: "null", state: { state: "rejected", nick: null } },
+  ])("names nick when it is $why", ({ state }) => {
+    expect(parseJoinRequestState(state)).toEqual({ ok: false, field: "nick" });
+  });
+
+  // Whoever is still outside sees nothing of the game: a key outside the contract (the question, the players, another
+  // latecomer's request) never reaches the waiting screen, even if the database sent one.
+  it.each([
+    {
+      why: "a request waiting",
+      state: { state: "pending", nick: "Kuba", question: "planted", players: ["Ola"], requests: ["Zosia"] },
+      value: { state: "pending", nick: "Kuba" },
+    },
+    {
+      why: "a latecomer let in",
+      state: { state: "admitted", nick: "Kuba", room_id: "planted" },
+      value: { state: "admitted" },
+    },
+    { why: "no request", state: { state: "none", nick: "planted" }, value: { state: "none" } },
+  ])("passes on no key outside the contract for $why", ({ state, value }) => {
+    expect(parseJoinRequestState(state)).toEqual({ ok: true, value });
   });
 });
