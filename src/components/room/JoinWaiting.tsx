@@ -121,6 +121,9 @@ export default function JoinWaiting({ roomId, linkToken, nick, realtime, preview
       return true;
     }
 
+    // Known limit, accepted for now: a request still waiting is "no new state" to the limiter, so every bell of a busy
+    // round (each vote rings) doubles the bells' gap, and the host's "Wpuść" may reach this screen up to LOBBY_POLL_MS
+    // late. That brake is what bounds a stranger ringing the public channel.
     const limiter = createFetchLimiter({
       fetchState,
       onError: (error) => {

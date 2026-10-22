@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CircleCheck, Eye, Send, SkipForward } from "lucide-react";
+import { CircleCheck, Eye, Hourglass, Send, SkipForward } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +75,10 @@ function PlayerBadges({ player, isMe, hasVoted }: { player: LobbyPlayer; isMe: b
 // vote is final (decision D2), so the screen says so before and after. Everyone sees who has voted, never for whom;
 // the host can reveal the result at any time (decision D3), skip the question while it is voting (its votes are gone,
 // the next question opens at once) and end the game (decisions D2 and D4 of
-// context/archive/2026-10-15-full-game-evening/research.md); skipping and ending ask first.
+// context/archive/2026-10-15-full-game-evening/research.md); skipping and ending ask first. Only the round's eligible
+// players (the players when it opened, round.eligible) are counted in "Zagłosowało X z Y" and offered in the list: a
+// latecomer the host let in since then (S-08) sees the question with a note instead of the form, stands among the
+// players marked "od następnego pytania", and votes from the next question on.
 export default function RoundVoting({
   view,
   round,
@@ -99,8 +102,13 @@ export default function RoundVoting({
   // After a reload only the database knows: "Głos oddany", without the choice.
   const hasVoted = myVote !== null || round.me_voted;
   const voted = new Set(round.voted);
+  const eligible = new Set(round.eligible);
+  // false for a latecomer let in while this question was voting.
+  const canVote = eligible.has(view.me);
+  // Whom the form offers: the eligible players, in seat order (the players' order).
+  const candidates = view.players.filter((player) => eligible.has(player.nick));
   const choiceErrorId = `${idPrefix}vote-choice-error`;
-  const votedOf = `${String(round.voted.length)} z ${String(view.players.length)}`;
+  const votedOf = `${String(round.voted.length)} z ${String(round.eligible.length)}`;
 
   async function vote(target: string | null) {
     setVoting(true);
@@ -136,137 +144,174 @@ export default function RoundVoting({
     return list.length > 0 ? list.join(" ") : undefined;
   }
 
-  // Who has voted so far, and the quiet note when the state could not be refreshed.
+  // Who has voted so far out of those who may, and the quiet note when the state could not be refreshed.
   const status = (
     <div className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs">
       <p>
-        Zagłosowało: {round.voted.length} z {view.players.length}
+        Zagłosowało: {round.voted.length} z {round.eligible.length}
       </p>
       <p aria-live="polite">{refreshFailed ? "Nie udało się odświeżyć stanu gry" : ""}</p>
     </div>
   );
 
-  let hint = "Wybierz jedną osobę, także siebie, albo wstrzymaj się.";
-  if (hasVoted) {
+  // Every player, a latecomer too: one let in during this question has a grey "od następnego pytania" and never the
+  // vote's badge.
+  const players = (
+    <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
+      <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
+        Gracze ({view.players.length})
+      </h2>
+      <ul className="divide-y rounded-md border">
+        {view.players.map((player) => {
+          const mayVote = eligible.has(player.nick);
+          return (
+            <li key={player.nick} className={`${ROW} justify-between py-2.5`}>
+              <span className="flex min-w-0 flex-col">
+                <span className="wrap-anywhere">{player.nick}</span>
+                {!mayVote && <span className="text-muted-foreground text-xs">od następnego pytania</span>}
+              </span>
+              <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
+                <PlayerBadges
+                  player={player}
+                  isMe={player.nick === view.me}
+                  hasVoted={mayVote && voted.has(player.nick)}
+                />
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {status}
+    </section>
+  );
+
+  // The hints are for those who may vote; a latecomer gets the note in place of the form instead.
+  let hint: string | null = "Wybierz jedną osobę, także siebie, albo wstrzymaj się.";
+  if (!canVote) {
+    hint = null;
+  } else if (hasVoted) {
     hint = isHost
       ? "Wynik pokaże się, gdy zagłosują wszyscy."
       : "Wynik pokaże się, gdy zagłosują wszyscy albo gdy host go odsłoni.";
+  }
+
+  let body: React.ReactNode;
+  if (!canVote) {
+    body = (
+      <>
+        {/* A note, not an alert: it is on the screen from the moment the latecomer comes in. */}
+        <Alert role="note">
+          <Hourglass />
+          <AlertTitle>Zagłosujesz od następnego pytania</AlertTitle>
+          <AlertDescription>Host wpuścił cię w trakcie tego pytania. Wynik zobaczysz razem z innymi.</AlertDescription>
+        </Alert>
+        {players}
+      </>
+    );
+  } else if (hasVoted) {
+    body = (
+      <>
+        <Alert>
+          <CircleCheck />
+          <AlertTitle>Głos oddany</AlertTitle>
+          <AlertDescription>
+            {myVote && <p>{myVote.target === null ? "Wstrzymujesz się." : `Twój głos: ${myVote.target}.`}</p>}
+            <p>Głosu nie da się zmienić.</p>
+          </AlertDescription>
+        </Alert>
+        {players}
+      </>
+    );
+  } else {
+    body = (
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+        <FieldSet className="min-w-0 gap-3">
+          <FieldLegend variant="label">Twój głos</FieldLegend>
+          <ul className="divide-y rounded-md border">
+            {candidates.map((player, index) => {
+              const id = `${idPrefix}vote-${index}`;
+              const badgesId = `${id}-badges`;
+              const isMe = player.nick === view.me;
+              const hasBadges = player.host || isMe || voted.has(player.nick);
+              return (
+                <li key={player.nick} className={CHOICE_ROW}>
+                  <input
+                    type="radio"
+                    id={id}
+                    name={`${idPrefix}vote`}
+                    value={index}
+                    checked={choice === player.nick}
+                    onChange={() => {
+                      choose(player.nick);
+                    }}
+                    aria-describedby={describedBy(hasBadges && badgesId, missingChoice && choiceErrorId)}
+                    aria-invalid={missingChoice || undefined}
+                    className={RADIO}
+                  />
+                  <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer py-2.5 wrap-anywhere">
+                    {player.nick}
+                  </label>
+                  {hasBadges && (
+                    <span id={badgesId} className="flex shrink-0 flex-wrap justify-end gap-1.5">
+                      <PlayerBadges player={player} isMe={isMe} hasVoted={voted.has(player.nick)} />
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+            <li className={CHOICE_ROW}>
+              <input
+                type="radio"
+                id={`${idPrefix}vote-abstain`}
+                name={`${idPrefix}vote`}
+                value={ABSTAIN}
+                checked={choice === null}
+                onChange={() => {
+                  choose(null);
+                }}
+                aria-describedby={describedBy(missingChoice && choiceErrorId)}
+                aria-invalid={missingChoice || undefined}
+                className={RADIO}
+              />
+              <label htmlFor={`${idPrefix}vote-abstain`} className="min-w-0 flex-1 cursor-pointer py-2.5">
+                Wstrzymuję się
+              </label>
+            </li>
+          </ul>
+          {missingChoice && <FieldError id={choiceErrorId}>Wybierz osobę albo „Wstrzymuję się”.</FieldError>}
+          {status}
+        </FieldSet>
+
+        <ServerError message={voteError} />
+
+        <div className="flex flex-col gap-2">
+          <Button type="submit" className="w-full" disabled={voting}>
+            {voting ? (
+              <>
+                <Spinner aria-hidden="true" />
+                Wysyłanie…
+              </>
+            ) : (
+              <>
+                <Send />
+                Zagłosuj
+              </>
+            )}
+          </Button>
+          <p className="text-muted-foreground text-sm">Głosu nie da się zmienić.</p>
+        </div>
+      </form>
+    );
   }
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <RoundQuestion question={round.question} titleAs={titleAs} />
-        <p className="text-muted-foreground">{hint}</p>
+        {hint && <p className="text-muted-foreground">{hint}</p>}
       </div>
 
-      {hasVoted ? (
-        <>
-          <Alert>
-            <CircleCheck />
-            <AlertTitle>Głos oddany</AlertTitle>
-            <AlertDescription>
-              {myVote && <p>{myVote.target === null ? "Wstrzymujesz się." : `Twój głos: ${myVote.target}.`}</p>}
-              <p>Głosu nie da się zmienić.</p>
-            </AlertDescription>
-          </Alert>
-
-          <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
-            <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
-              Gracze ({view.players.length})
-            </h2>
-            <ul className="divide-y rounded-md border">
-              {view.players.map((player) => (
-                <li key={player.nick} className={`${ROW} justify-between py-2.5`}>
-                  <span className="min-w-0 wrap-anywhere">{player.nick}</span>
-                  <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
-                    <PlayerBadges player={player} isMe={player.nick === view.me} hasVoted={voted.has(player.nick)} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-            {status}
-          </section>
-        </>
-      ) : (
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-          <FieldSet className="min-w-0 gap-3">
-            <FieldLegend variant="label">Twój głos</FieldLegend>
-            <ul className="divide-y rounded-md border">
-              {view.players.map((player, index) => {
-                const id = `${idPrefix}vote-${index}`;
-                const badgesId = `${id}-badges`;
-                const isMe = player.nick === view.me;
-                const hasBadges = player.host || isMe || voted.has(player.nick);
-                return (
-                  <li key={player.nick} className={CHOICE_ROW}>
-                    <input
-                      type="radio"
-                      id={id}
-                      name={`${idPrefix}vote`}
-                      value={index}
-                      checked={choice === player.nick}
-                      onChange={() => {
-                        choose(player.nick);
-                      }}
-                      aria-describedby={describedBy(hasBadges && badgesId, missingChoice && choiceErrorId)}
-                      aria-invalid={missingChoice || undefined}
-                      className={RADIO}
-                    />
-                    <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer py-2.5 wrap-anywhere">
-                      {player.nick}
-                    </label>
-                    {hasBadges && (
-                      <span id={badgesId} className="flex shrink-0 flex-wrap justify-end gap-1.5">
-                        <PlayerBadges player={player} isMe={isMe} hasVoted={voted.has(player.nick)} />
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-              <li className={CHOICE_ROW}>
-                <input
-                  type="radio"
-                  id={`${idPrefix}vote-abstain`}
-                  name={`${idPrefix}vote`}
-                  value={ABSTAIN}
-                  checked={choice === null}
-                  onChange={() => {
-                    choose(null);
-                  }}
-                  aria-describedby={describedBy(missingChoice && choiceErrorId)}
-                  aria-invalid={missingChoice || undefined}
-                  className={RADIO}
-                />
-                <label htmlFor={`${idPrefix}vote-abstain`} className="min-w-0 flex-1 cursor-pointer py-2.5">
-                  Wstrzymuję się
-                </label>
-              </li>
-            </ul>
-            {missingChoice && <FieldError id={choiceErrorId}>Wybierz osobę albo „Wstrzymuję się”.</FieldError>}
-            {status}
-          </FieldSet>
-
-          <ServerError message={voteError} />
-
-          <div className="flex flex-col gap-2">
-            <Button type="submit" className="w-full" disabled={voting}>
-              {voting ? (
-                <>
-                  <Spinner aria-hidden="true" />
-                  Wysyłanie…
-                </>
-              ) : (
-                <>
-                  <Send />
-                  Zagłosuj
-                </>
-              )}
-            </Button>
-            <p className="text-muted-foreground text-sm">Głosu nie da się zmienić.</p>
-          </div>
-        </form>
-      )}
+      {body}
 
       {isHost && (
         <HostActions

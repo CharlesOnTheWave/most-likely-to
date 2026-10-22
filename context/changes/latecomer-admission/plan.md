@@ -461,25 +461,25 @@ Jedna mała tabela, prośby najwyżej 5 naraz na pokój, odczyt po unikalnym ind
 
 #### Automated
 
-- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 2.2 `npx prettier --check README.md context/foundation/test-plan.md` przechodzi
-- [ ] 2.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`)
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 295beca
+- [x] 2.2 `npx prettier --check README.md context/foundation/test-plan.md` przechodzi — 295beca
+- [x] 2.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) — 295beca
 
 #### Manual
 
-- [x] 2.4 Karol ocenia zrzuty `/dev/room-states` dla formularza prośby, ekranu czekania i odrzucenia (strona HTML „Co oceniasz”, telefon w prawdziwej wielkości)
+- [x] 2.4 Karol ocenia zrzuty `/dev/room-states` dla formularza prośby, ekranu czekania i odrzucenia (strona HTML „Co oceniasz”, telefon w prawdziwej wielkości) — 295beca
 
 ### Phase 3: Ekrany gry
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 3.2 `npx prettier --check context/domain/glossary.md context/foundation/test-plan.md` przechodzi
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.2 `npx prettier --check context/domain/glossary.md context/foundation/test-plan.md` przechodzi
 - [ ] 3.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach, w `e2e` `latecomer.spec.ts`, w `smoke` nowe kroki
 
 #### Manual
 
-- [ ] 3.4 Karol ocenia zrzuty: host z prośbami w głosowaniu i odsłonie (laptop jako całe okno 1:1 i telefon), wpuszczony z notką i dopiskiem
+- [x] 3.4 Karol ocenia zrzuty: host z prośbami w głosowaniu i odsłonie (laptop jako całe okno 1:1 i telefon), wpuszczony z notką i dopiskiem
 
 ### Phase 4: Wdrożenie
 
