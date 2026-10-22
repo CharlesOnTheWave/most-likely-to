@@ -2,26 +2,27 @@ Project rules for all agents: @AGENTS.md
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — Moduł 5, Lekcja 2 (Agent zespołowy z SDK)
+## Zestaw narzędzi AI 10xDevs — moduł 5, lekcja 5 (agenci asynchroniczni i zdalni)
 
-Zbuduj minimalnego agenta do przeglądu kodu: diff na wejściu, ustrukturyzowany werdykt JSON na wyjściu. Schemat i prompt systemowy są kontraktem, od którego zależy wszystko później (bramka CI, ewaluacje).
+Deleguj ograniczoną, zaplanowaną zmianę i wróć, aby ją przejrzeć. Kontrola nie znika; przenosi się do kontraktu zadania, konfiguracji sandboxa i końcowego przeglądu.
 
 ```
-review schema + system prompt -> review.ts (ready-made agent SDK or AI SDK ToolLoopAgent) -> git diff | npx tsx review.ts
+/10x-plan -> /goal + /10x-goal-implement (interactive or claude -p) -> review the commits and the manual checklist
 ```
 
 ### Router zadań — od czego zacząć
 
-| Umiejętność / prompt / szablon | Użyj, gdy |
+| Umiejętność | Użyj jej, gdy |
 | --- | --- |
-| `m5l2-review-schema.ts.template` (config templates) | Rozpoczynasz tworzenie recenzenta. Skopiuj go do pakietu recenzenta: sześć ocenianych kryteriów (1–10), werdykt i podsumowanie jako schemat zod oraz prompt systemowy. |
-| `m5l2-agent` (prompts) | Konfigurujesz punkt wejścia AI SDK, a następnie planujesz modułowego recenzenta `ToolLoopAgent` za pomocą `/10x-plan`. |
-| `/10x-plan` -> `/10x-implement` | Przekształcasz jednoplikowego recenzenta w moduły wielokrotnego użytku. |
+| `/10x-goal-implement <change-id>` | Zatwierdzony `context/changes/<id>/plan.md` powinien zostać wykonany bez nadzoru. Połącz go z `/goal <condition>`; zapisuje commit po każdej zielonej fazie i kończy się oczekującymi ręcznymi kontrolami. |
+| `/10x-implement` | Chcesz samodzielnie kierować każdą fazą. |
 
 ### Twarde zasady
 
-- **Schemat jest kontraktem.** Najpierw zmień kryteria, wartości werdyktu lub nazwy pól w schemacie, a następnie w promptach, bramkach i ewaluacjach.
-- **Przypinaj główne wersje.** Kod lekcji jest przeznaczony dla AI SDK 7 (`ai@7`, `@openrouter/ai-sdk-provider@3`) oraz Node 22+.
-- **Śledź koszt każdego uruchomienia.** Loguj użycie z każdego przeglądu i ustaw twardy limit budżetu, zanim agent zacznie działać bez nadzoru.
+- **Deleguj wyłącznie zaplanowaną pracę.** Brak zatwierdzonego `plan.md` oznacza brak działania bez nadzoru.
+- **Ogranicz każde uruchomienie.** Warunek `/goal` określa stan końcowy i limit tur.
+- **Zielone uruchomienie nie oznacza ukończonej zmiany.** Przejrzyj commity i wykonaj ręczną checklistę przed mergowaniem.
+- **Przyznaj sandboxowi tylko te sekrety i dostęp do sieci, których zadanie potrzebuje.**
+- **Monitoruj równoległe i zdalne uruchomienia w jednym miejscu.** Uruchamiaj każdą sesję bez nadzoru w osobnym obszarze roboczym herdr, aby widzieć, którzy agenci pracują, są zablokowani lub skończyli, oraz interweniować z przeglądarki (konfiguracja w M2L6 Deep Dive).
 
 <!-- END @przeprogramowani/10x-cli -->

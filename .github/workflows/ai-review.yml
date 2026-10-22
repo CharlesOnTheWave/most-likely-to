@@ -1,0 +1,90 @@
+# AI review of every pull request to main (M5L3): the reviewer from tools/pr-review on the owner's Claude subscription
+# (secret CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token`, no API key). It comments with the summary, sets the label
+# ai-cr:passed / ai-cr:failed and turns red on "fail"; adding the label ai-cr:review runs it again. The verdict is a
+# suggestion for the owner, not a required check and not part of the gate in ci.yml.
+name: AI review
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write # labels live on the issues API
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.action != 'labeled' || github.event.label.name == 'ai-cr:review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history, otherwise there is no base to diff against
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/pr-review/package-lock.json
+
+      - name: Install the reviewer
+        working-directory: tools/pr-review
+        run: npm ci
+
+      - name: Compute diff
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git diff "origin/$BASE_REF...HEAD" > "$RUNNER_TEMP/pr.diff"
+
+      - id: review
+        name: Review
+        working-directory: tools/pr-review
+        # Untrusted PR text goes through env, never interpolated into the script.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          test -n "$CLAUDE_CODE_OAUTH_TOKEN" || { echo "::error::Missing secret CLAUDE_CODE_OAUTH_TOKEN (claude setup-token)"; exit 1; }
+          # The token is printed wrapped across lines by `claude setup-token`, so a pasted secret may carry line
+          # breaks or spaces. Strip them; log only the shape (length, prefix), never the value.
+          raw_length=${#CLAUDE_CODE_OAUTH_TOKEN}
+          CLAUDE_CODE_OAUTH_TOKEN=$(printf '%s' "$CLAUDE_CODE_OAUTH_TOKEN" | tr -d '[:space:]')
+          echo "::add-mask::$CLAUDE_CODE_OAUTH_TOKEN" # the stripped value differs from the secret GitHub masks
+          export CLAUDE_CODE_OAUTH_TOKEN
+          case "$CLAUDE_CODE_OAUTH_TOKEN" in sk-ant-oat01-*) prefix=ok ;; *) prefix=unexpected ;; esac
+          echo "token: ${#CLAUDE_CODE_OAUTH_TOKEN} chars (raw $raw_length), prefix $prefix"
+          npx tsx src/index.ts "$RUNNER_TEMP/pr.diff" > "$RUNNER_TEMP/ai-review.json"
+          verdict=$(node -e 'const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); if (!["pass", "fail"].includes(r.verdict)) process.exit(1); console.log(r.verdict)' "$RUNNER_TEMP/ai-review.json")
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+
+      - name: Comment and label
+        if: steps.review.outputs.verdict != ''
+        env:
+          VERDICT: ${{ steps.review.outputs.verdict }}
+        run: |
+          (cd tools/pr-review && npx tsx src/comment.ts "$RUNNER_TEMP/ai-review.json") > "$RUNNER_TEMP/comment.md"
+          # One comment per PR, updated on every run.
+          gh pr comment "$PR" --edit-last --body-file "$RUNNER_TEMP/comment.md" || gh pr comment "$PR" --body-file "$RUNNER_TEMP/comment.md"
+          gh label create ai-cr:passed --color 0E8A16 --description "AI review: pass" --force
+          gh label create ai-cr:failed --color B60205 --description "AI review: fail" --force
+          gh label create ai-cr:review --color 1D76DB --description "Run the AI review again" --force
+          if [ "$VERDICT" = pass ]; then add=ai-cr:passed; drop=ai-cr:failed; else add=ai-cr:failed; drop=ai-cr:passed; fi
+          gh pr edit "$PR" --add-label "$add" --remove-label "$drop"
+          gh pr edit "$PR" --remove-label ai-cr:review || true
+
+      - name: Gate on verdict
+        env:
+          VERDICT: ${{ steps.review.outputs.verdict }}
+        run: |
+          test "$VERDICT" = pass || { echo "::error::AI review verdict: ${VERDICT:-missing}"; exit 1; }

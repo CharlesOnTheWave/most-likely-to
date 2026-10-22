@@ -1,0 +1,229 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { describe, expect, it } from "vitest";
+import {
+  castVote,
+  createRoom,
+  endGame,
+  joinRoom,
+  nextRound,
+  revealRound,
+  roomLink,
+  roomLobby,
+  skipRound,
+  startGame,
+} from "@/lib/rooms/server";
+
+// The Worker reaches the database only through these RPCs (src/lib/rooms/server.ts), and the function's name and its
+// p_* keys are plain strings. A typo there, a lost or extra key, or a value passed to the wrong parameter would pass
+// every local check and show only in CI, or, for "Odsłoń wynik", which no CI job drives through the Worker, nowhere
+// (context/changes/refactor-opportunities/plan.md, Faza 1). This test pins, for each game action, the function's name
+// and the exact arguments the Worker sends.
+
+// The oracle: each function's parameters as the latest migration defines them, written out by hand, never read from
+// server.ts. A new or changed RPC function adds or changes its row here, together with the migration.
+const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = {
+  // supabase/migrations/20261014101922_first_live_round.sql:220-226
+  create_room: [
+    { name: "p_nick", hasDefault: false },
+    { name: "p_link_token", hasDefault: false },
+    { name: "p_categories", hasDefault: false },
+    { name: "p_adult_categories", hasDefault: false },
+    { name: "p_confirm_close", hasDefault: true },
+  ],
+  // supabase/migrations/20261014101922_first_live_round.sql:384
+  room_link: [{ name: "p_link_token", hasDefault: false }],
+  // supabase/migrations/20261014101922_first_live_round.sql:308
+  join_room: [
+    { name: "p_link_token", hasDefault: false },
+    { name: "p_nick", hasDefault: false },
+    { name: "p_player_token", hasDefault: false },
+  ],
+  // supabase/migrations/20261015122252_full_game_evening.sql:403
+  room_lobby: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
+  // supabase/migrations/20261014101922_first_live_round.sql:540
+  start_game: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_question_id", hasDefault: false },
+  ],
+  // supabase/migrations/20261020205751_round_number_required.sql:87-92
+  cast_vote: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_target", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+    { name: "p_round", hasDefault: true },
+  ],
+  // supabase/migrations/20261020205751_round_number_required.sql:238
+  reveal_round: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_round", hasDefault: true },
+  ],
+  // supabase/migrations/20261015122252_full_game_evening.sql:79
+  next_round: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_round", hasDefault: false },
+    { name: "p_candidates", hasDefault: false },
+  ],
+  // supabase/migrations/20261015122252_full_game_evening.sql:140
+  skip_round: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_round", hasDefault: false },
+    { name: "p_candidates", hasDefault: false },
+  ],
+  // supabase/migrations/20261015122252_full_game_evening.sql:207
+  end_game: [{ name: "p_room_id", hasDefault: false }],
+};
+
+// An answer on the success path for each function, one that passes server.ts's check of its shape.
+const SUCCESS: Record<string, unknown> = {
+  create_room: { ok: true, room_id: "room-created" },
+  join_room: { ok: true, room_id: "room-joined" },
+  room_link: { status: "unknown" },
+  room_lobby: null,
+};
+
+interface RpcCall {
+  fn: string;
+  args: unknown[];
+}
+
+// A client that has only rpc(fn, args, options?): it records each call, with every argument it got, and answers as
+// the database would on the success path.
+function fakeClient(): { supabase: SupabaseClient; calls: RpcCall[] } {
+  const calls: RpcCall[] = [];
+  const client = {
+    rpc(fn: string, ...args: unknown[]) {
+      calls.push({ fn, args });
+      const data = fn in SUCCESS ? SUCCESS[fn] : { ok: true };
+      return Promise.resolve({ data, error: null, status: 200 });
+    },
+  };
+  return { supabase: client as unknown as SupabaseClient, calls };
+}
+
+// Sentinels: a different value for every input field, so a value sent to the wrong parameter shows.
+const ROOM_ID = "room-id-sentinel";
+const NICK = "nick-sentinel";
+const LINK_TOKEN = "link-token-sentinel";
+const PLAYER_TOKEN = "player-token-sentinel";
+const QUESTION_ID = "question-id-sentinel";
+const TARGET = "target-sentinel";
+const CATEGORIES = ["category-sentinel"];
+const ADULT_CATEGORIES = ["adult-category-sentinel"];
+const CANDIDATES = ["candidate-sentinel"];
+const ROUND = 7;
+
+const CASES: {
+  action: string;
+  fn: string;
+  call: (supabase: SupabaseClient) => Promise<{ ok: boolean }>;
+  expected: Record<string, unknown>;
+}[] = [
+  {
+    action: "Załóż grę",
+    fn: "create_room",
+    call: (supabase) =>
+      createRoom(supabase, {
+        nick: NICK,
+        linkToken: LINK_TOKEN,
+        categories: CATEGORIES,
+        adultCategories: ADULT_CATEGORIES,
+        confirmClose: true,
+      }),
+    expected: {
+      p_nick: NICK,
+      p_link_token: LINK_TOKEN,
+      p_categories: CATEGORIES,
+      p_adult_categories: ADULT_CATEGORIES,
+      p_confirm_close: true,
+    },
+  },
+  {
+    action: "Otwarcie linku do pokoju",
+    fn: "room_link",
+    call: (supabase) => roomLink(supabase, LINK_TOKEN),
+    expected: { p_link_token: LINK_TOKEN },
+  },
+  {
+    action: "Dołącz do gry",
+    fn: "join_room",
+    call: (supabase) => joinRoom(supabase, { linkToken: LINK_TOKEN, nick: NICK, playerToken: PLAYER_TOKEN }),
+    expected: { p_link_token: LINK_TOKEN, p_nick: NICK, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Stan pokoju gościa (token gościa)",
+    fn: "room_lobby",
+    call: (supabase) => roomLobby(supabase, ROOM_ID, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Stan pokoju hosta (bez tokenu gościa)",
+    fn: "room_lobby",
+    call: (supabase) => roomLobby(supabase, ROOM_ID),
+    expected: { p_room_id: ROOM_ID, p_player_token: null },
+  },
+  {
+    action: "Zacznij grę",
+    fn: "start_game",
+    call: (supabase) => startGame(supabase, ROOM_ID, QUESTION_ID),
+    expected: { p_room_id: ROOM_ID, p_question_id: QUESTION_ID },
+  },
+  {
+    action: "Zagłosuj",
+    fn: "cast_vote",
+    call: (supabase) => castVote(supabase, ROOM_ID, TARGET, PLAYER_TOKEN, ROUND),
+    expected: { p_room_id: ROOM_ID, p_target: TARGET, p_player_token: PLAYER_TOKEN, p_round: ROUND },
+  },
+  {
+    action: "Odsłoń wynik",
+    fn: "reveal_round",
+    call: (supabase) => revealRound(supabase, ROOM_ID, ROUND),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND },
+  },
+  {
+    action: "Następne pytanie",
+    fn: "next_round",
+    call: (supabase) => nextRound(supabase, ROOM_ID, ROUND, CANDIDATES),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES },
+  },
+  {
+    action: "Pomiń pytanie",
+    fn: "skip_round",
+    call: (supabase) => skipRound(supabase, ROOM_ID, ROUND, CANDIDATES),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES },
+  },
+  {
+    action: "Zakończ grę",
+    fn: "end_game",
+    call: (supabase) => endGame(supabase, ROOM_ID),
+    expected: { p_room_id: ROOM_ID },
+  },
+];
+
+describe("the Worker's RPC calls to the database", () => {
+  it.each(CASES)("$action → $fn", async ({ fn, call, expected }) => {
+    const { supabase, calls } = fakeClient();
+
+    const result = await call(supabase);
+
+    expect(calls).toHaveLength(1);
+    const [{ fn: calledFn, args: callArgs }] = calls;
+    expect(calledFn).toBe(fn);
+    // Exactly (fn, args): no third argument, so always a POST; { get: true } would put the arguments into the URL.
+    expect(callArgs).toHaveLength(1);
+    const [args] = callArgs;
+    expect(args).toStrictEqual(expected);
+
+    const params = SQL_SIGNATURES[fn];
+    const keys = Object.keys(args as Record<string, unknown>);
+    expect(params.map((param) => param.name)).toEqual(expect.arrayContaining(keys));
+    for (const param of params.filter((p) => !p.hasDefault)) {
+      expect(keys).toContain(param.name);
+    }
+
+    // The fake's answer passed server.ts's check of its shape.
+    expect(result.ok).toBe(true);
+  });
+});
