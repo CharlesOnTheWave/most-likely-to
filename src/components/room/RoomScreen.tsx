@@ -3,6 +3,7 @@ import { PartyPopper, Plus, SkipForward } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import type { HostActionsPreview } from "@/components/room/HostActions";
+import JoinRequests from "@/components/room/JoinRequests";
 import { LiveBanner } from "@/components/room/LiveBanner";
 import RoomLobby, { type LobbyPreview } from "@/components/room/RoomLobby";
 import { RoomErrorBoundary } from "@/components/room/RoomErrorBoundary";
@@ -70,12 +71,14 @@ function EveningEnd({ view, titleAs: Title }: { view: RoomView; titleAs: "h1" | 
   );
 }
 
-// The host's moves that replace the whole view; after them the focus goes to the new view's heading.
+// The host's moves that replace the whole view; after them the focus goes to the new view's heading. The host's answer
+// to a latecomer ("Wpuść", "Odrzuć") keeps the view, so it keeps the focus too.
 const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
-// the end of the evening, chosen by the room's status and the round's phase. useRoomState keeps the state live; the
-// actions go to the game's endpoints and then look again at once, without waiting for the bell.
+// the end of the evening, chosen by the room's status and the round's phase; while a game is in play the host also
+// sees the latecomers waiting to be let in (S-08) above it. useRoomState keeps the state live; the actions go to the
+// game's endpoints and then look again at once, without waiting for the bell.
 function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const { view, refreshFailed, liveBroken, refresh } = useRoomState({ roomId, initial, realtime, preview });
   const isPreview = Boolean(preview);
@@ -126,6 +129,8 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const next = useCallback((round: number) => act("next", { round }), [act]);
   const skip = useCallback((round: number) => act("skip", { round }), [act]);
   const end = useCallback(() => act("end", {}), [act]);
+  const admit = useCallback((nick: string) => act("admit", { nick }), [act]);
+  const reject = useCallback((nick: string) => act("reject", { nick }), [act]);
 
   let content;
   if (view.status === "closed") {
@@ -192,14 +197,18 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
     );
   }
 
-  // The state's column in the page's frame (src/components/room/room-frame.ts), so the banner and the note after a skip
-  // are as wide as the view under them.
+  // The state's column in the page's frame (src/components/room/room-frame.ts), so the banner, the host's list of
+  // requests and the note after a skip are as wide as the view under them.
   return (
     <div className={cn("flex flex-col gap-6", roomColumn(view))}>
       <p aria-live="polite" className="sr-only">
         {announced}
       </p>
       {view.status !== "closed" && <LiveBanner broken={liveBroken} />}
+      {view.role === "host" && view.status === "playing" && (
+        // Outside contentRef: answering a request is not a move that takes the focus to the view's heading.
+        <JoinRequests requests={view.requests} onAdmit={admit} onReject={reject} />
+      )}
       {skipNotice(view) && (
         // Not a live region: the announcement above already says the skip with the new question.
         <Alert role="note">

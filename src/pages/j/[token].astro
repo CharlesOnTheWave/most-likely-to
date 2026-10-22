@@ -2,23 +2,28 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import JoinForm from "@/components/room/JoinForm";
+import JoinWaiting from "@/components/room/JoinWaiting";
 import RoomCard from "@/components/room/RoomCard.astro";
 import RoomMessage from "@/components/room/RoomMessage.astro";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import { roomLink, roomLobby } from "@/lib/rooms/server";
+import { joinRequestState, roomLink, roomLobby } from "@/lib/rooms/server";
 import { LINK_TOKEN_PATTERN, playerCookieName } from "@/lib/rooms/tokens";
-import { createClient } from "@/lib/supabase";
+import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 
 // The host's link. A GET changes nothing, because Discord fetches the link for its preview, and the title and meta tags
 // carry no room data. Someone already in the room (its host, or a guest with the room's cookie) goes straight to it,
 // also once the game has started: a player who opens the link from Discord again gets back to the round. Anyone else
-// sees the join form in the lobby and "Gra już trwa" during a game (S-08 decides about late players). Once the game is
-// over ("Zakończ grę", "Nowa gra" or the sweep), the link only says so: the room never opens again.
+// sees the join form in the lobby; during a game, a latecomer asks the host to let them in (S-08): the request form,
+// then a waiting screen that moves on to the room by itself, and after "Odrzuć" the form again with the nick asked with.
+// The request's state comes from the room's cookie (join_request_state), never the question or anyone else's request.
+// Once the game is over ("Zakończ grę", "Nowa gra" or the sweep), the link only says so: the room never opens again.
 type Page =
   | { kind: "join"; linkToken: string }
   | { kind: "inside"; roomId: string }
   | { kind: "unknown" }
-  | { kind: "started" }
+  // A game in play: the request form; rejectedNick is the nick asked with before, once the host turned it away.
+  | { kind: "started"; linkToken: string; rejectedNick: string | null }
+  | { kind: "waiting"; linkToken: string; roomId: string; nick: string }
   | { kind: "closed" }
   | { kind: "error"; reason: string };
 
@@ -39,7 +44,18 @@ async function loadPage(linkToken: string): Promise<Page> {
     if (!inside.ok) return { kind: "error", reason: inside.reason };
     if (inside.lobby) return { kind: "inside", roomId: link.roomId };
   }
-  return link.status === "started" ? { kind: "started" } : { kind: "join", linkToken };
+  if (link.status === "open") return { kind: "join", linkToken };
+
+  // A game in play. Without the room's cookie there is no request yet.
+  if (playerToken === undefined) return { kind: "started", linkToken, rejectedNick: null };
+  const asked = await joinRequestState(supabase, link.roomId, playerToken);
+  if (!asked.ok) return { kind: "error", reason: asked.reason };
+  const { request } = asked;
+  // Let in between the two calls above, or the room closed meanwhile.
+  if (request.state === "admitted") return { kind: "inside", roomId: link.roomId };
+  if (request.state === "closed") return { kind: "closed" };
+  if (request.state === "pending") return { kind: "waiting", linkToken, roomId: link.roomId, nick: request.nick };
+  return { kind: "started", linkToken, rejectedNick: request.state === "rejected" ? request.nick : null };
 }
 
 const page = await loadPage(Astro.params.token ?? "");
@@ -50,14 +66,14 @@ if (page.kind === "inside") {
   Astro.response.headers.set("Location", `/r/${page.roomId}`);
 } else if (page.kind === "unknown") {
   Astro.response.status = 404;
-} else if (page.kind === "started") {
-  Astro.response.status = 409;
 } else if (page.kind === "closed") {
   Astro.response.status = 410;
 } else if (page.kind === "error") {
   Astro.response.status = page.reason === "service_unavailable" ? 503 : 500;
 }
 const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
+// The waiting screen listens on the room's channel: the publishable key only, for Realtime (AGENTS.md).
+const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
 ---
 
 {page.kind !== "inside" && (
@@ -70,8 +86,27 @@ const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
         </RoomCard>
       )}
       {page.kind === "unknown" && <RoomMessage title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />}
-      {page.kind === "started" && (
-        <RoomMessage title="Gra już trwa." text="Do rozpoczętej gry nie można dołączyć. Poczekaj na kolejną." />
+      {page.kind === "started" && page.rejectedNick === null && (
+        <RoomCard
+          title="Poproś o wejście"
+          description="Gra już trwa, więc host musi cię wpuścić. Wpisz nick i poproś o wejście."
+        >
+          <JoinForm linkToken={page.linkToken} serverError={serverError} variant="request" client:load />
+        </RoomCard>
+      )}
+      {page.kind === "started" && page.rejectedNick !== null && (
+        <RoomCard title="Host cię nie wpuścił." description="Możesz poprosić o wejście jeszcze raz.">
+          <JoinForm
+            linkToken={page.linkToken}
+            serverError={serverError}
+            variant="request-again"
+            initialNick={page.rejectedNick}
+            client:load
+          />
+        </RoomCard>
+      )}
+      {page.kind === "waiting" && (
+        <JoinWaiting roomId={page.roomId} linkToken={page.linkToken} nick={page.nick} realtime={realtime} client:load />
       )}
       {page.kind === "closed" && <RoomMessage title="Ta gra już się skończyła." text="Poproś hosta o nowy link." />}
       {page.kind === "error" && (

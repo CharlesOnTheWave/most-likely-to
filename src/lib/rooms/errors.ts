@@ -2,8 +2,9 @@
 // screen shows the Polish text from this map, so text typed into `?error=` never reaches the screen (same as
 // src/lib/auth-errors.ts).
 
-// The refusals of the game's actions (start, vote, reveal, next, skip, end) and of joining a game in play, each with
-// its own text (audit G2). tests/unit/room-errors.test.ts checks this list against the plans.
+// The refusals of the game's actions (start, vote, reveal, next, skip, end) and of the host's answer to a latecomer
+// ("Wpuść", "Odrzuć"), each with its own text (audit G2). tests/unit/room-errors.test.ts checks this list against the
+// plans. game_started is also join_room's: a game in play takes a latecomer only through a request to the host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -16,6 +17,8 @@ export const ROUND_REFUSALS = [
   "round_over",
   "round_in_progress",
   "questions_ran_out",
+  "request_unknown",
+  "latecomer_nick_taken",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -35,7 +38,12 @@ const MESSAGES: Record<string, string> = {
   room_closed: "Ta gra jest zamknięta. Poproś hosta o nowy link.",
   room_unknown: "Nie znamy tego linku. Sprawdź, czy skopiował się cały.",
   service_unavailable: "Serwer jest chwilowo niedostępny. Spróbuj za kilka minut.",
-  game_started: "Gra już trwa. Do rozpoczętej gry nie można dołączyć.",
+  // Also the host's second "Zacznij grę"; a latecomer sees it above the form that asks the host to let them in.
+  game_started: "Gra już trwa.",
+  requests_full: "Na wejście czeka już 5 osób. Spróbuj za chwilę.",
+  room_open: "Gra jeszcze się nie zaczęła. Odśwież stronę i dołącz.",
+  request_unknown: "Tej prośby już nie ma.",
+  latecomer_nick_taken: "Ten nick ma już ktoś w grze. Odrzuć prośbę, a spóźniony poprosi pod innym nickiem.",
   not_enough_players: "Do gry potrzeba co najmniej 3 graczy.",
   no_questions: "W wybranych kategoriach nie ma pytań. Załóż nową grę z innymi kategoriami.",
   invalid_question: "Nie udało się wylosować pytania. Spróbuj jeszcze raz.",

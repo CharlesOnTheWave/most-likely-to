@@ -31,7 +31,10 @@ import {
 // urn). What the creator sees as the database owner is supabase/tests/round_creator_view.test.sql's to check (pgTAP).
 //
 // Exact key sets, not "the fields we know of": a new key in an answer is how a pair or an early count would leak
-// (test-plan §2, #1: never only the table's columns).
+// (test-plan §2, #1: never only the table's columns). S-08 added two keys tied to no one's vote: room_lobby's requests
+// (the latecomers waiting, the host's only; tests/db/latecomers.test.ts checks who sees them) and a voting round's
+// eligible (who may vote in it, in seat order), from supabase/migrations/*_latecomer_admission.sql. Without them every
+// exact key set of the lobby and of a voting round here is red.
 //
 // The round functions come from supabase/migrations/*_first_live_round.sql, the evening's (skip_round, end_game,
 // cast_vote's p_round, room_lobby's skipped round and after_skip) from *_full_game_evening.sql. Without them the suites
@@ -133,15 +136,18 @@ describe("a round in progress shows who voted, never how", () => {
     expect(roundOf(lobby())).toMatchObject({ phase: "voting", voted: ["Host", "Kuba"], me_voted: meVoted });
   });
 
-  // room_lobby keeps the fields of S-01 and adds only round: no per-player flag or count beside a nick.
-  it.each(viewers)("$viewer's lobby has only its old keys plus round, and players only nick and host", ({ lobby }) => {
-    const data = lobby().data;
-    const players: unknown = isRecord(data) ? data.players : null;
-    const playerKeys = Array.isArray(players) ? (players as unknown[]).map(keysOf) : [];
+  // room_lobby keeps the fields of S-01 and adds only round and requests: no per-player flag or count beside a nick.
+  it.each(viewers)(
+    "$viewer's lobby has only its old keys plus round and requests, and players only nick and host",
+    ({ lobby }) => {
+      const data = lobby().data;
+      const players: unknown = isRecord(data) ? data.players : null;
+      const playerKeys = Array.isArray(players) ? (players as unknown[]).map(keysOf) : [];
 
-    expect(keysOf(data)).toEqual(LOBBY_KEYS);
-    expect(playerKeys).toEqual([PLAYER_KEYS, PLAYER_KEYS, PLAYER_KEYS, PLAYER_KEYS]);
-  });
+      expect(keysOf(data)).toEqual(LOBBY_KEYS);
+      expect(playerKeys).toEqual([PLAYER_KEYS, PLAYER_KEYS, PLAYER_KEYS, PLAYER_KEYS]);
+    },
+  );
 
   // After the reveal, counts per nick and nothing more (D1: only the counts stay).
   describe("after the reveal", () => {

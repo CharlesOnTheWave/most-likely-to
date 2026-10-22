@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bodyRound, readJsonRequest } from "@/lib/rooms/json-route";
+import { bodyNick, bodyRound, readJsonRequest } from "@/lib/rooms/json-route";
 
 // F6 of the S-02 review (context/archive/2026-10-13-first-live-round/follow-ups/review-fixes.md;
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #5): a body too large for a game's action is refused
@@ -127,5 +127,29 @@ describe("bodyRound", () => {
     { round: Number.NaN },
   ])("gives undefined for the round $round", (body) => {
     expect(bodyRound(body)).toBeUndefined();
+  });
+});
+
+// The host's "Wpuść" and "Odrzuć" ({nick}; context/changes/latecomer-admission/plan.md, Faza 2 #6): the nick as a text,
+// as it stands on the host's list; anything else is not our screen's body (invalid_body).
+describe("bodyNick", () => {
+  it.each([
+    { body: { nick: "Kuba" }, nick: "Kuba" },
+    { body: { nick: "Kasia 🎉", round: 2 }, nick: "Kasia 🎉" },
+  ])("reads the nick from $body", ({ body, nick }) => {
+    expect(bodyNick(body)).toBe(nick);
+  });
+
+  it.each([
+    { body: { target: "Kuba" } },
+    { body: {} },
+    { body: null },
+    { body: [] },
+    { body: "Kuba" },
+    { body: { nick: null } },
+    { body: { nick: 1 } },
+    { body: { nick: ["Kuba"] } },
+  ])("gives undefined for $body", ({ body }) => {
+    expect(bodyNick(body)).toBeUndefined();
   });
 });

@@ -16,7 +16,7 @@ Use these words in code, tests, commits and conversations. When a name in the co
 | głos | wybór jednej osoby z listy albo wstrzymanie się; nigdzie nie istnieje jako rekord | `cast_vote`; ślady: `round_voters`, `ballot_boxes.tally` | „kartka z celem”, cokolwiek, co łączy głosującego z celem |
 | wstrzymanie się | świadomy wybór „nikt”, liczony osobno | `abstained`, `target: null`, `"abstain"` | „pomijanie” (to robi prowadzący z pytaniem) |
 | kto już zagłosował | lista nicków, które oddały głos w tej rundzie, bez celu | `voted`, `me_voted` | „głosy” |
-| uprawnieni | gracze, którzy mogą głosować w tej rundzie: wszyscy w pokoju przy jej otwarciu | `eligible` | „gracze” (to nie zawsze ta sama lista) |
+| uprawnieni | gracze, którzy mogą głosować w tej rundzie: wszyscy w pokoju przy jej otwarciu | `eligible`; `round.eligible` w stanie pokoju | „gracze” (to nie zawsze ta sama lista) |
 | odsłona | moment, w którym wszyscy widzą, ile głosów dostała każda osoba | `reveal_round`, `finish_round`, `phase = 'revealed'` | „przewinięcie”, „advance” |
 | wynik | liczba głosów na każdą osobę w jednej rundzie | `round_results`, `RoundResult` | „wynik jakości” (to ocena pytania) |
 | urna | stan rundy w toku: kto zagłosował i liczniki; znika przy odsłonie i każdym innym końcu | `ballot_boxes` (+ `round_voters`) | „głosy w bazie” |
@@ -38,7 +38,8 @@ Use these words in code, tests, commits and conversations. When a name in the co
 | gracz | każdy z nickiem w pokoju, także host | `players`, `LobbyPlayer` | „gość” (host też jest graczem) |
 | prowadzący | host albo (później) współhost | dziś tylko host | — |
 | współhost | gość z prawem prowadzenia rund | *missing in code* (S-07) | — |
-| spóźniony | ktoś, kto prosi o wejście do trwającej gry | *missing in code* (S-08) | — |
+| spóźniony | ktoś, kto prosi o wejście do trwającej gry | `join_requests` (jego prośba); po wpuszczeniu zwykły gracz | — |
+| prośba o wejście | spóźniony prosi o wejście do trwającej gry, host wpuszcza („Wpuść”) albo odrzuca („Odrzuć”); po odrzuceniu można poprosić jeszcze raz | `join_requests`, `request_join`, `admit_latecomer`, `reject_latecomer`; `requests` w stanie pokoju (tylko host) | „dołączenie” (to wejście z linku w poczekalni, bez hosta) |
 | nick | nazwa gracza w pokoju; unikalna po normalizacji, wielkość liter się liczy | `nick`, `nick_key` | „login”, „imię” |
 | link do pokoju | zaproszenie `/j/<kod>`, osobne od adresu pokoju | `link_token`, `/j/[token]` | „token” bez dopowiedzenia (token gościa to coś innego) |
 | miejsce | kolejność dołączenia: host 1, goście dalej | `seat` | „czas wejścia” |

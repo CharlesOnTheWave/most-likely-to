@@ -199,9 +199,12 @@ const NICK_TAKEN = /^\/j\/[A-Za-z0-9_-]{22}\?error=nick_taken$/;
 // Filled in as the steps run. Never printed: the link code opens the room.
 const room = { id: "", link: "" };
 // Ola's jar: she votes and checks the lobby again after the game is over. The second guest ("ola") keeps a jar too, to
-// vote, and to send the vote that comes late. Every other guest gets a fresh jar.
+// vote, and to send the vote that comes late. So do the two latecomers of the round (S-08), whose requests the steps
+// follow: Kuba, let in, and Ula, turned away. Every other guest gets a fresh jar.
 const olaJar = new Map();
 const secondGuestJar = new Map();
+const kubaJar = new Map();
+const ulaJar = new Map();
 
 function newRoom({ confirmClose }) {
   const form = [["nick", "Smoke host"], ...CATEGORY_IDS.map((id) => ["category", id])];
@@ -215,6 +218,20 @@ function join(nick, cookies) {
 
 function lobby(roomId, cookies) {
   return request(`/api/rooms/${roomId}/lobby`, { cookies, readBody: true });
+}
+
+// A latecomer's own request, by the room's cookie in their jar (GET /api/rooms/<id>/request, the waiting screen's look).
+function requestState(cookies) {
+  return request(`/api/rooms/${room.id}/request`, { cookies, readBody: true });
+}
+
+// That answer, its whole text: the state, and the nick while the request waits or after "Odrzuć"; never the question,
+// the players or anyone else's request. Either order of the two keys.
+function requestAnswer(state, nick) {
+  const parts = [`"state":"${state}"`];
+  if (nick !== undefined) parts.push(`"nick":"${nick}"`);
+  const orders = parts.length === 1 ? [parts] : [parts, [...parts].reverse()];
+  return new RegExp(`^\\{(?:${orders.map((order) => order.join(",")).join("|")})\\}$`);
 }
 
 // Discord's preview, or a guest opening the link again. One fresh jar for all three, so a later open sends back
@@ -234,15 +251,16 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 // The room's own page; a function, because the id is known only once the room exists.
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
-// A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts), as JSON, the way
-// the room screen sends it.
+// A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts, admit.ts,
+// reject.ts), as JSON, the way the room screen sends it.
 function act(action, body, cookies) {
   return request(`/api/rooms/${room.id}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
 
 // An accepted action answers exactly this: a vote's answer carries no target and no count.
 const ACCEPTED = /^\{"ok":true\}$/;
-const GAME_STARTED = /^\/j\/[A-Za-z0-9_-]{22}\?error=game_started$/;
+// Back to the link's own page, with no error: after a latecomer's request it shows the waiting screen.
+const LINK_PAGE = /^\/j\/[A-Za-z0-9_-]{22}$/;
 // The reveal the votes below make, every player in seat order: Smoke host 0, Ola 1, ola 1; one abstention, three
 // ballots. Each part is checked on its own, so the order of the round's keys does not matter.
 const REVEALED = new RegExp(
@@ -261,12 +279,26 @@ function skippedBy(steps, reason) {
   return steps.map(([name]) => [name, null, reason]);
 }
 
+// Question 1 as the room's state shows it to Kuba, let in while it was voting: he is a player ("me"), the round is still
+// voting, and those who may vote in it are the three who were in the room when it opened, in seat order, without him.
+// Each part is checked on its own, as in REVEALED.
+const LATECOMER_ROUND = new RegExp(
+  ['"me":"Kuba"', '"phase":"voting"', '"eligible":\\["Smoke host","Ola","ola"\\]']
+    .map((part) => `(?=.*${part})`)
+    .join(""),
+);
+
 // S-02's round (context/archive/2026-10-13-first-live-round/plan.md, Faza 5) in the room of the steps around it: the
 // host, Ola and the second guest. The votes: Ola for herself, the second guest abstains, and the host, last, for "ola"
 // (not Ola: case counts); the last vote reveals the round by itself. Every vote carries question 1's number, as the
 // room screen sends it; a vote or a reveal without one is refused before the database (F2 of
 // context/archive/2026-10-20-deferred-review-fixes/plan.md). The targets live only in the request bodies: no step's
-// name and nothing the script prints says who voted for whom. Skipped with SMOKE_ROUND=0.
+// name and nothing the script prints says who voted for whom. Two latecomers come during question 1 (S-08,
+// context/changes/latecomer-admission/plan.md, Faza 2 #10 and Faza 3 #5): the form answers 303 back to the link, whose
+// page shows the waiting screen, and sets the room's cookie with the request's token. The host lets Kuba in: he is a
+// player from then on, but may not vote in question 1, so the three votes still reveal it and its results leave him
+// out. The host turns Ula away; her request stays rejected until the room closes (closingSteps). Skipped with
+// SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
@@ -280,7 +312,31 @@ function roundSteps() {
       () => act("reveal", {}, hostJar),
       { status: 400, body: /^\{"error":"invalid_body"\}$/ },
     ],
-    ["a new guest cannot join a game in play", () => join("Kuba", new Map()), { status: 302, location: GAME_STARTED }],
+    [
+      "a new guest asks to join a game in play and gets the room's cookie",
+      () => join("Kuba", kubaJar),
+      () => ({ status: 303, location: LINK_PAGE, cookie: `mlt_player_${room.id}` }),
+    ],
+    ["Kuba's request is pending", () => requestState(kubaJar), { status: 200, body: requestAnswer("pending", "Kuba") }],
+    [
+      "host sees Kuba among the requests",
+      () => lobby(room.id, hostJar),
+      { status: 200, body: /"requests":\["Kuba"\]/ },
+    ],
+    ["host lets Kuba in", () => act("admit", { nick: "Kuba" }, hostJar), { status: 200, body: ACCEPTED }],
+    ["Kuba's request is admitted", () => requestState(kubaJar), { status: 200, body: requestAnswer("admitted") }],
+    [
+      "room state shows Kuba question 1, which he may not vote in",
+      () => lobby(room.id, kubaJar),
+      { status: 200, body: LATECOMER_ROUND },
+    ],
+    [
+      "a second latecomer asks to join",
+      () => join("Ula", ulaJar),
+      () => ({ status: 303, location: LINK_PAGE, cookie: `mlt_player_${room.id}` }),
+    ],
+    ["host turns Ula away", () => act("reject", { nick: "Ula" }, hostJar), { status: 200, body: ACCEPTED }],
+    ["Ula's request is rejected", () => requestState(ulaJar), { status: 200, body: requestAnswer("rejected", "Ula") }],
     ["Ola votes", () => act("vote", { target: "Ola", round: 1 }, olaJar), { status: 200, body: ACCEPTED }],
     [
       "the second guest votes",
@@ -359,8 +415,15 @@ function gameSteps() {
 
 // "Nowa gra" at the end. After the evening's steps the room is closed already, so a new one opens without asking.
 // Without them (SMOKE_GAME=0, SMOKE_ROUND=0) the room is still open with its guests, so "Nowa gra" with the
-// confirmation closes it, and its old link and lobby say so.
+// confirmation closes it, and its old link and lobby say so. Either way the room's requests went with it (S-08): Ula's,
+// turned away during question 1, now says the game is over (the rows themselves are pgTAP's to check,
+// supabase/tests/round_creator_view.test.sql). That step is a round step: skipped with SMOKE_ROUND=0, which has no
+// latecomers.
 function closingSteps() {
+  const requestGone = [
+    ["Ula's request says the game is over", () => requestState(ulaJar), { status: 200, body: requestAnswer("closed") }],
+  ];
+  const latecomer = ROUND ? requestGone : skippedBy(requestGone, "SMOKE_ROUND=0");
   if (GAME) {
     return [
       [
@@ -368,6 +431,7 @@ function closingSteps() {
         () => newRoom({ confirmClose: false }),
         { status: 302, location: ROOM_PATH },
       ],
+      ...latecomer,
     ];
   }
   return [
@@ -382,6 +446,7 @@ function closingSteps() {
       () => lobby(room.id, olaJar),
       { status: 200, body: /"status":"closed"/ },
     ],
+    ...latecomer,
   ];
 }
 

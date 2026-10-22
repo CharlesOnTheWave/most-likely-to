@@ -17,7 +17,7 @@ const QUESTION = "spóźniłby się na własne urodziny";
 const OTHER_QUESTION = "zjadłby pizzę z ananasem";
 
 function lobby(): RoomView {
-  return { status: "lobby", role: "host", me: "Ola", players: PLAYERS, round: null, questionsLeft: null };
+  return { status: "lobby", role: "host", me: "Ola", players: PLAYERS, round: null, requests: [], questionsLeft: null };
 }
 
 function voting(
@@ -35,11 +35,13 @@ function voting(
       number,
       question_id: "na-co-dzien-001",
       phase: "voting",
+      eligible: PLAYERS.map(({ nick }) => nick),
       voted,
       me_voted: voted.includes(me),
       after_skip: options.afterSkip ?? false,
       question: options.question === undefined ? QUESTION : options.question,
     },
+    requests: [],
     questionsLeft: null,
   };
 }
@@ -63,6 +65,7 @@ function revealed(number: number): RoomView {
       ballots: 3,
       question: QUESTION,
     },
+    requests: [],
     questionsLeft: null,
   };
 }
@@ -74,6 +77,7 @@ function skipped(number: number, role: "host" | "guest" = "guest"): RoomView {
     me: role === "host" ? "Ola" : "Bartek",
     players: PLAYERS,
     round: { number, phase: "skipped" },
+    requests: [],
     questionsLeft: role === "host" ? false : null,
   };
 }
@@ -85,6 +89,7 @@ function closed(role: "host" | "guest"): RoomView {
     me: role === "host" ? "Ola" : "Bartek",
     players: PLAYERS,
     round: null,
+    requests: [],
     questionsLeft: null,
   };
 }
