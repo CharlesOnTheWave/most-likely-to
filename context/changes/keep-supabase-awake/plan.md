@@ -351,23 +351,23 @@ Agent sprawdza tylko nazwy: `gh secret list` (bez wartości).
 
 #### Automated
 
-- [x] 2.1 `npx prettier --check context/foundation/roadmap.md context/foundation/infrastructure.md context/deployment/deploy-plan.md context/foundation/test-plan.md README.md AGENTS.md` przechodzi
-- [x] 2.2 `npm run lint` przechodzi
+- [x] 2.1 `npx prettier --check context/foundation/roadmap.md context/foundation/infrastructure.md context/deployment/deploy-plan.md context/foundation/test-plan.md README.md AGENTS.md` przechodzi — fa36dcd
+- [x] 2.2 `npm run lint` przechodzi — fa36dcd
 
 #### Manual
 
-- [x] 2.3 Karol akceptuje zmianę w roadmapie (zgoda w `/10x-roadmap`)
+- [x] 2.3 Karol akceptuje zmianę w roadmapie (zgoda w `/10x-roadmap`) — fa36dcd
 
 ### Phase 3: Sekrety, PR, scalenie i pierwszy przebieg
 
 #### Automated
 
-- [ ] 3.1 `gh secret list` pokazuje `SUPABASE_URL` i `SUPABASE_KEY`
-- [ ] 3.2 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`)
-- [ ] 3.3 Ręczny przebieg workflow po scaleniu jest zielony, w logu jest „ok” i nie ma `sb_publishable`
+- [x] 3.1 `gh secret list` pokazuje `SUPABASE_URL` i `SUPABASE_KEY` — 8a5e6a2
+- [x] 3.2 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) — 8a5e6a2
+- [x] 3.3 Ręczny przebieg workflow po scaleniu jest zielony, w logu jest „ok” i nie ma `sb_publishable` — 8a5e6a2
 - [ ] 3.4 `gh run list --workflow keep-supabase-awake.yml --event schedule` pokazuje co najmniej jeden zielony przebieg z harmonogramu
 
 #### Manual
 
-- [ ] 3.5 Karol dodaje oba sekrety w ustawieniach repo
-- [ ] 3.6 Karol scala PR
+- [x] 3.5 Karol dodaje oba sekrety w ustawieniach repo — 8a5e6a2
+- [x] 3.6 Karol scala PR — 8a5e6a2

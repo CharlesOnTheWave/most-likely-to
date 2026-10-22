@@ -3,7 +3,7 @@ change_id: keep-supabase-awake
 title: Keep supabase awake
 status: implementing
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 archived_at: null
 ---
 
