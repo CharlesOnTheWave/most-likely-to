@@ -142,6 +142,7 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
 - **Oracle**: oczekiwanie z PRD, roadmapy albo decyzji właściciela. Nigdy nie licz go tą samą logiką co testowany kod.
 - **Assert**: sprawdzaj zachowanie, nie tekst. Przykład: każda odmowa gościa ma tekst inny niż ogólny „coś poszło nie tak”; polskich tekstów nie przepisujemy do asercji, bo to byłoby lustro.
 - **Cases**: jedna właściwość to jeden `it.each`, a do tego przypadek brzegowy, np. `null` albo nieznany kod (w tym `"constructor"`, który siedzi w `Object.prototype`).
+- **RPC gate**: `tests/unit/room-rpc-gate.test.ts` woła każdą funkcję opakowującą z `src/lib/rooms/server.ts` na atrapie klienta (sama metoda `rpc`, typ przez `import type { SupabaseClient }`) i porównuje nazwę funkcji i argumenty `p_*` z ręczną tabelą sygnatur SQL z najnowszej migracji (`plik:linia` przy każdej), nigdy z `server.ts`. Nowa albo zmieniona funkcja RPC = nowy albo zmieniony wiersz tabeli i przypadek akcji gry, w tej samej zmianie co migracja.
 
 ### 6.2 Adding a database permission or function test
 
