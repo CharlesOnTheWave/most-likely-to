@@ -78,8 +78,14 @@ async function review(diff: string) {
     if (message.subtype !== "success") {
       throw new Error(`Recenzja nie powiodła się (${message.subtype}): ${message.errors.join("; ")}`);
     }
+    // An API error (e.g. a rejected login) ends the turn as "success" with is_error and the error text in result.
+    if (message.is_error) throw new Error(`Recenzja nie powiodła się (błąd API): ${message.result.slice(0, 500)}`);
     const parsed = REVIEW_SCHEMA.safeParse(message.structured_output);
-    if (!parsed.success) throw new Error(`Wynik niezgodny ze schematem: ${parsed.error.message}`);
+    if (!parsed.success) {
+      throw new Error(
+        `Wynik niezgodny ze schematem: ${parsed.error.message}\nOdpowiedź modelu: ${message.result.slice(0, 500)}`,
+      );
+    }
     const tokens = Object.values(message.modelUsage).reduce(
       (sum, usage) => ({
         input: sum.input + usage.inputTokens + usage.cacheReadInputTokens + usage.cacheCreationInputTokens,
