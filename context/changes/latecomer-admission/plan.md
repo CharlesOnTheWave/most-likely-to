@@ -485,10 +485,10 @@ Jedna mała tabela, prośby najwyżej 5 naraz na pokój, odczyt po unikalnym ind
 
 #### Automated
 
-- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
-- [ ] 4.2 Smoke na produkcji zielony
+- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie — 5add8c9
+- [x] 4.2 Smoke na produkcji zielony — 2ed1304
 
 #### Manual
 
-- [ ] 4.3 Karol scala PR
+- [x] 4.3 Karol scala PR — 2ed1304
 - [ ] 4.4 Karol przeklikuje na telefonie i laptopie: spóźniony prosi w trakcie głosowania, host wpuszcza, wpuszczony głosuje od następnego pytania; drugi spóźniony odrzucony i prosi jeszcze raz
