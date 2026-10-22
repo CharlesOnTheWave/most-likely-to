@@ -16,6 +16,9 @@ const MODEL = "claude-sonnet-5-5";
 const MAX_BUDGET_USD = 0.5;
 // Documents and the lockfile are most of a PR's diff and say nothing about the code, so they are left out.
 const SKIPPED_PATHS = [/^context\//, /(^|\/)package-lock\.json$/];
+// The CI job passes the PR's title and description (PR_TITLE, PR_BODY); the description is clipped, it costs tokens on
+// every run.
+const PR_BODY_LIMIT = 4000;
 
 const repoFile = (path: string) => readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
 const runsLog = new URL("../runs.jsonl", import.meta.url);
@@ -41,7 +44,14 @@ async function readInput(): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+function describePr(): string {
+  const title = process.env.PR_TITLE?.trim();
+  const body = process.env.PR_BODY?.trim().slice(0, PR_BODY_LIMIT);
+  return [title && `Tytuł PR-a: ${title}`, body && `Opis PR-a:\n\n${body}`].filter(Boolean).join("\n\n");
+}
+
 async function review(diff: string) {
+  const pr = describePr();
   const systemPrompt = [
     SYSTEM_PROMPT,
     "AGENTS.md (zasady i konwencje repo):\n\n" + repoFile("AGENTS.md"),
@@ -49,7 +59,7 @@ async function review(diff: string) {
   ].join("\n\n");
 
   const run = query({
-    prompt: `Zrecenzuj ten diff:\n\n${diff}`,
+    prompt: `${pr ? `${pr}\n\n` : ""}Zrecenzuj ten diff:\n\n${diff}`,
     options: {
       systemPrompt,
       model: MODEL,

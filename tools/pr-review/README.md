@@ -18,3 +18,14 @@ npm run typecheck
 - Each run prints its cost to stderr (an SDK estimate) and appends it to `runs.jsonl` (not in git). A run stops at
   0.50 USD.
 - It has its own dependencies, so the root lint and `astro check` skip `tools/`.
+
+## In CI (M5L3)
+
+`.github/workflows/ai-review.yml` runs it on every pull request to `main` (opened, each push, reopened) and when the
+label `ai-cr:review` is added. It passes the PR's title and description (`PR_TITLE`, `PR_BODY`), posts one comment
+rendered by `src/comment.ts` and updates it on later runs, sets `ai-cr:passed` or `ai-cr:failed` and turns red on
+`fail`. The check is not required: the owner merges.
+
+It signs in with the owner's subscription through the repository secret `CLAUDE_CODE_OAUTH_TOKEN`, made with
+`claude setup-token` in a terminal of its own (the token must not land in an agent's session). Runs count against the
+same usage limits as the owner's Claude Code sessions.
