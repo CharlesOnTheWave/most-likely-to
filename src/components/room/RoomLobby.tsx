@@ -144,7 +144,7 @@ export default function RoomLobby({ view, idPrefix, titleAs: Title, linkUrl, ref
             </Button>
             <p id={startHintId} className="text-muted-foreground text-sm">
               {canStart
-                ? "Po starcie nikt nowy już nie dołączy."
+                ? "Po starcie nowi gracze wejdą tylko wtedy, gdy ich wpuścisz."
                 : `Grę zaczniesz, gdy będzie was co najmniej ${MIN_PLAYERS}.`}
             </p>
             <ServerError message={startError} />
