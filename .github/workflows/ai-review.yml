@@ -56,6 +56,14 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           test -n "$CLAUDE_CODE_OAUTH_TOKEN" || { echo "::error::Missing secret CLAUDE_CODE_OAUTH_TOKEN (claude setup-token)"; exit 1; }
+          # The token is printed wrapped across lines by `claude setup-token`, so a pasted secret may carry line
+          # breaks or spaces. Strip them; log only the shape (length, prefix), never the value.
+          raw_length=${#CLAUDE_CODE_OAUTH_TOKEN}
+          CLAUDE_CODE_OAUTH_TOKEN=$(printf '%s' "$CLAUDE_CODE_OAUTH_TOKEN" | tr -d '[:space:]')
+          echo "::add-mask::$CLAUDE_CODE_OAUTH_TOKEN" # the stripped value differs from the secret GitHub masks
+          export CLAUDE_CODE_OAUTH_TOKEN
+          case "$CLAUDE_CODE_OAUTH_TOKEN" in sk-ant-oat01-*) prefix=ok ;; *) prefix=unexpected ;; esac
+          echo "token: ${#CLAUDE_CODE_OAUTH_TOKEN} chars (raw $raw_length), prefix $prefix"
           npx tsx src/index.ts "$RUNNER_TEMP/pr.diff" > "$RUNNER_TEMP/ai-review.json"
           verdict=$(node -e 'const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); if (!["pass", "fail"].includes(r.verdict)) process.exit(1); console.log(r.verdict)' "$RUNNER_TEMP/ai-review.json")
           echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
