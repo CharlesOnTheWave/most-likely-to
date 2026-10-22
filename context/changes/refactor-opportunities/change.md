@@ -1,9 +1,9 @@
 ---
 change_id: refactor-opportunities
 title: Ranking okazji do refaktoryzacji w przepływie gościa od linku do głosu
-status: plan_reviewed
+status: implementing
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-22
 archived_at: null
 ---
 
