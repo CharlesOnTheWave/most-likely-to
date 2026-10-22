@@ -39,9 +39,27 @@ import { isRecord } from "./rooms";
 // end_game(p_room_id uuid): authenticated only. "Zakończ grę" while the game is in play: the room is closed and its
 //   round's in-progress state deleted. { ok: true } or { ok: false, reason } with reason in room_unknown, room_closed,
 //   no_round (a lobby).
-// room_lobby: the fields of S-01 plus round, with exactly the keys below: a skipped round shows only its number and
-//   phase, and a voting round says whether the round before it was skipped (after_skip). room_link of a game in play:
-//   { status: "started", room_id }. join_room into a game in play: reason game_started.
+// room_lobby: the fields of S-01 plus round and requests, with exactly the keys below: a skipped round shows only its
+//   number and phase, and a voting round says who may vote in it (eligible: the players when it opened, in seat order)
+//   and whether the round before it was skipped (after_skip). requests: the nicks of the latecomers waiting, in the
+//   order of asking, for the host; [] for a guest. room_link of a game in play: { status: "started", room_id }.
+//   join_room into a game in play: reason game_started.
+//
+// The latecomer's way in (S-08, context/changes/latecomer-admission/plan.md, Faza 1), from
+// supabase/migrations/*_latecomer_admission.sql:
+// request_join(p_link_token text, p_nick text, p_player_token text): anon and authenticated. A request to join a game
+//   in play, with the token the Worker keeps in the room's cookie. { ok: true }, also for a player of the room or a
+//   request already waiting (nothing changes then), or { ok: false, reason } with reason in room_unknown, room_open
+//   (the lobby, which join_room takes), room_closed, invalid_nick, nick_taken (a player's or another waiting
+//   request's), requests_full (5 waiting). A rejected request asks again under the new nick. A malformed token raises
+//   22023, as in join_room.
+// join_request_state(p_room_id uuid, p_player_token text): anon and authenticated, writes nothing.
+//   { state: "admitted" } for a player of the room, { state: "closed" } for a closed room,
+//   { state: "pending" | "rejected", nick } for the token's request, { state: "none" } otherwise.
+// admit_latecomer(p_room_id uuid, p_nick text), reject_latecomer(p_room_id uuid, p_nick text): authenticated only.
+//   "Wpuść" (the request becomes a player at the next seat and is deleted) and "Odrzuć" (the request stays, rejected).
+//   { ok: true } or { ok: false, reason } with reason in room_unknown (another host's room), request_unknown (no
+//   request with that nick waiting, or the room not in play), latecomer_nick_taken (admit only, a backstop).
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -58,11 +76,13 @@ export const EVENING_QUESTION_IDS = [
 
 // Exact key sets, sorted, of room_lobby and its round. A key outside these lists is a possible leak (counts before the
 // reveal, a voter next to a target) until a decision adds it here.
-export const LOBBY_KEYS = ["me", "players", "role", "round", "status"];
+// requests: the nicks of the latecomers waiting, the host's only (S-08).
+export const LOBBY_KEYS = ["me", "players", "requests", "role", "round", "status"];
 export const PLAYER_KEYS = ["host", "nick"];
 // voted: nicks in seat order, never in the order of voting. after_skip: whether the round before this one was skipped,
-// public to everyone and tied to no one's vote.
-export const VOTING_ROUND_KEYS = ["after_skip", "me_voted", "number", "phase", "question_id", "voted"];
+// public to everyone and tied to no one's vote. eligible: who may vote in this round, nicks in seat order, tied to no
+// one's vote either (S-08).
+export const VOTING_ROUND_KEYS = ["after_skip", "eligible", "me_voted", "number", "phase", "question_id", "voted"];
 // results: every eligible player in seat order, zeros included; counts only, per nick.
 export const REVEALED_ROUND_KEYS = ["abstained", "ballots", "number", "phase", "question_id", "results"];
 export const RESULT_KEYS = ["nick", "votes"];
@@ -159,6 +179,27 @@ export function roomLink(linkToken: string): Promise<Answer> {
 // A new guest on a new phone, with a fresh player token like the Worker's cookie.
 export function joinRoom(linkToken: string, nick: string): Promise<Answer> {
   return call(anonClient(), "join_room", { p_link_token: linkToken, p_nick: nick, p_player_token: newPlayerToken() });
+}
+
+// A latecomer on a new phone, with no session. playerToken: the token of the room's cookie (newPlayerToken()), which
+// the test keeps to ask again, follow the request and, once let in, act as the new player.
+export function requestJoin(linkToken: string, nick: string, playerToken: string): Promise<Answer> {
+  return call(anonClient(), "request_join", { p_link_token: linkToken, p_nick: nick, p_player_token: playerToken });
+}
+
+// The latecomer's own request, as its waiting screen asks for it.
+export function joinRequestState(roomId: string, playerToken: string): Promise<Answer> {
+  return call(anonClient(), "join_request_state", { p_room_id: roomId, p_player_token: playerToken });
+}
+
+// "Wpuść" as the host: nick is the nick on the host's list.
+export function admitLatecomer(client: TestClient, roomId: string, nick: string): Promise<Answer> {
+  return call(client, "admit_latecomer", { p_room_id: roomId, p_nick: nick });
+}
+
+// "Odrzuć" as the host: nick is the nick on the host's list.
+export function rejectLatecomer(client: TestClient, roomId: string, nick: string): Promise<Answer> {
+  return call(client, "reject_latecomer", { p_room_id: roomId, p_nick: nick });
 }
 
 // The function's own refusal code, never its arguments: they hold nicks, vote targets and tokens.

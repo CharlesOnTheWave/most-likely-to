@@ -1,13 +1,16 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { anonClient, newHost, type Host } from "./support/clients";
-import { readOwnRoom, seedGuest, seedRoom, type OwnRoom, type SeededGuest } from "./support/rooms";
+import { anonClient, newHost, newPlayerToken, type Host } from "./support/clients";
+import { isRecord, readOwnRoom, seedGuest, seedRoom, type OwnRoom, type SeededGuest } from "./support/rooms";
 import {
   OTHER_QUESTION_ID,
   QUESTION_ID,
+  admitLatecomer,
   castVote,
   endGame,
   joinRoom,
   nextRound,
+  rejectLatecomer,
+  requestJoin,
   revealRound,
   roomLink,
   roomLobby,
@@ -25,7 +28,9 @@ import {
 // Every expected count is written out by hand from the scenario, never computed.
 //
 // S-03 adds the evening's moves (next_round, skip_round, end_game): only the room's own host makes them (PRD Access
-// Control), checked here; the evening's own rules are tests/db/game-rules.test.ts's.
+// Control), checked here; the evening's own rules are tests/db/game-rules.test.ts's. The same for S-08's "Wpuść" and
+// "Odrzuć" (admit_latecomer, reject_latecomer, from *_latecomer_admission.sql), whose own rules are
+// tests/db/latecomers.test.ts's.
 //
 // A refusal is the function's answer { ok: false, reason }, never "some error"; a guest calling a host's function gets
 // 42501 naming the function (test-plan §6.2, G2).
@@ -102,6 +107,12 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
 
     hostView = await roomLobby(hostA.client, room.id);
     guestView = await roomLobby(anon, room.id, kuba.playerToken);
+
+    // A latecomer waiting after the reveal, so host B letting her in or turning her away would have someone to act on.
+    const elaAsks = await requestJoin(room.linkToken, "Ela", newPlayerToken());
+    if (!isRecord(elaAsks.data) || elaAsks.data.ok !== true) {
+      throw new Error("precondition failed: request_join did not take Ela's request to join the game in play");
+    }
   });
 
   // Positive control: an allowed vote must work, or a wrong address would look like a refusal everywhere. ok only: the
@@ -180,7 +191,8 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
     expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "game_started" } });
   });
 
-  // Late players wait for S-08: a game in play takes no one new.
+  // A game in play takes no one new through join_room: a latecomer asks to be let in (request_join, S-08,
+  // tests/db/latecomers.test.ts).
   it("a new guest joining after the start gets game_started", async () => {
     const answer = await joinRoom(room.linkToken, "Wiktor");
 
@@ -224,11 +236,14 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
   });
 
   // S-03: the evening's moves are host A's own as well. Round 1 is revealed, the round number is right and the
-  // candidate was never played, so the room is the only thing they can be refused for. end_game last, so a hole cannot
-  // close the room under the two before it.
+  // candidate was never played, so the room is the only thing they can be refused for. S-08: so are "Wpuść" and
+  // "Odrzuć"; Ela is waiting, so a call that got through would act on her. end_game last, so a hole cannot close the
+  // room under the ones before it.
   it.each([
     { fn: "next_round", attempt: () => nextRound(hostB.client, room.id, 1, [OTHER_QUESTION_ID]) },
     { fn: "skip_round", attempt: () => skipRound(hostB.client, room.id, 1, [OTHER_QUESTION_ID]) },
+    { fn: "admit_latecomer", attempt: () => admitLatecomer(hostB.client, room.id, "Ela") },
+    { fn: "reject_latecomer", attempt: () => rejectLatecomer(hostB.client, room.id, "Ela") },
     { fn: "end_game", attempt: () => endGame(hostB.client, room.id) },
   ])("host B calling $fn on host A's game gets room_unknown", async ({ attempt }) => {
     const answer = await attempt();
