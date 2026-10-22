@@ -1,11 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import {
+  admitLatecomer,
   castVote,
   createRoom,
   endGame,
+  joinRequestState,
   joinRoom,
   nextRound,
+  rejectLatecomer,
+  requestJoin,
   revealRound,
   roomLink,
   roomLobby,
@@ -38,7 +42,18 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_nick", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261015122252_full_game_evening.sql:403
+  // supabase/migrations/20261022132240_latecomer_admission.sql:94
+  request_join: [
+    { name: "p_link_token", hasDefault: false },
+    { name: "p_nick", hasDefault: false },
+    { name: "p_player_token", hasDefault: false },
+  ],
+  // supabase/migrations/20261022132240_latecomer_admission.sql:207
+  join_request_state: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_player_token", hasDefault: false },
+  ],
+  // supabase/migrations/20261022132240_latecomer_admission.sql:383
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
@@ -74,6 +89,16 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   ],
   // supabase/migrations/20261015122252_full_game_evening.sql:207
   end_game: [{ name: "p_room_id", hasDefault: false }],
+  // supabase/migrations/20261022132240_latecomer_admission.sql:265
+  admit_latecomer: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_nick", hasDefault: false },
+  ],
+  // supabase/migrations/20261022132240_latecomer_admission.sql:333
+  reject_latecomer: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_nick", hasDefault: false },
+  ],
 };
 
 // An answer on the success path for each function, one that passes server.ts's check of its shape.
@@ -82,6 +107,7 @@ const SUCCESS: Record<string, unknown> = {
   join_room: { ok: true, room_id: "room-joined" },
   room_link: { status: "unknown" },
   room_lobby: null,
+  join_request_state: { state: "none" },
 };
 
 interface RpcCall {
@@ -153,6 +179,18 @@ const CASES: {
     expected: { p_link_token: LINK_TOKEN, p_nick: NICK, p_player_token: PLAYER_TOKEN },
   },
   {
+    action: "Poproś o wejście (gra w toku)",
+    fn: "request_join",
+    call: (supabase) => requestJoin(supabase, LINK_TOKEN, NICK, PLAYER_TOKEN),
+    expected: { p_link_token: LINK_TOKEN, p_nick: NICK, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Stan prośby spóźnionego",
+    fn: "join_request_state",
+    call: (supabase) => joinRequestState(supabase, ROOM_ID, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_player_token: PLAYER_TOKEN },
+  },
+  {
     action: "Stan pokoju gościa (token gościa)",
     fn: "room_lobby",
     call: (supabase) => roomLobby(supabase, ROOM_ID, PLAYER_TOKEN),
@@ -199,6 +237,18 @@ const CASES: {
     fn: "end_game",
     call: (supabase) => endGame(supabase, ROOM_ID),
     expected: { p_room_id: ROOM_ID },
+  },
+  {
+    action: "Wpuść",
+    fn: "admit_latecomer",
+    call: (supabase) => admitLatecomer(supabase, ROOM_ID, NICK),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK },
+  },
+  {
+    action: "Odrzuć",
+    fn: "reject_latecomer",
+    call: (supabase) => rejectLatecomer(supabase, ROOM_ID, NICK),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK },
   },
 ];
 

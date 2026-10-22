@@ -473,19 +473,19 @@ Jedna mała tabela, prośby najwyżej 5 naraz na pokój, odczyt po unikalnym ind
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 3.2 `npx prettier --check context/domain/glossary.md context/foundation/test-plan.md` przechodzi
-- [ ] 3.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach, w `e2e` `latecomer.spec.ts`, w `smoke` nowe kroki
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — d84f144
+- [x] 3.2 `npx prettier --check context/domain/glossary.md context/foundation/test-plan.md` przechodzi — d84f144
+- [x] 3.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach, w `e2e` `latecomer.spec.ts`, w `smoke` nowe kroki — d84f144
 
 #### Manual
 
-- [x] 3.4 Karol ocenia zrzuty: host z prośbami w głosowaniu i odsłonie (laptop jako całe okno 1:1 i telefon), wpuszczony z notką i dopiskiem
+- [x] 3.4 Karol ocenia zrzuty: host z prośbami w głosowaniu i odsłonie (laptop jako całe okno 1:1 i telefon), wpuszczony z notką i dopiskiem — d84f144
 
 ### Phase 4: Wdrożenie
 
 #### Automated
 
-- [ ] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
+- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
 - [ ] 4.2 Smoke na produkcji zielony
 
 #### Manual
