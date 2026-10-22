@@ -113,6 +113,9 @@ export default defineConfig(
   includeIgnoreFile(gitignorePath),
   // Agent skills in .claude/ come from the course package with their own scripts; they are not project code.
   globalIgnores([".claude/"]),
+  // tools/ holds packages with their own dependencies, which the root `npm ci` does not install; each checks its own
+  // types (`npm run typecheck` in tools/pr-review).
+  globalIgnores(["tools/"]),
   baseConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],

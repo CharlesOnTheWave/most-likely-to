@@ -60,3 +60,7 @@ Pozostałe sygnały odpadają. Koordynacja terminali działa od niedawna i jeszc
 - **Dalej (M5L3):** standardy recenzji i Definition of Done z `AGENTS.md`, potem job w `.github/workflows/` przez osobny PR. Najpierw sprawdzić `gh pr list`, czy tor gry nie zmienia tych samych plików.
 - **Walidacja:** bez `/10x-mom-test`, bo jedynym użytkownikiem jest właściciel, a przeszłe zachowanie znamy (10 scalonych PR-ów). Wróć do walidacji, gdyby narzędzie miało służyć komuś jeszcze.
 - **Dowody do 10xChampion:** widok pipeline'u z jobem, logi joba i komentarz LLM pod PR-em.
+
+## Dystrybucja artefaktów AI (M5L4)
+
+Z artefaktów AI korzysta jedna osoba: właściciel repo, który pracuje w dwóch folderach (`main` i worktree gry) i w jednym narzędziu (Claude Code). Dlatego żaden z trzech modeli z lekcji nie jest potrzebny: skille kursu przychodzą przez `10x get`, a do worktree gry trafiają przez git. Paczka albo rejestr byłyby tu „dystrybucją pod CV”. Wracamy do tematu, gdy dołączy druga osoba albo drugie repo, i wtedy zaczynamy od GitHub Packages.
