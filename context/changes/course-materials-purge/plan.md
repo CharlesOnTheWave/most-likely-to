@@ -419,69 +419,69 @@ Brak. 214 commitów to sekundy dla `filter-repo`.
 
 #### Automated
 
-- [x] 1.1 Kopia plików kursu z obu folderów zgodna z sumami kontrolnymi (134 + 28 + 10 + 2 + 1 plików na folder)
-- [x] 1.2 `git ls-files` nie zawiera plików kursu, `.claude/skills/playwright-cli` (11 plików) dalej jest śledzony, a `git grep -nE '<!-- (BEGIN|END) @przeprogramowani/10x-cli'` jest puste
-- [x] 1.3 Pliki kursu są na dysku (40 folderów w `.claude/skills/`), `git status --short` ich nie pokazuje, a `git check-ignore -v` wskazuje nową sekcję `.gitignore`
-- [x] 1.4 Świeża sesja `claude -p` w `10xdevs-gra` cytuje nagłówek bloku kursu z `CLAUDE.local.md` i zna skill `10x-plan`
-- [x] 1.5 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.6 PR ma zielone CI (`ci`, `smoke`, `db`, `e2e`)
+- [x] 1.1 Kopia plików kursu z obu folderów zgodna z sumami kontrolnymi (134 + 28 + 10 + 2 + 1 plików na folder) — b71446c
+- [x] 1.2 `git ls-files` nie zawiera plików kursu, `.claude/skills/playwright-cli` (11 plików) dalej jest śledzony, a `git grep -nE '<!-- (BEGIN|END) @przeprogramowani/10x-cli'` jest puste — b71446c
+- [x] 1.3 Pliki kursu są na dysku (40 folderów w `.claude/skills/`), `git status --short` ich nie pokazuje, a `git check-ignore -v` wskazuje nową sekcję `.gitignore` — b71446c
+- [x] 1.4 Świeża sesja `claude -p` w `10xdevs-gra` cytuje nagłówek bloku kursu z `CLAUDE.local.md` i zna skill `10x-plan` — b71446c
+- [x] 1.5 Bramka przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — b71446c
+- [x] 1.6 PR ma zielone CI (`ci`, `smoke`, `db`, `e2e`)
 
 #### Manual
 
-- [ ] 1.7 Karol scala PR (`! gh pr merge <n> --merge`), a smoke na produkcji (za zgodą) jest zielony
-- [ ] 1.8 Karol w Claude Code w `10xdevs-gra` widzi skille po wpisaniu `/10x-`
+- [x] 1.7 Karol scala PR (`! gh pr merge <n> --merge`), a smoke na produkcji (za zgodą) jest zielony
+- [x] 1.8 Karol w Claude Code w `10xdevs-gra` widzi skille po wpisaniu `/10x-`
 
 ### Phase 2: Przepisanie na kopii, nic na zewnątrz
 
 #### Automated
 
-- [ ] 2.1 Obie kopie zapasowe przechodzą `git fsck`; `github-mirror.git` ma 15 refów `refs/pull/*`, `local-mirror.git` ma commity `1153156` i `6842913`
-- [ ] 2.2 `py -m git_filter_repo --version` działa (instalacja za zgodą Karola)
-- [ ] 2.3 `git rev-list --all --count` w `rewrite.git` po przepisaniu równa się liczbie sprzed
-- [ ] 2.4 W historii `rewrite.git` (`git log --all --format= --name-only`) pod `.claude/skills/` jest tylko `playwright-cli`, nic pod `.claude/prompts/` i `.claude/config-templates/`, żadnego `.10x-cli.json` ani `.claude/.10x-cli-manifest.json`, a `git log --all -G'<!-- (BEGIN|END) @przeprogramowani/10x-cli'` jest puste
-- [ ] 2.5 Tree SHA `main` w `rewrite.git` równa się tree SHA `main` w `github-mirror.git`
-- [ ] 2.6 Każda para z mapy różni się tylko plikami kursu i `CLAUDE.md`; autor, daty i opis bez zmian; `playwright-cli` jest w nowych commitach tam, gdzie był w starych
-- [ ] 2.7 Mapa skopiowana do kopii zapasowej, a oba niewypchnięte commity mają w niej odpowiedniki na przepisanych gałęziach
+- [x] 2.1 Obie kopie zapasowe przechodzą `git fsck`; `github-mirror.git` ma 15 refów `refs/pull/*`, `local-mirror.git` ma commity `1153156` i `6842913`
+- [x] 2.2 `py -m git_filter_repo --version` działa (instalacja za zgodą Karola)
+- [x] 2.3 `git rev-list --all --count` w `rewrite.git` po przepisaniu równa się liczbie sprzed
+- [x] 2.4 W historii `rewrite.git` (`git log --all --format= --name-only`) pod `.claude/skills/` jest tylko `playwright-cli`, nic pod `.claude/prompts/` i `.claude/config-templates/`, żadnego `.10x-cli.json` ani `.claude/.10x-cli-manifest.json`, a `git log --all -G'<!-- (BEGIN|END) @przeprogramowani/10x-cli'` jest puste
+- [x] 2.5 Tree SHA `main` w `rewrite.git` równa się tree SHA `main` w `github-mirror.git`
+- [x] 2.6 Każda para z mapy różni się tylko plikami kursu i `CLAUDE.md`; autor, daty i opis bez zmian; `playwright-cli` jest w nowych commitach tam, gdzie był w starych
+- [x] 2.7 Mapa skopiowana do kopii zapasowej, a oba niewypchnięte commity mają w niej odpowiedniki na przepisanych gałęziach
 
 #### Manual
 
-- [ ] 2.8 Karol akceptuje wynik sprawdzeń przed fazą 3
+- [x] 2.8 Karol akceptuje wynik sprawdzeń przed fazą 3
 
 ### Phase 3: Publikacja na GitHubie (nie do cofnięcia bez kopii)
 
 #### Automated
 
-- [ ] 3.1 `git ls-remote origin refs/heads/main` wskazuje przepisany `main` (push z `--force-with-lease`, za zgodą)
-- [ ] 3.2 CI na nowym `main` zielone, check „Workers Builds: most-likely-to” ma `success`, a `npx wrangler deployments list` pokazuje nowe wdrożenie
-- [ ] 3.3 Drzewo `main` na GitHubie (`gh api repos/CharlesOnTheWave/most-likely-to/git/trees/main?recursive=1`) nie zawiera plików kursu
-- [ ] 3.4 `git ls-remote origin` pokazuje z gałęzi tylko `main` (6 pozostałych usuniętych za zgodą)
+- [x] 3.1 `git ls-remote origin refs/heads/main` wskazuje przepisany `main` (push z `--force-with-lease`, za zgodą)
+- [x] 3.2 CI na nowym `main` zielone, check „Workers Builds: most-likely-to” ma `success`, a `npx wrangler deployments list` pokazuje nowe wdrożenie
+- [x] 3.3 Drzewo `main` na GitHubie (`gh api repos/CharlesOnTheWave/most-likely-to/git/trees/main?recursive=1`) nie zawiera plików kursu
+- [x] 3.4 `git ls-remote origin` pokazuje z gałęzi tylko `main` (6 pozostałych usuniętych za zgodą)
 
 #### Manual
 
-- [ ] 3.5 Smoke na produkcji (za zgodą) jest zielony
-- [ ] 3.6 Karol na GitHubie widzi repo bez folderów kursu, z 15 PR-ami na miejscu
+- [x] 3.5 Smoke na produkcji (za zgodą) jest zielony
+- [x] 3.6 Karol na GitHubie widzi repo bez folderów kursu, z 15 PR-ami na miejscu
 
 ### Phase 4: Przestawienie obu folderów
 
 #### Automated
 
-- [ ] 4.1 Lokalne gałęzie wskazują przepisane commity z mapy, a `origin/*` nie ma usuniętych gałęzi
-- [ ] 4.2 Oba foldery stoją na nowej historii, `git status --short` w obu jest puste
-- [ ] 4.3 Pliki kursu w obu folderach zgadzają się z sumami kontrolnymi kopii (40 folderów w `.claude/skills/`) i są ignorowane
-- [ ] 4.4 Świeża sesja `claude -p` w obu folderach cytuje nagłówek bloku kursu i zna skill `10x-plan`
+- [x] 4.1 Lokalne gałęzie wskazują przepisane commity z mapy, a `origin/*` nie ma usuniętych gałęzi
+- [x] 4.2 Oba foldery stoją na nowej historii, `git status --short` w obu jest puste
+- [x] 4.3 Pliki kursu w obu folderach zgadzają się z sumami kontrolnymi kopii (40 folderów w `.claude/skills/`) i są ignorowane
+- [x] 4.4 Świeża sesja `claude -p` w obu folderach cytuje nagłówek bloku kursu i zna skill `10x-plan`
 
 #### Manual
 
-- [ ] 4.5 Karol w Claude Code w obu folderach widzi skille po wpisaniu `/10x-`
+- [x] 4.5 Karol w Claude Code w obu folderach widzi skille po wpisaniu `/10x-`
 
 ### Phase 5: Zapis i sprzątanie
 
 #### Automated
 
-- [ ] 5.1 `context/deployment/history-rewrite-2026-10-22.md` ma tyle wierszy mapy, ile commitów jest w `rewrite.git`, i nie zawiera ścieżek z dysku
-- [ ] 5.2 Sufiksy SHA w Progress tego planu wskazują commity obecne na nowym `main`
+- [x] 5.1 `context/deployment/history-rewrite-2026-10-22.md` ma tyle wierszy mapy, ile commitów jest w `rewrite.git`, i nie zawiera ścieżek z dysku
+- [x] 5.2 Sufiksy SHA w Progress tego planu wskazują commity obecne na nowym `main`
 - [ ] 5.3 Bramka przechodzi, a PR ma zielone CI
-- [ ] 5.4 `git filter-repo` odinstalowane (za zgodą)
+- [x] 5.4 `git filter-repo` odinstalowane (za zgodą)
 
 #### Manual
 
