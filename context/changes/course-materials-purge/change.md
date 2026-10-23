@@ -1,7 +1,7 @@
 ---
 change_id: course-materials-purge
 title: Course materials purge
-status: implementing
+status: implemented
 created: 2026-10-22
 updated: 2026-10-23
 archived_at: null
