@@ -201,6 +201,7 @@ Właściciel kroku: **Ty** albo **agent**. Zapis „(ask)” oznacza, że Claude
   - → Od 07.10.2026 (S-05) smoke i sonda F-01 logują się stałym kontem testowym z `.dev.vars` (`SMOKE_EMAIL`, `SMOKE_PASSWORD`) i nie zakładają kont. Stare konta `smoke-…` i `probe-…` usunięte. W nowym worktree trzeba skopiować `.dev.vars`.
 - **Paczki kursu w publicznym repo:** `.claude/skills/10x-*` trafiły do publicznego repo. Nie znalazłem w nich zastrzeżeń licencyjnych, a kurs zachęca do publicznego repo.
   - → 23.10.2026 (`course-materials-purge`): pliki kursu poza gitem i w `.gitignore`, blok kursu w `CLAUDE.local.md`; historia do przepisania w fazach 2–5 tego planu.
+  - → 23.10.2026: historia przepisana, żaden commit na GitHubie nie zawiera już plików kursu, a `main` ma te same pliki co przed przepisaniem. Stare numery commitów tłumaczy mapa w `context/deployment/history-rewrite-2026-10-22.md`.
 
 ## Poza tym planem (decyzje na później)
 
