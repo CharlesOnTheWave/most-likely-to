@@ -34,3 +34,14 @@ playwright-report/
 blob-report/
 playwright/.cache/
 .playwright-cli/
+
+# 10xDevs course packages (`10x get`): local only, never in git
+.10x-cli.json
+.claude/.10x-cli-manifest.json
+.claude/config-templates/
+.claude/prompts/
+.claude/skills/10x-*/
+.claude/skills/pack-init/
+.claude/skills/setup-cicd/
+.claude/skills/tf-registry/
+CLAUDE.local.md
