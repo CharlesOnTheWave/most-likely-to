@@ -365,7 +365,7 @@ Agent sprawdza tylko nazwy: `gh secret list` (bez wartości).
 - [x] 3.1 `gh secret list` pokazuje `SUPABASE_URL` i `SUPABASE_KEY` — 8a5e6a2
 - [x] 3.2 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) — 8a5e6a2
 - [x] 3.3 Ręczny przebieg workflow po scaleniu jest zielony, w logu jest „ok” i nie ma `sb_publishable` — 8a5e6a2
-- [ ] 3.4 `gh run list --workflow keep-supabase-awake.yml --event schedule` pokazuje co najmniej jeden zielony przebieg z harmonogramu
+- [x] 3.4 `gh run list --workflow keep-supabase-awake.yml --event schedule` pokazuje co najmniej jeden zielony przebieg z harmonogramu
 
 #### Manual
 
