@@ -56,6 +56,8 @@
       "Bash(node scripts/keep-supabase-awake*)",
       "Bash(node ./scripts/keep-supabase-awake*)",
       "Bash(node *keep-supabase-awake*)",
+      "Bash(node --run*)",
+      "Bash(node *--run*)",
       "Bash(gh workflow run*)",
       "Bash(gh workflow enable*)",
       "Bash(gh workflow disable*)",
