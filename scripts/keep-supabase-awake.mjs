@@ -1,11 +1,11 @@
-// Keep-awake ping: the free Supabase plan pauses a project after 7 days without enough database activity, and the
-// game is played every week or two (roadmap Open Question 9, option 2, decided 2026-10-21; plan in
-// context/changes/keep-supabase-awake). One harmless call to the project behind SUPABASE_URL: room_link with a made-up
-// code, a single read of public.rooms that writes and logs nothing. npm run keep-awake reads SUPABASE_URL /
+// Keep-awake ping: the free Supabase plan pauses a project after 7 days without enough database activity, and the game
+// is played every week or two (roadmap Open Question 9, option 2, decided 2026-10-21; plan in
+// context/archive/2026-10-21-keep-supabase-awake). One harmless call to the project behind SUPABASE_URL: room_link with
+// a made-up code, a single read of public.rooms that writes and logs nothing. npm run keep-awake reads SUPABASE_URL /
 // SUPABASE_KEY from .dev.vars (environment variables win); .github/workflows/keep-supabase-awake.yml passes them from
 // the repository's secrets every 6 hours. It reaches production, so its commands are under an "ask" rule in
-// .claude/settings.json (lessons.md). Prints one line, never the response body, the key or the address: the
-// workflow's log is public.
+// .claude/settings.json (lessons.md). Prints one line, never the response body, the key or the address: the workflow's
+// log is public.
 // Exit codes: 0 ok, 1 the database answered otherwise or did not answer, 2 refused before sending anything.
 
 // 22 characters from [A-Za-z0-9_-], like a real link code: a malformed code returns before the table read, which may
