@@ -491,4 +491,4 @@ Jedna mała tabela, prośby najwyżej 5 naraz na pokój, odczyt po unikalnym ind
 #### Manual
 
 - [x] 4.3 Karol scala PR — 2ed1304
-- [ ] 4.4 Karol przeklikuje na telefonie i laptopie: spóźniony prosi w trakcie głosowania, host wpuszcza, wpuszczony głosuje od następnego pytania; drugi spóźniony odrzucony i prosi jeszcze raz
+- [x] 4.4 Karol przeklikuje na telefonie i laptopie: spóźniony prosi w trakcie głosowania, host wpuszcza, wpuszczony głosuje od następnego pytania; drugi spóźniony odrzucony i prosi jeszcze raz

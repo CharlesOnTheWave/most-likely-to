@@ -1,9 +1,9 @@
 ---
 change_id: latecomer-admission
 title: Latecomer admission
-status: implementing
+status: implemented
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-24
 archived_at: null
 ---
 
