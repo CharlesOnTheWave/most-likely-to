@@ -491,19 +491,19 @@ Dwie zaległe poprawki dokumentów w tym samym PR, potem wdrożenie według `con
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint` (z kontrolą literałów UI), `npx astro check`, `npm test`, `npm run build`
-- [ ] 3.2 CI zielone na PR, w `e2e` nowy `question-list.spec.ts` przechodzi w obu projektach (laptop i telefon)
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint` (z kontrolą literałów UI), `npx astro check`, `npm test`, `npm run build` — f8b7e5c
+- [x] 3.2 CI zielone na PR, w `e2e` nowy `question-list.spec.ts` przechodzi w obu projektach (laptop i telefon) — f8b7e5c
 
 #### Manual
 
-- [x] 3.3 Karol ocenia zrzuty (laptop 1:1 i telefon) i akceptuje wygląd sekcji
-- [x] 3.4 Przejście klawiaturą sekcji na `/dev/room-states` (Tab, Enter, Escape): fokus zostaje w sekcji i wraca według kontraktu
+- [x] 3.3 Karol ocenia zrzuty (laptop 1:1 i telefon) i akceptuje wygląd sekcji — f8b7e5c
+- [x] 3.4 Przejście klawiaturą sekcji na `/dev/room-states` (Tab, Enter, Escape): fokus zostaje w sekcji i wraca według kontraktu — f8b7e5c
 
 ### Phase 4: Wdrożenie
 
 #### Automated
 
-- [ ] 4.1 `npx prettier --check AGENTS.md context/architect-report.md` przechodzi, a `git grep -n -E "0fad991|d4bff27a|957bb6d3" context/architect-report.md` nic nie znajduje
+- [x] 4.1 `npx prettier --check AGENTS.md context/architect-report.md` przechodzi, a `git grep -n -E "0fad991|d4bff27a|957bb6d3" context/architect-report.md` nic nie znajduje
 - [ ] 4.2 `npx supabase db push --dry-run` pokazuje tylko migrację `question_list_review`; po `db push` `migration list` ma ją lokalnie i zdalnie
 - [ ] 4.3 Po scaleniu CI na `main` zielone i smoke na produkcji zielony
 
