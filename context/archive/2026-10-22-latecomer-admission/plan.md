@@ -448,47 +448,47 @@ Jedna mała tabela, prośby najwyżej 5 naraz na pokój, odczyt po unikalnym ind
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 682d5a5
-- [x] 1.2 `npx prettier --check` dla nowych i zmienionych plików `.md` przechodzi — 682d5a5
-- [x] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `latecomers.test.ts` i nowe asercje pgTAP przechodzą — 682d5a5
-- [x] 1.4 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy `latecomers.test.ts` i 3 asercje resztek pgTAP; po `git revert` CI zielone — 75831a4
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 1e3cbca
+- [x] 1.2 `npx prettier --check` dla nowych i zmienionych plików `.md` przechodzi — 1e3cbca
+- [x] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `latecomers.test.ts` i nowe asercje pgTAP przechodzą — 1e3cbca
+- [x] 1.4 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy `latecomers.test.ts` i 3 asercje resztek pgTAP; po `git revert` CI zielone — 29e18e8
 
 #### Manual
 
-- [x] 1.5 Karol czyta streszczenie migracji (tabela, 4 funkcje, co widzi host, co spóźniony) i je akceptuje — 682d5a5
+- [x] 1.5 Karol czyta streszczenie migracji (tabela, 4 funkcje, co widzi host, co spóźniony) i je akceptuje — 1e3cbca
 
 ### Phase 2: Strona linku i serwer gry
 
 #### Automated
 
-- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 295beca
-- [x] 2.2 `npx prettier --check README.md context/foundation/test-plan.md` przechodzi — 295beca
-- [x] 2.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) — 295beca
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 140eba3
+- [x] 2.2 `npx prettier --check README.md context/foundation/test-plan.md` przechodzi — 140eba3
+- [x] 2.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) — 140eba3
 
 #### Manual
 
-- [x] 2.4 Karol ocenia zrzuty `/dev/room-states` dla formularza prośby, ekranu czekania i odrzucenia (strona HTML „Co oceniasz”, telefon w prawdziwej wielkości) — 295beca
+- [x] 2.4 Karol ocenia zrzuty `/dev/room-states` dla formularza prośby, ekranu czekania i odrzucenia (strona HTML „Co oceniasz”, telefon w prawdziwej wielkości) — 140eba3
 
 ### Phase 3: Ekrany gry
 
 #### Automated
 
-- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — d84f144
-- [x] 3.2 `npx prettier --check context/domain/glossary.md context/foundation/test-plan.md` przechodzi — d84f144
-- [x] 3.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach, w `e2e` `latecomer.spec.ts`, w `smoke` nowe kroki — d84f144
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 9b4ed8f
+- [x] 3.2 `npx prettier --check context/domain/glossary.md context/foundation/test-plan.md` przechodzi — 9b4ed8f
+- [x] 3.3 Push na gałąź PR (za zgodą): CI zielone we wszystkich jobach, w `e2e` `latecomer.spec.ts`, w `smoke` nowe kroki — 9b4ed8f
 
 #### Manual
 
-- [x] 3.4 Karol ocenia zrzuty: host z prośbami w głosowaniu i odsłonie (laptop jako całe okno 1:1 i telefon), wpuszczony z notką i dopiskiem — d84f144
+- [x] 3.4 Karol ocenia zrzuty: host z prośbami w głosowaniu i odsłonie (laptop jako całe okno 1:1 i telefon), wpuszczony z notką i dopiskiem — 9b4ed8f
 
 ### Phase 4: Wdrożenie
 
 #### Automated
 
-- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie — 5add8c9
-- [x] 4.2 Smoke na produkcji zielony — 2ed1304
+- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie — 050c14d
+- [x] 4.2 Smoke na produkcji zielony — 2e2010f
 
 #### Manual
 
-- [x] 4.3 Karol scala PR — 2ed1304
+- [x] 4.3 Karol scala PR — 2e2010f
 - [x] 4.4 Karol przeklikuje na telefonie i laptopie: spóźniony prosi w trakcie głosowania, host wpuszcza, wpuszczony głosuje od następnego pytania; drugi spóźniony odrzucony i prosi jeszcze raz
