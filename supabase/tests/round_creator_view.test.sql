@@ -15,7 +15,7 @@
 -- plan Faza 1 #3: a request to join a game in play, reached only through those functions, outside the publication, and
 -- gone from its room once the room closes); private.game_questions, open_question_list, draw_list_question,
 -- remove_list_question, edit_list_question and add_own_question with *_question_list_review.sql (S-06,
--- context/changes/question-list-review, plan Faza 1 #3: the game's question list, reached only through those
+-- context/archive/2026-10-24-question-list-review, plan Faza 1 #3: the game's question list, reached only through those
 -- functions, outside the publication, and kept with its room once the room closes). Each assertion about an object that
 -- may be missing must be its own `not ok`, never an error that ends the file: nothing here names them statically. They
 -- are reached only through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are,

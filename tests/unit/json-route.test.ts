@@ -155,8 +155,8 @@ describe("bodyNick", () => {
 });
 
 // The host's "Usuń" ({position}) and "Popraw" ({position, text}) on the game's question list
-// (context/changes/question-list-review/plan.md, Faza 2 #3): the entry's position, a whole number from 1 to 100 as the
-// database keeps it (private.game_questions); anything else is not our screen's body (invalid_body).
+// (context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #3): the entry's position, a whole number from 1 to
+// 100 as the database keeps it (private.game_questions); anything else is not our screen's body (invalid_body).
 describe("bodyPosition", () => {
   it.each([
     { body: { position: 1 }, position: 1 },

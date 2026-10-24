@@ -61,7 +61,7 @@ import { isRecord } from "./rooms";
 //   { ok: true } or { ok: false, reason } with reason in room_unknown (another host's room), request_unknown (no
 //   request with that nick waiting, or the room not in play), latecomer_nick_taken (admit only, a backstop).
 //
-// The game's question list (S-06, context/changes/question-list-review/plan.md, Faza 1), from
+// The game's question list (S-06, context/archive/2026-10-24-question-list-review/plan.md, Faza 1), from
 // supabase/migrations/*_question_list_review.sql. Every move on it is authenticated only, the room's host's and the
 // lobby's: { ok: true } or { ok: false, reason } with reason in room_unknown (another host's room), room_closed,
 // game_started, or one of the move's own below. An entry is named by its position, which never changes.

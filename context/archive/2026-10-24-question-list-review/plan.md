@@ -503,11 +503,11 @@ Dwie zaległe poprawki dokumentów w tym samym PR, potem wdrożenie według `con
 
 #### Automated
 
-- [x] 4.1 `npx prettier --check AGENTS.md context/architect-report.md` przechodzi, a `git grep -n -E "0fad991|d4bff27a|957bb6d3" context/architect-report.md` nic nie znajduje
-- [ ] 4.2 `npx supabase db push --dry-run` pokazuje tylko migrację `question_list_review`; po `db push` `migration list` ma ją lokalnie i zdalnie
-- [ ] 4.3 Po scaleniu CI na `main` zielone i smoke na produkcji zielony
+- [x] 4.1 `npx prettier --check AGENTS.md context/architect-report.md` przechodzi, a `git grep -n -E "0fad991|d4bff27a|957bb6d3" context/architect-report.md` nic nie znajduje — ceb39b1
+- [x] 4.2 `npx supabase db push --dry-run` pokazuje tylko migrację `question_list_review`; po `db push` `migration list` ma ją lokalnie i zdalnie — ceb39b1
+- [x] 4.3 Po scaleniu CI na `main` zielone i smoke na produkcji zielony — ceb39b1
 
 #### Manual
 
-- [ ] 4.4 Advisors → Security: 0 błędów
-- [ ] 4.5 Karol przeklikuje na telefonie i laptopie: „Przejrzyj pytania”, usuń, popraw, dodaj własne, dolosuj, start z poprawionym pytaniem u gości; nowa gra i „Zacznij grę” bez przeglądu działają jak dawniej
+- [x] 4.4 Advisors → Security: 0 błędów — ceb39b1
+- [x] 4.5 Karol przeklikuje na telefonie i laptopie: „Przejrzyj pytania”, usuń, popraw, dodaj własne, dolosuj, start z poprawionym pytaniem u gości; nowa gra i „Zacznij grę” bez przeglądu działają jak dawniej — ceb39b1

@@ -8,8 +8,8 @@ import { parseJoinRequestState, parseLobbyState, parseRoomView, questionLength }
 // (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 1 #2 and Faza 3 #2;
 // context/changes/latecomer-admission/plan.md, Faza 1 #1: requests and round.eligible;
-// context/changes/question-list-review/plan.md, Faza 1 #1 and Faza 2 #1: question_list, round.question_text and the
-// view's questions; tests/db/support/rounds.ts, the exact key sets), never from the parser.
+// context/archive/2026-10-24-question-list-review/plan.md, Faza 1 #1 and Faza 2 #1: question_list, round.question_text
+// and the view's questions; tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 const PLAYERS = [
   { nick: "Ola", host: true },

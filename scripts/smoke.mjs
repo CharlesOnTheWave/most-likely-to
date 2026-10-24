@@ -12,8 +12,8 @@
 // SMOKE_LIST=0 skips the host's review of the game's question list (S-06: "Przejrzyj pytania" and the moves on the list,
 // in the room "Nowa gra" opens at the end) and prints them as skipped: for production while it still runs a Worker
 // without the list's routes, between `npx supabase db push` and the merge
-// (context/changes/question-list-review/plan.md, Faza 2 #8). The game itself always plays with no list, so "Zacznij
-// grę" with no review is checked on every run.
+// (context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #8). The game itself always plays with no list, so
+// "Zacznij grę" with no review is checked on every run.
 
 const missing = ["SMOKE_EMAIL", "SMOKE_PASSWORD"].filter((name) => !process.env[name]);
 if (missing.length > 0) {
@@ -440,11 +440,12 @@ const NO_QUESTIONS = /^(?!.*"question_list")(?=.*"questions":null)/;
 const SMOKE_REWORDED = "przeszedłby test dymny za pierwszym razem";
 const SMOKE_OWN_QUESTION = "napisałby test, zanim napisze kod";
 
-// S-06's review of the game's question list (context/changes/question-list-review/plan.md, Faza 2 #8) through the real
-// routes, in the room "Nowa gra" opened at the end, which stays in the lobby: no game starts with a list here, so the
-// game's steps above keep "Zacznij grę" with no review checked after every deploy (an own question in a round is the
-// database tests' and e2e's to check). A guest joins first, to check that only the host gets the list. The list is
-// the first 15 of the pool in random order, so the steps name its entries by position only. Skipped with SMOKE_LIST=0.
+// S-06's review of the game's question list (context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #8)
+// through the real routes, in the room "Nowa gra" opened at the end, which stays in the lobby: no game starts with a
+// list here, so the game's steps above keep "Zacznij grę" with no review checked after every deploy (an own question in
+// a round is the database tests' and e2e's to check). A guest joins first, to check that only the host gets the list.
+// The list is the first 15 of the pool in random order, so the steps name its entries by position only. Skipped with
+// SMOKE_LIST=0.
 function listSteps() {
   const inListRoom = (action, body) => act(action, body, hostJar, listRoom.id);
   const list = [

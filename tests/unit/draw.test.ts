@@ -205,10 +205,10 @@ describe("questionPool and shuffledQuestions", () => {
   });
 });
 
-// "Pozostałe pytania" for the host after a reveal or a skip (context/changes/question-list-review/plan.md, Critical
-// Implementation Details): every round, a skipped one too, plays one question and none comes twice. The game plays
-// the entries of its question list not removed first, then the pool of the picked categories without every question
-// id on any row of the list. The totals are counted by hand below.
+// "Pozostałe pytania" for the host after a reveal or a skip (context/archive/2026-10-24-question-list-review/plan.md,
+// Critical Implementation Details): every round, a skipped one too, plays one question and none comes twice. The game
+// plays the entries of its question list not removed first, then the pool of the picked categories without every
+// question id on any row of the list. The totals are counted by hand below.
 describe("questionsLeft", () => {
   // A pool of 20 with no list: 20 questions in all.
   it("counts the pool alone with no list", () => {

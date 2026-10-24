@@ -22,12 +22,13 @@ import {
 // The game's question list (S-06) through the roles' own doors: RPC with the publishable key, as the signed-in host and
 // as the room's guests, past the Worker. Oracle: PRD FR-012 (before the start the host may review the drawn list of
 // the game's questions: remove one, draw another, reword one, add their own; "start now" stays the default, and the
-// list belongs to this game only) and Karol's decisions written in context/changes/question-list-review/plan.md: the
-// list appears on "Przejrzyj pytania" with 15 questions of the picked categories; "Dolosuj pytanie" adds one at the
-// end; an own or reworded question has 1 to 90 characters, without the trailing "?"; the game plays the list first,
-// in its order, then draws on from the picked categories, never a question removed or reworded; only the host sees
-// the list, in the lobby and during the game (the questions left are counted from it). Every list, position, id and
-// text expected here is written out by hand from the scenario, never computed.
+// list belongs to this game only) and Karol's decisions written in
+// context/archive/2026-10-24-question-list-review/plan.md: the list appears on "Przejrzyj pytania" with 15 questions of
+// the picked categories; "Dolosuj pytanie" adds one at the end; an own or reworded question has 1 to 90 characters,
+// without the trailing "?"; the game plays the list first, in its order, then draws on from the picked categories,
+// never a question removed or reworded; only the host sees the list, in the lobby and during the game (the questions
+// left are counted from it). Every list, position, id and text expected here is written out by hand from the scenario,
+// never computed.
 //
 // open_question_list, draw_list_question, remove_list_question, edit_list_question, add_own_question, room_lobby's
 // question_list and round.question_text come from supabase/migrations/*_question_list_review.sql. Without them
