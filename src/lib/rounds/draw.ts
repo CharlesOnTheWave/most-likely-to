@@ -83,7 +83,7 @@ export function questionPool(selection: QuestionSelection): QuestionId[] {
 // the pool of poolSize questions, so N rounds have played N of them. With the game's question list it plays the list's
 // entries not removed first, then the pool without every question id on any row of the list (removed and reworded
 // entries included, base_count of them, all of the pool: the list is drawn from it). So the game has
-// poolSize - base_count + entries questions in all (context/changes/question-list-review/plan.md, Critical
+// poolSize - base_count + entries questions in all (context/archive/2026-10-24-question-list-review/plan.md, Critical
 // Implementation Details); with no list both are 0.
 export function questionsLeft(poolSize: number, list: GameQuestionList | null, roundNumber: number): boolean {
   const onList = list?.base_count ?? 0;

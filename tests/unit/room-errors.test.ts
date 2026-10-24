@@ -23,10 +23,10 @@ const GUEST_REFUSALS = [
 // screen, round_in_progress for "Następne pytanie" while the round is voting;
 // context/archive/2026-10-20-deferred-review-fixes/plan.md, Faza 3: questions_ran_out for "Następne pytanie" once the
 // game's questions ran out; context/changes/latecomer-admission/plan.md, Faza 2 #3: request_unknown and
-// latecomer_nick_taken for the host's "Wpuść" and "Odrzuć"; and context/changes/question-list-review/plan.md, Faza 2 #5:
-// question_unknown, invalid_question_text, list_full and no_new_questions for the host's moves on the game's question
-// list, list_empty for the start with every entry removed), written out by hand: a code dropped from ROUND_REFUSALS
-// would otherwise drop out of this test too.
+// latecomer_nick_taken for the host's "Wpuść" and "Odrzuć"; and
+// context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #5: question_unknown, invalid_question_text,
+// list_full and no_new_questions for the host's moves on the game's question list, list_empty for the start with every
+// entry removed), written out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
