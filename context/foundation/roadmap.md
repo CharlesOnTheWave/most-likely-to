@@ -48,7 +48,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                                | S-02             | FR-006, FR-015                                            | done        |
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | proposed    |
 | S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                           | —                | FR-001                                                    | done        |
-| S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | in-progress |
+| S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | done        |
 | S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | proposed    |
 | S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | in-progress |
 | S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | proposed    |
@@ -184,7 +184,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Przegląd nie może spowolnić ścieżki „gra w mniej niż 5 minut”, dlatego zostaje opcjonalny.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-07: Współhost
 
@@ -341,3 +341,4 @@ _Brak: to pierwszy kamień milowy._
 - **S-02: Host klika „start”; wszyscy w pokoju widzą to samo pytanie z wybranych kategorii (18+ tylko z tych, w których host je dołączył), każdy wskazuje jedną osobę z listy nicków (także siebie) albo się wstrzymuje, wszyscy widzą, kto już zagłosował, a po ostatnim głosie lub przewinięciu przez prowadzącego widzą odsłonę: ile głosów dostała każda osoba.** — Archived 2026-10-15 → `context/archive/2026-10-13-first-live-round/`. Lesson: —.
 - **S-03: Prowadzący przechodzi do kolejnego pytania (bez powtórek w tej grze), może pominąć rundę (jej głosy przepadają i nie liczą się do jakości pytania) i kończy grę po potwierdzeniu; po ostatnim pytaniu ekipa widzi koniec wieczoru bez punktacji.** — Archived 2026-10-15 → `context/archive/2026-10-15-full-game-evening/`. Lesson: —.
 - **Szeroki układ ekranów gry na laptopie i dużym monitorze (zmiana `/10x-ui` z Parked, bez numeru slice'a): od 1024 px poczekalnia w dwóch kolumnach, odsłona z wykresem obok tabeli, przyciski hosta w pasku przyklejonym do dołu okna; telefon bez zmian.** — Archived 2026-10-18 → `context/archive/2026-10-15-room-wide-layout/`. Lesson: —.
+- **S-06: Host może przed startem przejrzeć wylosowaną listę pytań tej gry: usunąć pytanie, dolosować nowe, poprawić treść albo dodać własne; domyślną ścieżką zostaje „start teraz” bez przeglądania.** — Archived 2026-10-24 → `context/archive/2026-10-24-question-list-review/`. Lesson: —.
