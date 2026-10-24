@@ -1,7 +1,7 @@
 ---
 change_id: question-list-review
 title: Question list review
-status: implementing
+status: implemented
 created: 2026-10-24
 updated: 2026-10-24
 archived_at: null
