@@ -19,8 +19,9 @@ import {
 // (anon, each with a player token of its own, as the Worker's cookie will keep it) and as the signed-in host, past the
 // Worker. Oracle: PRD FR-020 (a latecomer asks to join a game in play with a nick of their choice, the host sees the
 // request on every screen of the game and lets them in, and whoever is let in sees the current round and votes from
-// the next one) and Karol's decisions 1-6 on the Open Questions of context/changes/latecomer-admission/research.md, as
-// written in context/changes/latecomer-admission/plan.md: "Wpuść" and "Odrzuć", a request waits until the host decides
+// the next one) and Karol's decisions 1-6 on the Open Questions of
+// context/archive/2026-10-22-latecomer-admission/research.md, as written in
+// context/archive/2026-10-22-latecomer-admission/plan.md: "Wpuść" and "Odrzuć", a request waits until the host decides
 // or the room closes, and a rejected one may ask again; at most 5 wait at once; a request's nick follows the nick rule
 // of joining and is taken by a player or by another waiting request; the one waiting sees only its own request, never
 // the question; the one let in mid-round is not among those who vote in it, and nobody votes for them in it. Every

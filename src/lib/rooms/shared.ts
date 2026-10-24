@@ -17,13 +17,14 @@ export interface LobbyPlayer {
 }
 
 // The round's keys as room_lobby names them (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
-// context/archive/2026-10-15-full-game-evening/plan.md, Faza 2 #4; context/changes/latecomer-admission/plan.md,
-// Faza 1 #1; context/archive/2026-10-24-question-list-review/plan.md, Faza 1 #1). The latest round of the game only.
-// Its question is a question of the base (question_id) or, for an own or reworded question of the game's question list,
-// the text the host gave it (question_text, with question_id null); never both null. While it is open: who may vote in
-// it (eligible: the players when it opened, in seat order, so a latecomer let in since then is among the players but
-// not here until the next question), who has voted, in seat order (never the order of voting), never a count, and
-// whether the round before it was skipped (public to everyone, tied to no one's vote).
+// context/archive/2026-10-15-full-game-evening/plan.md, Faza 2 #4;
+// context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1 #1;
+// context/archive/2026-10-24-question-list-review/plan.md, Faza 1 #1). The latest round of the game only. Its question
+// is a question of the base (question_id) or, for an own or reworded question of the game's question list, the text the
+// host gave it (question_text, with question_id null); never both null. While it is open: who may vote in it (eligible:
+// the players when it opened, in seat order, so a latecomer let in since then is among the players but not here until
+// the next question), who has voted, in seat order (never the order of voting), never a count, and whether the round
+// before it was skipped (public to everyone, tied to no one's vote).
 export interface VotingRound {
   number: number;
   question_id: string | null;

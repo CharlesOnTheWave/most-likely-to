@@ -13,7 +13,7 @@ const GUEST_REFUSALS = [
   "room_unknown",
   "service_unavailable",
   "game_started",
-  // request_join (context/changes/latecomer-admission/plan.md, Faza 1 #1 and Faza 2 #3).
+  // request_join (context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1 #1 and Faza 2 #3).
   "requests_full",
   "room_open",
 ];
@@ -22,7 +22,7 @@ const GUEST_REFUSALS = [
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #4: round_over for a question that changed under the
 // screen, round_in_progress for "Następne pytanie" while the round is voting;
 // context/archive/2026-10-20-deferred-review-fixes/plan.md, Faza 3: questions_ran_out for "Następne pytanie" once the
-// game's questions ran out; context/changes/latecomer-admission/plan.md, Faza 2 #3: request_unknown and
+// game's questions ran out; context/archive/2026-10-22-latecomer-admission/plan.md, Faza 2 #3: request_unknown and
 // latecomer_nick_taken for the host's "Wpuść" and "Odrzuć"; and
 // context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #5: question_unknown, invalid_question_text,
 // list_full and no_new_questions for the host's moves on the game's question list, list_empty for the start with every

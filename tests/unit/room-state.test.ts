@@ -7,7 +7,7 @@ import { parseJoinRequestState, parseLobbyState, parseRoomView, questionLength }
 // render a shape it does not know. The fixtures are written by hand from the round's contract
 // (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 1 #2 and Faza 3 #2;
-// context/changes/latecomer-admission/plan.md, Faza 1 #1: requests and round.eligible;
+// context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1 #1: requests and round.eligible;
 // context/archive/2026-10-24-question-list-review/plan.md, Faza 1 #1 and Faza 2 #1: question_list, round.question_text
 // and the view's questions; tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
@@ -482,8 +482,9 @@ describe("questionLength", () => {
   });
 });
 
-// A latecomer's own request as join_request_state returns it (context/changes/latecomer-admission/plan.md, Faza 1 #1),
-// for the /j/<code> page and its waiting screen: the state, and the nick only while a request exists.
+// A latecomer's own request as join_request_state returns it
+// (context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1 #1), for the /j/<code> page and its waiting screen:
+// the state, and the nick only while a request exists.
 describe("parseJoinRequestState", () => {
   it.each([
     { why: "a request waiting", state: { state: "pending", nick: "Kuba" } },
