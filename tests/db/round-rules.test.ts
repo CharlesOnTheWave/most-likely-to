@@ -4,12 +4,17 @@ import { isRecord, readOwnRoom, seedGuest, seedRoom, type OwnRoom, type SeededGu
 import {
   OTHER_QUESTION_ID,
   QUESTION_ID,
+  addOwnQuestion,
   admitLatecomer,
   castVote,
+  drawListQuestion,
+  editListQuestion,
   endGame,
   joinRoom,
   nextRound,
+  openQuestionList,
   rejectLatecomer,
+  removeListQuestion,
   requestJoin,
   revealRound,
   roomLink,
@@ -30,7 +35,9 @@ import {
 // S-03 adds the evening's moves (next_round, skip_round, end_game): only the room's own host makes them (PRD Access
 // Control), checked here; the evening's own rules are tests/db/game-rules.test.ts's. The same for S-08's "Wpuść" and
 // "Odrzuć" (admit_latecomer, reject_latecomer, from *_latecomer_admission.sql), whose own rules are
-// tests/db/latecomers.test.ts's.
+// tests/db/latecomers.test.ts's, and for S-06's moves on the game's question list (open_question_list,
+// draw_list_question, remove_list_question, edit_list_question, add_own_question, from *_question_list_review.sql),
+// whose own rules are tests/db/question-list.test.ts's.
 //
 // A refusal is the function's answer { ok: false, reason }, never "some error"; a guest calling a host's function gets
 // 42501 naming the function (test-plan §6.2, G2).
@@ -311,7 +318,7 @@ describe("the host reveals after one vote", () => {
   });
 });
 
-describe("refusals before a round: a closed room, the lobby, too few players, a malformed question", () => {
+describe("refusals before a round: a closed room, the lobby, too few players, a malformed question, another host's list", () => {
   // Three players each, so a refusal can only come from the state under test, never from too few players.
   let closedRoom: OwnRoom;
   let lobbyRoom: OwnRoom;
@@ -364,5 +371,21 @@ describe("refusals before a round: a closed room, the lobby, too few players, a 
     const answer = await startGame(hostB.client, roomB.id, QUESTION_ID);
 
     expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "not_enough_players" } });
+  });
+
+  // S-06: the game's question list is host A's own as well (PRD Access Control: only the host reviews it). Host A's
+  // lobby has no list and the arguments are ones host A's own call would take, so the room is the only thing they can
+  // be refused for; a move that got through would open or change a list there. Last in the file, so such a list could
+  // not change a start above.
+  it.each([
+    { fn: "open_question_list", attempt: () => openQuestionList(hostB.client, lobbyRoom.id, [OTHER_QUESTION_ID]) },
+    { fn: "draw_list_question", attempt: () => drawListQuestion(hostB.client, lobbyRoom.id, [OTHER_QUESTION_ID]) },
+    { fn: "remove_list_question", attempt: () => removeListQuestion(hostB.client, lobbyRoom.id, 1) },
+    { fn: "edit_list_question", attempt: () => editListQuestion(hostB.client, lobbyRoom.id, 1, "zasnąłby w kinie") },
+    { fn: "add_own_question", attempt: () => addOwnQuestion(hostB.client, lobbyRoom.id, "zasnąłby w kinie") },
+  ])("host B calling $fn on host A's lobby gets room_unknown", async ({ attempt }) => {
+    const answer = await attempt();
+
+    expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "room_unknown" } });
   });
 });

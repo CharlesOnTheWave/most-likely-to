@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bodyNick, bodyRound, readJsonRequest } from "@/lib/rooms/json-route";
+import { bodyNick, bodyPosition, bodyQuestionText, bodyRound, readJsonRequest } from "@/lib/rooms/json-route";
 
 // F6 of the S-02 review (context/archive/2026-10-13-first-live-round/follow-ups/review-fixes.md;
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #5): a body too large for a game's action is refused
@@ -151,5 +151,70 @@ describe("bodyNick", () => {
     { body: { nick: ["Kuba"] } },
   ])("gives undefined for $body", ({ body }) => {
     expect(bodyNick(body)).toBeUndefined();
+  });
+});
+
+// The host's "Usuń" ({position}) and "Popraw" ({position, text}) on the game's question list
+// (context/changes/question-list-review/plan.md, Faza 2 #3): the entry's position, a whole number from 1 to 100 as the
+// database keeps it (private.game_questions); anything else is not our screen's body (invalid_body).
+describe("bodyPosition", () => {
+  it.each([
+    { body: { position: 1 }, position: 1 },
+    { body: { position: 16, text: "wypiłby mleko prosto z kartonu" }, position: 16 },
+    { body: { position: 100 }, position: 100 },
+  ])("reads the position from $body", ({ body, position }) => {
+    expect(bodyPosition(body)).toBe(position);
+  });
+
+  it.each([
+    { body: { text: "wypiłby mleko prosto z kartonu" } },
+    { body: {} },
+    { body: null },
+    { body: [] },
+    { body: 3 },
+    { body: { position: 0 } },
+    { body: { position: -1 } },
+    { body: { position: 1.5 } },
+    { body: { position: 101 } },
+    { body: { position: "3" } },
+    { body: { position: null } },
+    { body: { position: Number.NaN } },
+  ])("gives undefined for $body", ({ body }) => {
+    expect(bodyPosition(body)).toBeUndefined();
+  });
+});
+
+// The host's "Popraw" ({position, text}) and "Dodaj własne" ({text}): the text as typed, at most 400 characters (as
+// Postgres counts them, so an emoji is one), the most the database reads at all; the database normalizes it and has
+// the final word on 1-90 (invalid_question_text). Anything else is not our screen's body (invalid_body).
+describe("bodyQuestionText", () => {
+  it.each([
+    { body: { text: "wypiłby mleko prosto z kartonu" }, text: "wypiłby mleko prosto z kartonu" },
+    { body: { position: 1, text: " zgubiłby klucze? " }, text: " zgubiłby klucze? " },
+    // Empty once normalized: the database's refusal, not the body's.
+    { body: { text: "" }, text: "" },
+    { body: { text: " ? " }, text: " ? " },
+  ])("reads the text from $body", ({ body, text }) => {
+    expect(bodyQuestionText(body)).toBe(text);
+  });
+
+  it.each([
+    { body: { position: 1 } },
+    { body: {} },
+    { body: null },
+    { body: [] },
+    { body: "zgubiłby klucze" },
+    { body: { text: null } },
+    { body: { text: 1 } },
+    { body: { text: ["zgubiłby klucze"] } },
+  ])("gives undefined for $body", ({ body }) => {
+    expect(bodyQuestionText(body)).toBeUndefined();
+  });
+
+  it("reads a text of 400 characters and no longer one, an emoji counted as one", () => {
+    expect(bodyQuestionText({ text: "x".repeat(400) })).toBe("x".repeat(400));
+    expect(bodyQuestionText({ text: "🍕".repeat(400) })).toBe("🍕".repeat(400));
+    expect(bodyQuestionText({ text: "x".repeat(401) })).toBeUndefined();
+    expect(bodyQuestionText({ text: "🍕".repeat(401) })).toBeUndefined();
   });
 });

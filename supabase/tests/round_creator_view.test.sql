@@ -13,11 +13,14 @@
 -- *_round_number_required.sql (deferred-review-fixes); public.join_requests, request_join, join_request_state,
 -- admit_latecomer and reject_latecomer with *_latecomer_admission.sql (S-08, context/changes/latecomer-admission,
 -- plan Faza 1 #3: a request to join a game in play, reached only through those functions, outside the publication, and
--- gone from its room once the room closes). Each assertion about an object that may be missing must
--- be its own `not ok`, never an error that ends the file: nothing here names them statically. They are reached only
--- through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are, columns_are),
--- lives_ok, and the helpers below, which run a call or a count dynamically and hand the error back as text for the TAP
--- diagnostics.
+-- gone from its room once the room closes); private.game_questions, open_question_list, draw_list_question,
+-- remove_list_question, edit_list_question and add_own_question with *_question_list_review.sql (S-06,
+-- context/changes/question-list-review, plan Faza 1 #3: the game's question list, reached only through those
+-- functions, outside the publication, and kept with its room once the room closes). Each assertion about an object that
+-- may be missing must be its own `not ok`, never an error that ends the file: nothing here names them statically. They
+-- are reached only through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are,
+-- columns_are), lives_ok, and the helpers below, which run a call or a count dynamically and hand the error back as
+-- text for the TAP diagnostics.
 --
 -- Rounds are played through the functions as the game's roles: each call switches to anon, or to authenticated with
 -- the host in request.jwt.claims, and back to the owner. Hosts are rows inserted into auth.users by the owner. The
@@ -25,7 +28,7 @@
 
 begin;
 
-select plan(128);
+select plan(150);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -533,6 +536,64 @@ exception when others then
 end;
 $$;
 
+-- S-06: the room's host reviews the game's question list as the host: open_question_list with the first 15 questions
+-- of the base, remove_list_question of position 2 and add_own_question, so the room's list holds 16 rows, one of them
+-- removed and one of them the host's own. 'ok', or the first answer that was not.
+create function pg_temp.host_reviews_list(p_key text) returns text language plpgsql as $$
+declare
+  v_outcome text;
+begin
+  v_outcome := pg_temp.outcome(pg_temp.call_as('authenticated', pg_temp.host_of(p_key), format(
+    'select public.open_question_list(%L, %L::text[])',
+    pg_temp.room_of(p_key),
+    array(select format('na-co-dzien-%s', lpad(n::text, 3, '0')) from generate_series(1, 15) as n)
+  )));
+  if v_outcome <> 'ok' then
+    return 'open_question_list as the host: ' || v_outcome;
+  end if;
+  v_outcome := pg_temp.outcome(pg_temp.call_as('authenticated', pg_temp.host_of(p_key), format(
+    'select public.remove_list_question(%L, 2)', pg_temp.room_of(p_key)
+  )));
+  if v_outcome <> 'ok' then
+    return 'remove_list_question as the host: ' || v_outcome;
+  end if;
+  v_outcome := pg_temp.outcome(pg_temp.call_as('authenticated', pg_temp.host_of(p_key), format(
+    'select public.add_own_question(%L, %L)', pg_temp.room_of(p_key), 'pytanie dopisane przez hosta'
+  )));
+  if v_outcome <> 'ok' then
+    return 'add_own_question as the host: ' || v_outcome;
+  end if;
+  return 'ok';
+end;
+$$;
+
+-- The room's rows in private.game_questions as one line ('16 rows, 1 removed, 1 own'), 'none', or why there is no
+-- count to give.
+create function pg_temp.list_rows(p_key text) returns text language plpgsql as $$
+declare
+  v_rows text;
+begin
+  if to_regclass('private.game_questions') is null then
+    return 'no table private.game_questions';
+  end if;
+  if pg_temp.room_of(p_key) is null then
+    return 'no room ' || p_key;
+  end if;
+  execute $q$
+    select case when count(*) = 0 then 'none' else
+      count(*)::text || ' rows, '
+        || (count(*) filter (where g.removed))::text || ' removed, '
+        || (count(*) filter (where g.question_id is null))::text || ' own'
+    end
+    from private.game_questions g
+    where g.room_id = $1
+  $q$ into v_rows using pg_temp.room_of(p_key);
+  return v_rows;
+exception when others then
+  return 'error ' || sqlstate || ': ' || sqlerrm;
+end;
+$$;
+
 -- Positive control (green from day one) -------------------------------------------------------------------------------
 
 -- If this fails, the file reads the wrong database or the owner's view is broken: nothing below means anything.
@@ -579,6 +640,15 @@ select table_privs_are(
 select table_privs_are(
   'private', 'round_voters', 'authenticated', array[]::name[], 'authenticated has no privilege on private.round_voters'
 );
+-- S-06: the game's question list, which a round of the game may come from, is reached only through the list's
+-- functions too.
+select table_privs_are(
+  'private', 'game_questions', 'anon', array[]::name[], 'anon has no privilege on private.game_questions'
+);
+select table_privs_are(
+  'private', 'game_questions', 'authenticated', array[]::name[],
+  'authenticated has no privilege on private.game_questions'
+);
 
 -- Postgres Changes would send every row to anyone holding the publishable key.
 select is(pg_temp.publication_of('rounds'), 'not published', 'private.rounds is not in supabase_realtime');
@@ -587,6 +657,9 @@ select is(
 );
 select is(pg_temp.publication_of('ballot_boxes'), 'not published', 'private.ballot_boxes is not in supabase_realtime');
 select is(pg_temp.publication_of('round_voters'), 'not published', 'private.round_voters is not in supabase_realtime');
+select is(
+  pg_temp.publication_of('game_questions'), 'not published', 'private.game_questions is not in supabase_realtime'
+);
 
 -- A time or a sequence next to a vote would tell the order of voting, and with it who voted for whom.
 select is(pg_temp.order_columns('rounds'), 'none', 'private.rounds has no time, serial or identity column');
@@ -595,6 +668,9 @@ select is(
 );
 select is(pg_temp.order_columns('ballot_boxes'), 'none', 'private.ballot_boxes has no time, serial or identity column');
 select is(pg_temp.order_columns('round_voters'), 'none', 'private.round_voters has no time, serial or identity column');
+select is(
+  pg_temp.order_columns('game_questions'), 'none', 'private.game_questions has no time, serial or identity column'
+);
 
 -- What stays after the reveal is a count per target, with no voter; who voted is never stored next to a target.
 select columns_are(
@@ -613,7 +689,7 @@ select ok(
 );
 
 -- The same, for every table of schema private: the ones above by name, and any later one by this scan (S-03 adds none,
--- so the scan holds from the start).
+-- so the scan holds from the start; S-06's private.game_questions is checked both ways).
 select is(
   pg_temp.private_tables_failing('grants'), 'none',
   'no table of schema private grants anything to anon or authenticated'
@@ -757,6 +833,74 @@ select is(
   'reject_latecomer exists in exactly one version'
 );
 
+-- Catalog: the game's question list (S-06) ---------------------------------------------------------------------------
+
+-- The list is the signed-in host's to review, in the lobby: every move on it runs as postgres with an empty
+-- search_path, for authenticated only, and checks the host and the room's status inside.
+select is(
+  pg_temp.function_facts('public.open_question_list(uuid, text[])'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'open_question_list runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.function_facts('public.draw_list_question(uuid, text[])'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'draw_list_question runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.function_facts('public.remove_list_question(uuid, integer)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'remove_list_question runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.function_facts('public.edit_list_question(uuid, integer, text)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'edit_list_question runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.function_facts('public.add_own_question(uuid, text)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'add_own_question runs as postgres with an empty search_path, for authenticated only'
+);
+
+-- A second version beside any of these would be a door its checks do not guard. start_game and room_lobby, replaced by
+-- the same migration, keep their one version.
+select is(
+  pg_temp.versions_of('open_question_list'),
+  'open_question_list(p_room_id uuid, p_candidates text[])',
+  'open_question_list exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('draw_list_question'),
+  'draw_list_question(p_room_id uuid, p_candidates text[])',
+  'draw_list_question exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('remove_list_question'),
+  'remove_list_question(p_room_id uuid, p_position integer)',
+  'remove_list_question exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('edit_list_question'),
+  'edit_list_question(p_room_id uuid, p_position integer, p_text text)',
+  'edit_list_question exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('add_own_question'),
+  'add_own_question(p_room_id uuid, p_text text)',
+  'add_own_question exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('start_game'),
+  'start_game(p_room_id uuid, p_question_id text)',
+  'start_game still exists in exactly one version'
+);
+select is(
+  pg_temp.versions_of('room_lobby'),
+  'room_lobby(p_room_id uuid, p_player_token text)',
+  'room_lobby still exists in exactly one version'
+);
+
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
 
 -- Host, Ola and Bartek: the third vote reveals the round by itself.
@@ -795,6 +939,26 @@ select is(pg_temp.urn_rows('ballot_boxes', 'abandoned'), '0', 'after Nowa gra, n
 select is(pg_temp.urn_rows('round_voters', 'abandoned'), '0', 'after Nowa gra, no private.round_voters row is left');
 select is(
   pg_temp.join_request_rows('abandoned'), 'none', 'after Nowa gra, no public.join_requests row of the room is left'
+);
+
+-- The game's question list stays with its closed room (S-06) ---------------------------------------------------------
+
+-- Karol's decision in the plan: own questions and removals stay for S-11 and for the game's creator (FR-021), so
+-- closing the room keeps its list whole; it goes only with the room itself. A list holds no voter and no count.
+select isnt(pg_temp.open_room('listed', array[]::text[]), null, 'setup: a host opens a room with no guests');
+select is(
+  pg_temp.host_reviews_list('listed'), 'ok',
+  'setup: the host opens the list of 15, removes position 2 and adds an own question'
+);
+select is(
+  pg_temp.list_rows('listed'), '16 rows, 1 removed, 1 own',
+  'before Nowa gra, private.game_questions holds the room''s list: 16 rows, 1 removed, 1 own'
+);
+select is(pg_temp.host_opens_new_room('listed'), 'ok', 'setup: Nowa gra closes the room in the lobby');
+select is(pg_temp.room_status('listed'), 'closed', 'Nowa gra closed the room with the list');
+select is(
+  pg_temp.list_rows('listed'), '16 rows, 1 removed, 1 own',
+  'after Nowa gra, private.game_questions keeps the closed room''s list: 16 rows, 1 removed, 1 own'
 );
 
 -- A round skipped while voting keeps nothing of its votes -------------------------------------------------------

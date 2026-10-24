@@ -57,8 +57,11 @@ Use these words in code, tests, commits and conversations. When a name in the co
 | kategoria | temat pytań wybierany przez hosta przy zakładaniu gry | `CATEGORIES`, `categories` | — |
 | pytania 18+ | pytania z flagą 18+, włączane osobno w każdej wybranej kategorii | `adult`, `adult_categories` | — |
 | wspólna baza pytań | wszystkie pytania gry, kuratorowane przez twórcę gry | `src/data/questions.ts` | „pula” |
-| lista pytań gry | pytania należące do jednej gry | dziś liczona w locie: `poolFrom`, `p_candidates` | „pula hosta” |
-| pozostałe pytania | niezagrane pytania z wybranych kategorii | `questionPool`, `hostQuestionsLeft` | „pula” bez dopowiedzenia |
+| lista pytań gry | pytania należące do jednej gry, które host może przejrzeć w poczekalni („Przejrzyj pytania”); gra gra je najpierw, w kolejności pozycji, a potem losuje dalej z wybranych kategorii | `private.game_questions`, `question_list`, `QuestionList` | „pula hosta” |
+| pozostałe pytania | niezagrane wpisy listy pytań gry i niezagrane pytania wybranych kategorii spoza listy | `questionsLeft`, `hostQuestionsLeft` | „pula” bez dopowiedzenia |
+| własne pytanie | pytanie dopisane przez hosta do listy pytań gry („Dodaj własne”), bez id z bazy pytań | `text` bez `question_id` w `game_questions`, `add_own_question` | „propozycja pytania” (to pytanie gościa) |
+| usunięcie pytania z listy | host zdejmuje pytanie z listy pytań gry („Usuń”); wpis zostaje oznaczony, a pytanie nie pada w tej grze | `removed`, `remove_list_question` | „pominięcie” (to porzucenie rundy, `skip_round`) |
+| dolosowanie pytania | host dobiera na koniec listy pytań gry kolejne pytanie z wybranych kategorii, którego nie ma na liście („Dolosuj pytanie”) | `draw_list_question` | — |
 | propozycja pytania | pytanie zgłoszone przez gościa do zatwierdzenia | *missing in code* (S-10) | — |
 | reakcja | kciuk w górę albo w dół po odsłonie | *missing in code* (S-11) | „ocena gracza” |
 | ocena pytania | zbiorcza ocena pytania z danych o rozgrywce | *missing in code* (S-11) | „wynik” |
