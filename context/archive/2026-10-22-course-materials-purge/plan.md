@@ -478,12 +478,12 @@ Brak. 214 commitów to sekundy dla `filter-repo`.
 
 #### Automated
 
-- [x] 5.1 `context/deployment/history-rewrite-2026-10-22.md` ma tyle wierszy mapy, ile commitów jest w `rewrite.git`, i nie zawiera ścieżek z dysku
-- [x] 5.2 Sufiksy SHA w Progress tego planu wskazują commity obecne na nowym `main`
-- [ ] 5.3 Bramka przechodzi, a PR ma zielone CI
-- [x] 5.4 `git filter-repo` odinstalowane (za zgodą)
+- [x] 5.1 `context/deployment/history-rewrite-2026-10-22.md` ma tyle wierszy mapy, ile commitów jest w `rewrite.git`, i nie zawiera ścieżek z dysku — d2b1abf
+- [x] 5.2 Sufiksy SHA w Progress tego planu wskazują commity obecne na nowym `main` — d2b1abf
+- [x] 5.3 Bramka przechodzi, a PR ma zielone CI
+- [x] 5.4 `git filter-repo` odinstalowane (za zgodą) — d2b1abf
 
 #### Manual
 
-- [ ] 5.5 Karol scala PR, a smoke na produkcji (za zgodą) jest zielony; potem `git ls-remote --heads origin` pokazuje tylko `main`
-- [ ] 5.6 Pamięć `gra-terminal-2` i „Stan” w `Desktop\10xdevs-gra.md` mają nowe numery i stan zmiany
+- [x] 5.5 Karol scala PR, a smoke na produkcji (za zgodą) jest zielony; potem `git ls-remote --heads origin` pokazuje tylko `main`
+- [x] 5.6 Pamięć `gra-terminal-2` i „Stan” w `Desktop\10xdevs-gra.md` mają nowe numery i stan zmiany

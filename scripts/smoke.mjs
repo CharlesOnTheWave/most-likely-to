@@ -306,11 +306,11 @@ const LATECOMER_ROUND = new RegExp(
 // room screen sends it; a vote or a reveal without one is refused before the database (F2 of
 // context/archive/2026-10-20-deferred-review-fixes/plan.md). The targets live only in the request bodies: no step's
 // name and nothing the script prints says who voted for whom. Two latecomers come during question 1 (S-08,
-// context/changes/latecomer-admission/plan.md, Faza 2 #10 and Faza 3 #5): the form answers 303 back to the link, whose
-// page shows the waiting screen, and sets the room's cookie with the request's token. The host lets Kuba in: he is a
-// player from then on, but may not vote in question 1, so the three votes still reveal it and its results leave him
-// out. The host turns Ula away; her request stays rejected until the room closes (closingSteps). Skipped with
-// SMOKE_ROUND=0.
+// context/archive/2026-10-22-latecomer-admission/plan.md, Faza 2 #10 and Faza 3 #5): the form answers 303 back to
+// the link, whose page shows the waiting screen, and sets the room's cookie with the request's token. The host lets
+// Kuba in: he is a player from then on, but may not vote in question 1, so the three votes still reveal it and its
+// results leave him out. The host turns Ula away; her request stays rejected until the room closes (closingSteps).
+// Skipped with SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],

@@ -11,16 +11,16 @@
 -- cast_vote, private.close_stale_games, the cron schema) came with S-02; the evening's (next_round, skip_round,
 -- end_game, cast_vote with p_round) with phase 2 of S-03; reveal_round with p_round comes with
 -- *_round_number_required.sql (deferred-review-fixes); public.join_requests, request_join, join_request_state,
--- admit_latecomer and reject_latecomer with *_latecomer_admission.sql (S-08, context/changes/latecomer-admission,
--- plan Faza 1 #3: a request to join a game in play, reached only through those functions, outside the publication, and
--- gone from its room once the room closes); private.game_questions, open_question_list, draw_list_question,
--- remove_list_question, edit_list_question and add_own_question with *_question_list_review.sql (S-06,
--- context/archive/2026-10-24-question-list-review, plan Faza 1 #3: the game's question list, reached only through those
--- functions, outside the publication, and kept with its room once the room closes). Each assertion about an object that
--- may be missing must be its own `not ok`, never an error that ends the file: nothing here names them statically. They
--- are reached only through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are,
--- columns_are), lives_ok, and the helpers below, which run a call or a count dynamically and hand the error back as
--- text for the TAP diagnostics.
+-- admit_latecomer and reject_latecomer with *_latecomer_admission.sql (S-08,
+-- context/archive/2026-10-22-latecomer-admission, plan Faza 1 #3: a request to join a game in play, reached only
+-- through those functions, outside the publication, and gone from its room once the room closes);
+-- private.game_questions, open_question_list, draw_list_question, remove_list_question, edit_list_question and
+-- add_own_question with *_question_list_review.sql (S-06, context/archive/2026-10-24-question-list-review, plan Faza 1
+-- #3: the game's question list, reached only through those functions, outside the publication, and kept with its room
+-- once the room closes). Each assertion about an object that may be missing must be its own `not ok`, never an error
+-- that ends the file: nothing here names them statically. They are reached only through to_regclass, to_regprocedure,
+-- pgTAP functions that report a missing table (table_privs_are, columns_are), lives_ok, and the helpers below, which
+-- run a call or a count dynamically and hand the error back as text for the TAP diagnostics.
 --
 -- Rounds are played through the functions as the game's roles: each call switches to anon, or to authenticated with
 -- the host in request.jwt.claims, and back to the owner. Hosts are rows inserted into auth.users by the owner. The

@@ -45,7 +45,7 @@ import { isRecord } from "./rooms";
 //   latecomers waiting, in the order of asking, for the host; [] for a guest. room_link of a game in play:
 //   { status: "started", room_id }. join_room into a game in play: reason game_started.
 //
-// The latecomer's way in (S-08, context/changes/latecomer-admission/plan.md, Faza 1), from
+// The latecomer's way in (S-08, context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1), from
 // supabase/migrations/*_latecomer_admission.sql:
 // request_join(p_link_token text, p_nick text, p_player_token text): anon and authenticated. A request to join a game
 //   in play, with the token the Worker keeps in the room's cookie. { ok: true }, also for a player of the room or a

@@ -130,8 +130,8 @@ describe("bodyRound", () => {
   });
 });
 
-// The host's "Wpuść" and "Odrzuć" ({nick}; context/changes/latecomer-admission/plan.md, Faza 2 #6): the nick as a text,
-// as it stands on the host's list; anything else is not our screen's body (invalid_body).
+// The host's "Wpuść" and "Odrzuć" ({nick}; context/archive/2026-10-22-latecomer-admission/plan.md, Faza 2 #6): the
+// nick as a text, as it stands on the host's list; anything else is not our screen's body (invalid_body).
 describe("bodyNick", () => {
   it.each([
     { body: { nick: "Kuba" }, nick: "Kuba" },
