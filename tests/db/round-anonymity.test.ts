@@ -34,7 +34,11 @@ import {
 // (test-plan §2, #1: never only the table's columns). S-08 added two keys tied to no one's vote: room_lobby's requests
 // (the latecomers waiting, the host's only; tests/db/latecomers.test.ts checks who sees them) and a voting round's
 // eligible (who may vote in it, in seat order), from supabase/migrations/*_latecomer_admission.sql. Without them every
-// exact key set of the lobby and of a voting round here is red.
+// exact key set of the lobby and of a voting round here is red. S-06 added two more, tied to no one's vote either, from
+// *_question_list_review.sql: room_lobby's question_list (the game's question list, the host's only, and null here,
+// where no room has one; tests/db/question-list.test.ts checks who sees it) and a voting or revealed round's
+// question_text (the text of an own or reworded question, null for a question of the base); without them the exact key
+// sets of the lobby and of a voting or revealed round are red.
 //
 // The round functions come from supabase/migrations/*_first_live_round.sql, the evening's (skip_round, end_game,
 // cast_vote's p_round, room_lobby's skipped round and after_skip) from *_full_game_evening.sql. Without them the suites
@@ -136,9 +140,10 @@ describe("a round in progress shows who voted, never how", () => {
     expect(roundOf(lobby())).toMatchObject({ phase: "voting", voted: ["Host", "Kuba"], me_voted: meVoted });
   });
 
-  // room_lobby keeps the fields of S-01 and adds only round and requests: no per-player flag or count beside a nick.
+  // room_lobby keeps the fields of S-01 and adds only round, requests and question_list: no per-player flag or count
+  // beside a nick.
   it.each(viewers)(
-    "$viewer's lobby has only its old keys plus round and requests, and players only nick and host",
+    "$viewer's lobby has only its old keys plus round, requests and question_list, and players only nick and host",
     ({ lobby }) => {
       const data = lobby().data;
       const players: unknown = isRecord(data) ? data.players : null;
