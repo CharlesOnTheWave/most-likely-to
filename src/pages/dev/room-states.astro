@@ -13,7 +13,7 @@ import RoomScreen from "@/components/room/RoomScreen";
 // Server only (lessons.md): the islands get just the id and name of each category.
 import { CATEGORIES } from "@/data/questions";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
+import type { ListQuestion, LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 
 // Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
 // no Realtime, no polling, no reports; the round's buttons only answer "ok" on this page (RoomScreen's preview). Local
@@ -110,9 +110,44 @@ const QUESTION = "spóźniłby się na własne urodziny";
 const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, żeby się pochwalić";
 const QUESTION_ID = "na-co-dzien-001";
 
+// The host's game's question list after a review (S-06), as the Worker sends it: 15 questions in the order of
+// positions. 1 reworded, 2 and 9 removed (a position is never used again, so the gaps stay), 16 drawn with "Dolosuj
+// pytanie", 17 the host's own, 90 characters long (the most a question may have, as questionLength counts it).
+const QUESTION_LIST: ListQuestion[] = [
+  { position: 1, text: "wypiłby mleko prosto z kartonu", own: true },
+  { position: 3, text: "spóźniłby się na własne urodziny", own: false },
+  { position: 4, text: "zjadłby wszystkie przekąski, zanim przyjdą goście", own: false },
+  { position: 5, text: "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy", own: false },
+  { position: 6, text: "wygrałby teleturniej w telewizji", own: false },
+  { position: 7, text: "zasnąłby w kinie na najgłośniejszej scenie", own: false },
+  { position: 8, text: "zgubiłby telefon, trzymając go w ręce", own: false },
+  { position: 10, text: LONG_QUESTION, own: false },
+  { position: 11, text: "krzyczałby na sędziego przez telewizor", own: false },
+  { position: 12, text: "biegałby codziennie o szóstej rano", own: false },
+  { position: 13, text: "odpowiedziałby „do wszystkich” na maila do jednej osoby", own: false },
+  { position: 14, text: "skoczyłby na bungee", own: false },
+  { position: 15, text: "zostałby przewodniczącym samorządu", own: false },
+  { position: 16, text: "mieszkałby za dziesięć lat na innym kontynencie", own: false },
+  {
+    position: 17,
+    text: "zorganizowałby wieczór gier dla całej ekipy i zapomniał, że to on miał przynieść przekąski",
+    own: true,
+  },
+];
+// "Popraw" on position 3, with a longer text in its field.
+const EDITED_TEXT = "spóźniłby się na własne urodziny, a potem obraził, że nikt nie czekał z tortem";
+// "Dodaj własne pytanie" with 114 characters, past the limit of 90.
+const TOO_LONG_QUESTION =
+  "przyszedłby na wieczór gier z własną planszówką, przeczytał całą instrukcję na głos i przegrał w pierwszej rundzie";
+
 // questions: the host's game's question list in the lobby (S-06); null until "Przejrzyj pytania", and for a guest.
 function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
   return { status: "lobby", role, me, players, round: null, requests: [], questionsLeft: null, questions: null };
+}
+
+// The host's lobby once "Przejrzyj pytania" drew the game's question list; [] once every question was removed.
+function withQuestions(view: RoomView, questions: ListQuestion[]): RoomView {
+  return { ...view, questions };
 }
 
 // round: the question's number in the game, whether the host skipped the one before it (S-03) and who may vote in it
@@ -251,11 +286,14 @@ const allForOne: [string, number][] = [
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na hosta sam nigdzie nie przechodzi. Hover i focus-visible sprawdzasz
-        na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64 i 69: najedź myszą na pola i przyciski albo przejdź Tabem. Wysłanie
-        formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku naprawdę
-        wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”, „Następne
-        pytanie”, „Wpuść”, „Odrzuć”) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, pytania „Na pewno…?” i
-        „Anuluj” działają naprawdę, a wysłana akcja hosta zostaje w stanie wysyłania. Przełącznik „Koło” / „Paski” w
+        na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72 i 74: najedź myszą na pola i przyciski albo przejdź Tabem.
+        Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku
+        naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”,
+        „Następne pytanie”, „Wpuść”, „Odrzuć”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”,
+        „Dodaj”) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, pytania „Na pewno…?” i „Anuluj” działają
+        naprawdę, a wysłana akcja hosta zostaje w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od
+        razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie
+        pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” / „Paski” w
         odsłonie działa naprawdę, tylko na swoim ekranie. Od 1024 px stany pokoju mają szerokość strony, jak na
         laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
@@ -652,6 +690,115 @@ const allForOne: [string, number][] = [
               linkUrl={LINK_URL}
               realtime={null}
               preview={{ idPrefix: "start-error", startError: roomErrorMessage("no_questions") }}
+              client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Poczekalnia: lista pytań (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="questions-folded" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              72. Host: „Przejrzyj pytania”, lista jeszcze niewylosowana · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", fewPlayers)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "questions-folded" }}
+              client:load
+            />
+          </section>
+
+          <section id="questions-opening" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">73. Host: losowanie listy pytań w toku</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", fewPlayers)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "questions-opening", questionList: { open: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="questions-open" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              74. Host: lista rozwinięta, 15 pytań (poprawione, dolosowane, własne 90 znaków) · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "questions-open", questionList: { open: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="questions-editing" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">75. Host: „Popraw” (wiersz w edycji)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{
+                idPrefix: "questions-editing",
+                questionList: { open: true, editing: { position: 3, text: EDITED_TEXT } },
+              }}
+              client:load
+            />
+          </section>
+
+          <section id="questions-row-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">76. Host: „Usuń” odrzucone przy wierszu</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{
+                idPrefix: "questions-row-error",
+                questionList: {
+                  open: true,
+                  rowError: { position: 4, message: roomErrorMessage("question_unknown") },
+                },
+              }}
+              client:load
+            />
+          </section>
+
+          <section id="questions-add-too-long" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">77. Host: własne pytanie ponad limit znaków</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withQuestions(lobby("host", "Ola", fewPlayers), QUESTION_LIST)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{
+                idPrefix: "questions-add-too-long",
+                questionList: { open: true, addText: TOO_LONG_QUESTION, addShowErrors: true },
+              }}
+              client:load
+            />
+          </section>
+
+          <section id="questions-list-empty" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">78. Host: pusta lista, start odrzucony</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withQuestions(lobby("host", "Ola", fewPlayers), [])}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{
+                idPrefix: "questions-list-empty",
+                startError: roomErrorMessage("list_empty"),
+                questionList: { open: true },
+              }}
               client:load
             />
           </section>

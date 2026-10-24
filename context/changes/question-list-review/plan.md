@@ -480,24 +480,24 @@ Dwie zaległe poprawki dokumentów w tym samym PR, potem wdrożenie według `con
 
 #### Automated
 
-- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 CI zielone na PR we wszystkich jobach, w `smoke` nowe kroki listy przechodzą
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 3314437
+- [x] 2.2 CI zielone na PR we wszystkich jobach, w `smoke` nowe kroki listy przechodzą — 3314437
 
 #### Manual
 
-- [x] 2.3 Karol akceptuje pięć nowych tekstów odmów
+- [x] 2.3 Karol akceptuje pięć nowych tekstów odmów — 3314437
 
 ### Phase 3: Ekran poczekalni
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna przechodzi: `npm run lint` (z kontrolą literałów UI), `npx astro check`, `npm test`, `npm run build`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint` (z kontrolą literałów UI), `npx astro check`, `npm test`, `npm run build`
 - [ ] 3.2 CI zielone na PR, w `e2e` nowy `question-list.spec.ts` przechodzi w obu projektach (laptop i telefon)
 
 #### Manual
 
-- [ ] 3.3 Karol ocenia zrzuty (laptop 1:1 i telefon) i akceptuje wygląd sekcji
-- [ ] 3.4 Przejście klawiaturą sekcji na `/dev/room-states` (Tab, Enter, Escape): fokus zostaje w sekcji i wraca według kontraktu
+- [x] 3.3 Karol ocenia zrzuty (laptop 1:1 i telefon) i akceptuje wygląd sekcji
+- [x] 3.4 Przejście klawiaturą sekcji na `/dev/room-states` (Tab, Enter, Escape): fokus zostaje w sekcji i wraca według kontraktu
 
 ### Phase 4: Wdrożenie
 
