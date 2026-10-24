@@ -338,36 +338,36 @@ Agent sprawdza tylko nazwy: `gh secret list` (bez wartości).
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build` — c5dac7f
-- [x] 1.2 `npx prettier --check .github/workflows/keep-supabase-awake.yml .claude/settings.json package.json` przechodzi — c5dac7f
-- [x] 1.3 Odmowy bez sieci: brak zmiennych, klucz `sb_secret_x` i adres `http://…` dają kod 2 bez żądania — c5dac7f
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run test:hooks`, `npm run build` — 2c692e4
+- [x] 1.2 `npx prettier --check .github/workflows/keep-supabase-awake.yml .claude/settings.json package.json` przechodzi — 2c692e4
+- [x] 1.3 Odmowy bez sieci: brak zmiennych, klucz `sb_secret_x` i adres `http://…` dają kod 2 bez żądania — 2c692e4
 
 #### Manual
 
-- [x] 1.4 Karol zgadza się na jedno `npm run keep-awake` do produkcji (z `.dev.vars`); wynik: linia „ok”, kod 0 — c5dac7f
-- [x] 1.5 Karol czyta workflow: co, kiedy i z jakimi sekretami się uruchamia — c5dac7f
+- [x] 1.4 Karol zgadza się na jedno `npm run keep-awake` do produkcji (z `.dev.vars`); wynik: linia „ok”, kod 0 — 2c692e4
+- [x] 1.5 Karol czyta workflow: co, kiedy i z jakimi sekretami się uruchamia — 2c692e4
 
 ### Phase 2: Dokumenty
 
 #### Automated
 
-- [x] 2.1 `npx prettier --check context/foundation/roadmap.md context/foundation/infrastructure.md context/deployment/deploy-plan.md context/foundation/test-plan.md README.md AGENTS.md` przechodzi — fa36dcd
-- [x] 2.2 `npm run lint` przechodzi — fa36dcd
+- [x] 2.1 `npx prettier --check context/foundation/roadmap.md context/foundation/infrastructure.md context/deployment/deploy-plan.md context/foundation/test-plan.md README.md AGENTS.md` przechodzi — e6fbec3
+- [x] 2.2 `npm run lint` przechodzi — e6fbec3
 
 #### Manual
 
-- [x] 2.3 Karol akceptuje zmianę w roadmapie (zgoda w `/10x-roadmap`) — fa36dcd
+- [x] 2.3 Karol akceptuje zmianę w roadmapie (zgoda w `/10x-roadmap`) — e6fbec3
 
 ### Phase 3: Sekrety, PR, scalenie i pierwszy przebieg
 
 #### Automated
 
-- [x] 3.1 `gh secret list` pokazuje `SUPABASE_URL` i `SUPABASE_KEY` — 8a5e6a2
-- [x] 3.2 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) — 8a5e6a2
-- [x] 3.3 Ręczny przebieg workflow po scaleniu jest zielony, w logu jest „ok” i nie ma `sb_publishable` — 8a5e6a2
+- [x] 3.1 `gh secret list` pokazuje `SUPABASE_URL` i `SUPABASE_KEY` — 5e2ace6
+- [x] 3.2 CI na PR zielone we wszystkich jobach (`ci`, `smoke`, `db`, `e2e`) — 5e2ace6
+- [x] 3.3 Ręczny przebieg workflow po scaleniu jest zielony, w logu jest „ok” i nie ma `sb_publishable` — 5e2ace6
 - [x] 3.4 `gh run list --workflow keep-supabase-awake.yml --event schedule` pokazuje co najmniej jeden zielony przebieg z harmonogramu
 
 #### Manual
 
-- [x] 3.5 Karol dodaje oba sekrety w ustawieniach repo — 8a5e6a2
-- [x] 3.6 Karol scala PR — 8a5e6a2
+- [x] 3.5 Karol dodaje oba sekrety w ustawieniach repo — 5e2ace6
+- [x] 3.6 Karol scala PR — 5e2ace6
