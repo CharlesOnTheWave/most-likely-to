@@ -467,14 +467,14 @@ Dwie zaległe poprawki dokumentów w tym samym PR, potem wdrożenie według `con
 
 #### Automated
 
-- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 `npx prettier --check` dla nowych i zmienionych plików `.md` (bez `context/domain/glossary.md`) przechodzi
-- [ ] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `question-list.test.ts` i nowe asercje pgTAP przechodzą
-- [ ] 1.4 Próbne alarmy A i B: każdy tymczasowy commit zapala tylko swoje przewidziane testy `question-list.test.ts`; po ostatnim `git revert` CI zielone
+- [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 0890a4d
+- [x] 1.2 `npx prettier --check` dla nowych i zmienionych plików `.md` (bez `context/domain/glossary.md`) przechodzi — 0890a4d
+- [x] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `question-list.test.ts` i nowe asercje pgTAP przechodzą — 0890a4d
+- [x] 1.4 Próbne alarmy A i B: każdy tymczasowy commit zapala tylko swoje przewidziane testy `question-list.test.ts`; po ostatnim `git revert` CI zielone — 7a6919e
 
 #### Manual
 
-- [x] 1.5 Karol czyta streszczenie migracji (tabela, zmiana rund, 5 funkcji, co widzi host, co gość) i je akceptuje
+- [x] 1.5 Karol czyta streszczenie migracji (tabela, zmiana rund, 5 funkcji, co widzi host, co gość) i je akceptuje — 0890a4d
 
 ### Phase 2: Serwer gry
 

@@ -204,6 +204,9 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   - Strażnicy próśb o wejście (S-08). Jeden tymczasowy commit z dwoma uszkodzeniami, bo każde zapala inne testy (odstępstwo od kroku 1 zapisane w planie zmiany); przewidywania sprawdzone najpierw lokalnie na PGlite. Próbny alarm z 2026-10-22 trafił dokładnie (`3bf6fcc`, revert `75831a4`):
     - (a) `room_lobby` daje gościowi listę próśb: czerwony tylko „while round 1 is voting the host sees requests: [Kuba] and a guest sees requests: []” w `latecomers.test.ts`;
     - (b) `drop_round_state` nie usuwa próśb: czerwony „after the end Ula's request is closed and the host sees no requests” w `latecomers.test.ts` oraz asercje pgTAP 64, 89 i 121 (resztki `join_requests` po „Nowa gra”, `end_game` i `close_stale_games`). Razem Vitest 224/226 i pgTAP 125/128; smoke, e2e i `ci` zielone.
+  - Strażnicy listy pytań gry (S-06), po jednym alarmie na strażnika (plan-review F2: jedno uszkodzenie w scenariuszu granym po kolei przesunęłoby dalsze rundy). Przewidywania sprawdzone najpierw lokalnie na PGlite. Próbne alarmy z 2026-10-24 trafiły dokładnie:
+    - (a) `room_lobby` daje gościowi listę pytań gry (`5a047e9`, revert `40ee177`): czerwone tylko „in the lobby a guest sees question_list: null while the host's list is open” i „while the game is in play a guest still sees question_list: null” w `question-list.test.ts` (Vitest 279/281); pgTAP 150/150, smoke, e2e i `ci` zielone;
+    - (b) `private.open_next_round` po końcu listy nie pomija kandydatów obecnych na liście (`f4053b5`, revert `7a6919e`): czerwony tylko „after the list, the candidates [Q02 removed, Q01 reworded, Q17] give round 17 the fresh Q17” (Vitest 280/281); pgTAP 150/150, smoke, e2e i `ci` zielone.
   - Tymczasową migrację zakładaj z `npx supabase migration new <nazwa> < /dev/null`: bez tego polecenie czeka na treść SQL ze standardowego wejścia.
 
 ### 6.3 Adding an anonymity check
