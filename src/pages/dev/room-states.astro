@@ -110,8 +110,9 @@ const QUESTION = "spóźniłby się na własne urodziny";
 const LONG_QUESTION = "przeszedłby grę na najwyższym poziomie tylko po to, żeby się pochwalić";
 const QUESTION_ID = "na-co-dzien-001";
 
+// questions: the host's game's question list in the lobby (S-06); null until "Przejrzyj pytania", and for a guest.
 function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
-  return { status: "lobby", role, me, players, round: null, requests: [], questionsLeft: null };
+  return { status: "lobby", role, me, players, round: null, requests: [], questionsLeft: null, questions: null };
 }
 
 // round: the question's number in the game, whether the host skipped the one before it (S-03) and who may vote in it
@@ -133,6 +134,7 @@ function voting(
     round: {
       number: round.number ?? 1,
       question_id: QUESTION_ID,
+      question_text: null,
       phase: "voting",
       eligible: round.eligible ?? players.map(({ nick }) => nick),
       voted,
@@ -142,6 +144,7 @@ function voting(
     },
     requests: [],
     questionsLeft: null,
+    questions: null,
   };
 }
 
@@ -164,6 +167,7 @@ function revealed(
     round: {
       number: 1,
       question_id: QUESTION_ID,
+      question_text: null,
       phase: "revealed",
       results: results.map(([nick, count]) => ({ nick, votes: count })),
       abstained,
@@ -171,8 +175,9 @@ function revealed(
       question,
     },
     requests: [],
-    // Only the host learns whether the game's pool has a question left.
+    // Only the host learns whether the game has a question left.
     questionsLeft: role === "host" ? questionsLeft : null,
+    questions: null,
   };
 }
 
@@ -186,12 +191,13 @@ function skipped(role: "host" | "guest", me: string, players: LobbyPlayer[]): Ro
     round: { number: 7, phase: "skipped" },
     requests: [],
     questionsLeft: role === "host" ? false : null,
+    questions: null,
   };
 }
 
 // The end of the evening: the room is closed, no round, no counts.
 function closed(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
-  return { status: "closed", role, me, players, round: null, requests: [], questionsLeft: null };
+  return { status: "closed", role, me, players, round: null, requests: [], questionsLeft: null, questions: null };
 }
 
 // The host's screen with latecomers waiting to be let in (S-08), in the order of asking; only the host gets them.
@@ -553,6 +559,7 @@ const allForOne: [string, number][] = [
                 round: null,
                 requests: [],
                 questionsLeft: null,
+                questions: null,
               }}
               realtime={null}
               preview={{ idPrefix: "lobby-closed-host" }}
@@ -572,6 +579,7 @@ const allForOne: [string, number][] = [
                 round: null,
                 requests: [],
                 questionsLeft: null,
+                questions: null,
               }}
               realtime={null}
               preview={{ idPrefix: "lobby-closed-guest" }}

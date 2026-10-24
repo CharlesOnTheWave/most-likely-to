@@ -480,12 +480,12 @@ Dwie zaległe poprawki dokumentów w tym samym PR, potem wdrożenie według `con
 
 #### Automated
 
-- [ ] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
 - [ ] 2.2 CI zielone na PR we wszystkich jobach, w `smoke` nowe kroki listy przechodzą
 
 #### Manual
 
-- [ ] 2.3 Karol akceptuje pięć nowych tekstów odmów
+- [x] 2.3 Karol akceptuje pięć nowych tekstów odmów
 
 ### Phase 3: Ekran poczekalni
 

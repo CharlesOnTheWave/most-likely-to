@@ -1,14 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import {
+  addOwnQuestion,
   admitLatecomer,
   castVote,
   createRoom,
+  drawListQuestion,
+  editListQuestion,
   endGame,
   joinRequestState,
   joinRoom,
   nextRound,
+  openQuestionList,
   rejectLatecomer,
+  removeListQuestion,
   requestJoin,
   revealRound,
   roomLink,
@@ -53,12 +58,12 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261022132240_latecomer_admission.sql:383
+  // supabase/migrations/20261024094002_question_list_review.sql:556
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261014101922_first_live_round.sql:540
+  // supabase/migrations/20261024094002_question_list_review.sql:400
   start_game: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_question_id", hasDefault: false },
@@ -98,6 +103,32 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
   reject_latecomer: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },
+  ],
+  // supabase/migrations/20261024094002_question_list_review.sql:104
+  open_question_list: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_candidates", hasDefault: false },
+  ],
+  // supabase/migrations/20261024094002_question_list_review.sql:171
+  draw_list_question: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_candidates", hasDefault: false },
+  ],
+  // supabase/migrations/20261024094002_question_list_review.sql:234
+  remove_list_question: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_position", hasDefault: false },
+  ],
+  // supabase/migrations/20261024094002_question_list_review.sql:283
+  edit_list_question: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_position", hasDefault: false },
+    { name: "p_text", hasDefault: false },
+  ],
+  // supabase/migrations/20261024094002_question_list_review.sql:341
+  add_own_question: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_text", hasDefault: false },
   ],
 };
 
@@ -139,7 +170,9 @@ const TARGET = "target-sentinel";
 const CATEGORIES = ["category-sentinel"];
 const ADULT_CATEGORIES = ["adult-category-sentinel"];
 const CANDIDATES = ["candidate-sentinel"];
+const QUESTION_TEXT = "question-text-sentinel";
 const ROUND = 7;
+const POSITION = 3;
 
 const CASES: {
   action: string;
@@ -249,6 +282,36 @@ const CASES: {
     fn: "reject_latecomer",
     call: (supabase) => rejectLatecomer(supabase, ROOM_ID, NICK),
     expected: { p_room_id: ROOM_ID, p_nick: NICK },
+  },
+  {
+    action: "Przejrzyj pytania",
+    fn: "open_question_list",
+    call: (supabase) => openQuestionList(supabase, ROOM_ID, CANDIDATES),
+    expected: { p_room_id: ROOM_ID, p_candidates: CANDIDATES },
+  },
+  {
+    action: "Dolosuj pytanie",
+    fn: "draw_list_question",
+    call: (supabase) => drawListQuestion(supabase, ROOM_ID, CANDIDATES),
+    expected: { p_room_id: ROOM_ID, p_candidates: CANDIDATES },
+  },
+  {
+    action: "Usuń pytanie",
+    fn: "remove_list_question",
+    call: (supabase) => removeListQuestion(supabase, ROOM_ID, POSITION),
+    expected: { p_room_id: ROOM_ID, p_position: POSITION },
+  },
+  {
+    action: "Popraw pytanie",
+    fn: "edit_list_question",
+    call: (supabase) => editListQuestion(supabase, ROOM_ID, POSITION, QUESTION_TEXT),
+    expected: { p_room_id: ROOM_ID, p_position: POSITION, p_text: QUESTION_TEXT },
+  },
+  {
+    action: "Dodaj własne pytanie",
+    fn: "add_own_question",
+    call: (supabase) => addOwnQuestion(supabase, ROOM_ID, QUESTION_TEXT),
+    expected: { p_room_id: ROOM_ID, p_text: QUESTION_TEXT },
   },
 ];
 

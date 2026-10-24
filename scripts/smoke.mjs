@@ -9,6 +9,11 @@
 // skipped: for production while it still runs a Worker without them, between `npx supabase db push` and the merge
 // (context/archive/2026-10-15-full-game-evening/plan.md, Faza 6). SMOKE_ROUND=0 skips the round's steps and the
 // evening's after them, as S-02 needed it (context/archive/2026-10-13-first-live-round/plan.md, Faza 6).
+// SMOKE_LIST=0 skips the host's review of the game's question list (S-06: "Przejrzyj pytania" and the moves on the list,
+// in the room "Nowa gra" opens at the end) and prints them as skipped: for production while it still runs a Worker
+// without the list's routes, between `npx supabase db push` and the merge
+// (context/changes/question-list-review/plan.md, Faza 2 #8). The game itself always plays with no list, so "Zacznij
+// grę" with no review is checked on every run.
 
 const missing = ["SMOKE_EMAIL", "SMOKE_PASSWORD"].filter((name) => !process.env[name]);
 if (missing.length > 0) {
@@ -23,6 +28,8 @@ const OAUTH = process.env.SMOKE_OAUTH === "1";
 const ROUND = process.env.SMOKE_ROUND !== "0";
 // The evening goes on from the round's reveal, so it needs the round's steps.
 const GAME = ROUND && process.env.SMOKE_GAME !== "0";
+// The list's steps need no round: they run in a room of their own, still in the lobby.
+const LIST = process.env.SMOKE_LIST !== "0";
 const jar = new Map();
 
 function cookieHeader(cookies = jar) {
@@ -196,15 +203,19 @@ const LINK_IN_PAGE = /\/j\/([A-Za-z0-9_-]{22})(?![A-Za-z0-9_-])/;
 const LINK_IN_LOCATION = /\/j\/[A-Za-z0-9_-]{22}/g;
 const mask = (location) => location.replace(LINK_IN_LOCATION, "/j/<code>");
 const NICK_TAKEN = /^\/j\/[A-Za-z0-9_-]{22}\?error=nick_taken$/;
-// Filled in as the steps run. Never printed: the link code opens the room.
+// Filled in as the steps run. Never printed: the link code opens the room. listRoom: the room "Nowa gra" opens at the
+// end, where the host reviews the game's question list (S-06).
 const room = { id: "", link: "" };
+const listRoom = { id: "", link: "" };
 // Ola's jar: she votes and checks the lobby again after the game is over. The second guest ("ola") keeps a jar too, to
 // vote, and to send the vote that comes late. So do the two latecomers of the round (S-08), whose requests the steps
-// follow: Kuba, let in, and Ula, turned away. Every other guest gets a fresh jar.
+// follow: Kuba, let in, and Ula, turned away, and Ela, the guest of the list's room, whose view of it the steps check.
+// Every other guest gets a fresh jar.
 const olaJar = new Map();
 const secondGuestJar = new Map();
 const kubaJar = new Map();
 const ulaJar = new Map();
+const elaJar = new Map();
 
 function newRoom({ confirmClose }) {
   const form = [["nick", "Smoke host"], ...CATEGORY_IDS.map((id) => ["category", id])];
@@ -212,8 +223,9 @@ function newRoom({ confirmClose }) {
   return request("/api/rooms", { method: "POST", form, cookies: hostJar });
 }
 
-function join(nick, cookies) {
-  return request("/api/rooms/join", { method: "POST", form: { link: room.link, nick }, cookies });
+// link: the room's link code, the main room's unless given.
+function join(nick, cookies, link = room.link) {
+  return request("/api/rooms/join", { method: "POST", form: { link, nick }, cookies });
 }
 
 function lobby(roomId, cookies) {
@@ -252,9 +264,9 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
 // A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts, admit.ts,
-// reject.ts), as JSON, the way the room screen sends it.
-function act(action, body, cookies) {
-  return request(`/api/rooms/${room.id}/${action}`, { method: "POST", json: body, cookies, readBody: true });
+// reject.ts, question-*.ts), as JSON, the way the room screen sends it; in the main room unless roomId is given.
+function act(action, body, cookies, roomId = room.id) {
+  return request(`/api/rooms/${roomId}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
 
 // An accepted action answers exactly this: a vote's answer carries no target and no count.
@@ -413,12 +425,78 @@ function gameSteps() {
   return skippedBy(game, ROUND ? "SMOKE_GAME=0" : "SMOKE_ROUND=0");
 }
 
+// The room "Nowa gra" opens at the end, kept for the list's steps.
+async function newListRoom({ confirmClose }) {
+  const actual = await newRoom({ confirmClose });
+  listRoom.id = ROOM_PATH.exec(actual.location)?.[1] ?? "";
+  return actual;
+}
+
+// The view of the room's state as the Worker sends it: the host's game's question list as 15 questions, each
+// {position, text, own}; question texts hold no braces. Never question_list itself, nor for a guest anything of the list.
+const FIFTEEN_QUESTIONS = /^(?!.*"question_list")(?=.*"questions":\[(?:\{[^{}]*\},){14}\{[^{}]*\}\])/;
+const NO_QUESTIONS = /^(?!.*"question_list")(?=.*"questions":null)/;
+// The host's own texts: the ending after "Kto z nas najprawdopodobniej", as on the room screen.
+const SMOKE_REWORDED = "przeszedłby test dymny za pierwszym razem";
+const SMOKE_OWN_QUESTION = "napisałby test, zanim napisze kod";
+
+// S-06's review of the game's question list (context/changes/question-list-review/plan.md, Faza 2 #8) through the real
+// routes, in the room "Nowa gra" opened at the end, which stays in the lobby: no game starts with a list here, so the
+// game's steps above keep "Zacznij grę" with no review checked after every deploy (an own question in a round is the
+// database tests' and e2e's to check). A guest joins first, to check that only the host gets the list. The list is
+// the first 15 of the pool in random order, so the steps name its entries by position only. Skipped with SMOKE_LIST=0.
+function listSteps() {
+  const inListRoom = (action, body) => act(action, body, hostJar, listRoom.id);
+  const list = [
+    [
+      "the new room's page shows host its link",
+      async () => {
+        const actual = await request(`/r/${listRoom.id}`, { cookies: hostJar, readBody: true });
+        listRoom.link = LINK_IN_PAGE.exec(actual.body)?.[1] ?? "";
+        return actual;
+      },
+      { status: 200, body: LINK_IN_PAGE },
+    ],
+    [
+      "a guest joins the new room as Ela",
+      () => join("Ela", elaJar, listRoom.link),
+      () => ({ status: 302, location: new RegExp(`^/r/${listRoom.id}$`), cookie: `mlt_player_${listRoom.id}` }),
+    ],
+    ["host opens the question list", () => inListRoom("question-list", {}), { status: 200, body: ACCEPTED }],
+    ["host sees 15 questions on the list", () => lobby(listRoom.id, hostJar), { status: 200, body: FIFTEEN_QUESTIONS }],
+    ["Ela sees no question list", () => lobby(listRoom.id, elaJar), { status: 200, body: NO_QUESTIONS }],
+    [
+      "host rewords question 1",
+      () => inListRoom("question-edit", { position: 1, text: SMOKE_REWORDED }),
+      { status: 200, body: ACCEPTED },
+    ],
+    ["host removes question 2", () => inListRoom("question-remove", { position: 2 }), { status: 200, body: ACCEPTED }],
+    [
+      "removing question 2 again is refused",
+      () => inListRoom("question-remove", { position: 2 }),
+      { status: 409, body: /^\{"error":"question_unknown"\}$/ },
+    ],
+    [
+      "an own question of 91 characters is refused",
+      () => inListRoom("question-add", { text: "x".repeat(91) }),
+      { status: 409, body: /^\{"error":"invalid_question_text"\}$/ },
+    ],
+    [
+      "host adds an own question",
+      () => inListRoom("question-add", { text: SMOKE_OWN_QUESTION }),
+      { status: 200, body: ACCEPTED },
+    ],
+    ["host draws one more question", () => inListRoom("question-draw", {}), { status: 200, body: ACCEPTED }],
+  ];
+  return LIST ? list : skippedBy(list, "SMOKE_LIST=0");
+}
+
 // "Nowa gra" at the end. After the evening's steps the room is closed already, so a new one opens without asking.
 // Without them (SMOKE_GAME=0, SMOKE_ROUND=0) the room is still open with its guests, so "Nowa gra" with the
 // confirmation closes it, and its old link and lobby say so. Either way the room's requests went with it (S-08): Ula's,
 // turned away during question 1, now says the game is over (the rows themselves are pgTAP's to check,
 // supabase/tests/round_creator_view.test.sql). That step is a round step: skipped with SMOKE_ROUND=0, which has no
-// latecomers.
+// latecomers. Then the list's steps in the new room, in every mode (listSteps).
 function closingSteps() {
   const requestGone = [
     ["Ula's request says the game is over", () => requestState(ulaJar), { status: 200, body: requestAnswer("closed") }],
@@ -428,16 +506,17 @@ function closingSteps() {
     return [
       [
         "new game after the end opens a room without asking",
-        () => newRoom({ confirmClose: false }),
+        () => newListRoom({ confirmClose: false }),
         { status: 302, location: ROOM_PATH },
       ],
       ...latecomer,
+      ...listSteps(),
     ];
   }
   return [
     [
       "new game with confirmation opens a new room",
-      () => newRoom({ confirmClose: true }),
+      () => newListRoom({ confirmClose: true }),
       { status: 302, location: ROOM_PATH },
     ],
     ["old link says the game is closed", () => request(`/j/${room.link}`, { cookies: olaJar }), { status: 410 }],
@@ -447,6 +526,7 @@ function closingSteps() {
       { status: 200, body: /"status":"closed"/ },
     ],
     ...latecomer,
+    ...listSteps(),
   ];
 }
 
@@ -549,7 +629,7 @@ function httpOnlyOk(actual, part) {
 let failed = 0;
 const skippedBecause = new Map();
 for (const [name, run, expectation] of [...steps, ...roomSteps]) {
-  // A round or evening step with SMOKE_ROUND=0 or SMOKE_GAME=0: the third element names the switch.
+  // A round, evening or list step with SMOKE_ROUND=0, SMOKE_GAME=0 or SMOKE_LIST=0: the third element names the switch.
   if (run === null) {
     skippedBecause.set(expectation, (skippedBecause.get(expectation) ?? 0) + 1);
     console.log(`SKIP  ${name}  (${expectation})`);

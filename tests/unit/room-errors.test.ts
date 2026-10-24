@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { ROUND_REFUSALS, roomErrorMessage } from "@/lib/rooms/errors";
 
 // Every refusal on a guest's way in (src/pages/api/rooms/join.ts), a latecomer's request to join a game in play
-// included, and of a game's action (start, vote, reveal, next, skip, end, and the host's "Wpuść" and "Odrzuć") must say
-// what went wrong. A code renamed on one side would leave the player with the generic "something went wrong"
+// included, and of a game's action (start, vote, reveal, next, skip, end, the host's "Wpuść" and "Odrzuć", and the
+// host's moves on the game's question list) must say what went wrong. A code renamed on one side would leave the player with the generic "something went wrong"
 // (test-plan #6; audit G2). The Polish texts are not copied here: the test checks that each refusal has its own text,
 // not what the text says.
 const GUEST_REFUSALS = [
@@ -22,8 +22,10 @@ const GUEST_REFUSALS = [
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 3 #4: round_over for a question that changed under the
 // screen, round_in_progress for "Następne pytanie" while the round is voting;
 // context/archive/2026-10-20-deferred-review-fixes/plan.md, Faza 3: questions_ran_out for "Następne pytanie" once the
-// game's questions ran out; and context/changes/latecomer-admission/plan.md, Faza 2 #3: request_unknown and
-// latecomer_nick_taken for the host's "Wpuść" and "Odrzuć"), written out by hand: a code dropped from ROUND_REFUSALS
+// game's questions ran out; context/changes/latecomer-admission/plan.md, Faza 2 #3: request_unknown and
+// latecomer_nick_taken for the host's "Wpuść" and "Odrzuć"; and context/changes/question-list-review/plan.md, Faza 2 #5:
+// question_unknown, invalid_question_text, list_full and no_new_questions for the host's moves on the game's question
+// list, list_empty for the start with every entry removed), written out by hand: a code dropped from ROUND_REFUSALS
 // would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
@@ -39,6 +41,11 @@ const PLANNED_ROUND_REFUSALS = [
   "questions_ran_out",
   "request_unknown",
   "latecomer_nick_taken",
+  "question_unknown",
+  "invalid_question_text",
+  "list_full",
+  "list_empty",
+  "no_new_questions",
 ];
 
 const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];

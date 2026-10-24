@@ -2,8 +2,9 @@ import type { APIContext } from "astro";
 import { logEvent } from "@/lib/log";
 import type { ActionResult, RoomFailure } from "@/lib/rooms/server";
 
-// What the JSON routes of the room screen share: the game's actions (start, vote, reveal, next, skip, end, and the
-// host's "Wpuść" and "Odrzuć": admit, reject; src/pages/api/rooms/[id]/*.ts), the room's state, a latecomer's request
+// What the JSON routes of the room screen share: the game's actions (start, vote, reveal, next, skip, end, the host's
+// "Wpuść" and "Odrzuć": admit, reject, and the host's moves on the game's question list: question-list, question-draw,
+// question-remove, question-edit, question-add; src/pages/api/rooms/[id]/*.ts), the room's state, a latecomer's request
 // state and the screens' reports (src/pages/api/client-events.ts). Every answer is JSON and never cached; an error is a
 // code from src/lib/rooms/errors.ts, never free text.
 
@@ -15,6 +16,13 @@ const MAX_BODY_LENGTH = 4096;
 // The largest round number the database takes (p_round is a Postgres integer). A larger one would fail the call before
 // the function runs, as a 500 with error lines in the log, instead of a plain refusal.
 const MAX_ROUND = 2_147_483_647;
+
+// The positions of the game's question list as the database keeps them (private.game_questions, 1-100).
+const MAX_LIST_POSITION = 100;
+
+// The longest text of a question as typed that the database reads at all (edit_list_question, add_own_question), in
+// characters as Postgres counts them; the stored text, once normalized, has 1-90 (QUESTION_MAX_LENGTH).
+const MAX_QUESTION_TEXT_LENGTH = 400;
 
 // Someone outside the room (no session and no cookie of the room, another host's room, no such room): the same 404 as
 // for a room that does not exist, so the answer does not tell which rooms exist.
@@ -127,6 +135,31 @@ export function bodyNick(body: unknown): string | undefined {
   }
   const { nick } = body as Record<string, unknown>;
   return typeof nick === "string" ? nick : undefined;
+}
+
+// The entry's position from the body of the host's "Usuń" or "Popraw" ({position}): a whole number from 1 to
+// MAX_LIST_POSITION, as it stands on the host's list. undefined when the body has no position, is not an object, or
+// holds something else than a position of the list.
+export function bodyPosition(body: unknown): number | undefined {
+  if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "position")) {
+    return undefined;
+  }
+  const { position } = body as Record<string, unknown>;
+  return typeof position === "number" && Number.isInteger(position) && position >= 1 && position <= MAX_LIST_POSITION
+    ? position
+    : undefined;
+}
+
+// The question's text from the body of the host's "Popraw" or "Dodaj własne" ({text}): a text of at most
+// MAX_QUESTION_TEXT_LENGTH characters, as the host typed it (the database normalizes it and has the final word on its
+// length). undefined when the body has no text, is not an object, or holds something else than such a text. Never
+// logged.
+export function bodyQuestionText(body: unknown): string | undefined {
+  if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "text")) {
+    return undefined;
+  }
+  const { text } = body as Record<string, unknown>;
+  return typeof text === "string" && Array.from(text).length <= MAX_QUESTION_TEXT_LENGTH ? text : undefined;
 }
 
 function statusFor(reason: string): number {

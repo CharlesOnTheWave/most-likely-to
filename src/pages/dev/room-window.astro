@@ -84,6 +84,7 @@ function voting(
     round: {
       number: 1,
       question_id: QUESTION_ID,
+      question_text: null,
       phase: "voting",
       eligible,
       voted,
@@ -93,6 +94,7 @@ function voting(
     },
     requests: [],
     questionsLeft: null,
+    questions: null,
   };
 }
 
@@ -106,6 +108,7 @@ function revealed(players: LobbyPlayer[], results: [string, number][], abstained
     round: {
       number: 1,
       question_id: QUESTION_ID,
+      question_text: null,
       phase: "revealed",
       results: results.map(([nick, count]) => ({ nick, votes: count })),
       abstained,
@@ -114,6 +117,7 @@ function revealed(players: LobbyPlayer[], results: [string, number][], abstained
     },
     requests: [],
     questionsLeft: true,
+    questions: null,
   };
 }
 
@@ -137,6 +141,7 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       questionsLeft: null,
+      questions: null,
     },
     linkUrl: LINK_URL,
   },
@@ -151,6 +156,7 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       questionsLeft: null,
+      questions: null,
     },
     linkUrl: LINK_URL,
   },
@@ -164,6 +170,7 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       questionsLeft: null,
+      questions: null,
     },
   },
   "vote-guest": {
@@ -232,6 +239,7 @@ const SAMPLES: Record<string, Sample> = {
       round: { number: 7, phase: "skipped" },
       requests: [],
       questionsLeft: false,
+      questions: null,
     },
   },
   "end-host": {
@@ -244,6 +252,7 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       questionsLeft: null,
+      questions: null,
     },
   },
 };
