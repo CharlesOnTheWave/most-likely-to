@@ -6,14 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import QuestionList, { type QuestionListActions, type QuestionListPreview } from "@/components/room/QuestionList";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
+import { cn } from "@/lib/utils";
 
 // /dev/room-states only: the starting state of this lobby; the real page never sets it.
 export interface LobbyPreview {
   copied?: boolean;
   starting?: boolean;
   startError?: string | null;
+  // The host's "Przejrzyj pytania" section (S-06).
+  questionList?: QuestionListPreview;
 }
 
 interface Props {
@@ -26,22 +30,37 @@ interface Props {
   refreshFailed: boolean;
   // "Zacznij grę": the screen sends it and looks again (src/components/room/RoomScreen.tsx).
   onStart: () => Promise<ActionOutcome>;
+  // The host's moves on the game's question list ("Przejrzyj pytania" and the list's buttons), sent the same way.
+  questionActions: QuestionListActions;
   preview?: LobbyPreview;
 }
 
 const COPIED_MS = 2000;
 
-// The lobby: the host's link and "Zacznij grę", the list of players for everyone. RoomScreen keeps the state live.
-export default function RoomLobby({ view, idPrefix, titleAs: Title, linkUrl, refreshFailed, onStart, preview }: Props) {
+// The lobby: the host's link, "Zacznij grę" and the game's question list ("Przejrzyj pytania"), the list of players for
+// everyone. RoomScreen keeps the state live.
+export default function RoomLobby({
+  view,
+  idPrefix,
+  titleAs: Title,
+  linkUrl,
+  refreshFailed,
+  onStart,
+  questionActions,
+  preview,
+}: Props) {
   const [copied, setCopied] = useState(preview?.copied ?? false);
   // After "Zacznij grę" was accepted the button stays busy until the game's state arrives and this view goes away.
   const [starting, setStarting] = useState(preview?.starting ?? false);
   const [startError, setStartError] = useState<string | null>(preview?.startError ?? null);
+  // The host unfolded "Przejrzyj pytania"; the list shows once the view has it.
+  const [questionsOpen, setQuestionsOpen] = useState(preview?.questionList?.open ?? false);
   const linkRef = useRef<HTMLInputElement>(null);
   const isPreview = Boolean(preview);
   const isHost = view.role === "host";
   const canStart = view.players.length >= MIN_PLAYERS;
   const startHintId = `${idPrefix}start-hint`;
+  const questionsShown = isHost && questionsOpen && view.questions !== null;
 
   useEffect(() => {
     if (!copied || isPreview) return;
@@ -81,8 +100,12 @@ export default function RoomLobby({ view, idPrefix, titleAs: Title, linkUrl, ref
       {/* From lg two columns: the game (title first in the DOM, where the focus goes after a host's move) and the
           players. The game's group stays in view while a long list of players scrolls the page, so the host keeps the
           link and "Zacznij grę" on screen; a sticky grid item moves only within its row, so only the shorter column
-          can stick. Below lg the group is display: contents, so its blocks stand in one column as on a phone. */}
-      <div className="contents lg:sticky lg:top-6 lg:col-span-2 lg:flex lg:flex-col lg:gap-8">
+          can stick. With the game's question list unfolded the group is taller than a window, so it scrolls with the
+          page instead, or the list's end would stay out of reach. Below lg the group is display: contents, so its
+          blocks stand in one column as on a phone. */}
+      <div
+        className={cn("contents lg:col-span-2 lg:flex lg:flex-col lg:gap-8", !questionsShown && "lg:sticky lg:top-6")}
+      >
         <div className="flex flex-col gap-2">
           <Title className="text-2xl font-semibold break-words">
             {isHost ? "Twój pokój" : `Jesteś w grze jako ${view.me}`}
@@ -149,6 +172,17 @@ export default function RoomLobby({ view, idPrefix, titleAs: Title, linkUrl, ref
             </p>
             <ServerError message={startError} />
           </div>
+        )}
+
+        {isHost && (
+          <QuestionList
+            questions={view.questions}
+            idPrefix={idPrefix}
+            open={questionsOpen}
+            onOpenChange={setQuestionsOpen}
+            actions={questionActions}
+            preview={preview?.questionList}
+          />
         )}
       </div>
 

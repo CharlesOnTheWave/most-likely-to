@@ -1,28 +1,31 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ringRoom } from "@/lib/live-sync/server";
 import { logEvent } from "@/lib/log";
-import { questionPool, questionText, type QuestionSelection } from "@/lib/rounds/draw";
+import { questionPool, questionsLeft, questionText, type QuestionSelection } from "@/lib/rounds/draw";
 import {
   parseJoinRequestState,
   parseLobbyState,
+  type GameQuestionList,
   type JoinRequestState,
+  type ListQuestion,
   type LobbyState,
   type RoomView,
 } from "@/lib/rooms/shared";
 
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
-// *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql and *_latecomer_admission.sql; failures
-// come back as codes for the URL or the JSON answer (src/lib/rooms/errors.ts).
-// Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes and
-// a vote's target.
+// *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql and
+// *_question_list_review.sql; failures come back as codes for the URL or the JSON answer (src/lib/rooms/errors.ts).
+// Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
+// a vote's target and the text of a question the host typed.
 
 export interface RoomFailure {
   ok: false;
   reason: string;
 }
 
-// A game's action (start, vote, reveal, next, skip, end), a latecomer's request to join and the host's answer to it
-// ("Wpuść", "Odrzuć"): the database answers { ok: true } and nothing else, or its refusal.
+// A game's action (start, vote, reveal, next, skip, end), a latecomer's request to join, the host's answer to it
+// ("Wpuść", "Odrzuć") and the host's moves on the game's question list ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń",
+// "Popraw", "Dodaj własne"): the database answers { ok: true } and nothing else, or its refusal.
 export type ActionResult = { ok: true } | RoomFailure;
 
 export type CreateRoomResult = { ok: true; roomId: string; closedRoomId: string | null } | RoomFailure;
@@ -233,29 +236,56 @@ export async function roomLobby(
 
 const QUESTION_ID_PATTERN = /^[a-z0-9-]+-[0-9]{3}$/;
 
-// The room's state for its screen: the round gets its question's text from the base, on the server only
-// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"). A question the base does not have (the
-// database checks only the id's format) goes out as null: the round goes on, the screen says it could not load the
-// question, and the log says which id. A skipped round has no question to show. questionsLeft from hostQuestionsLeft.
-export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boolean | null): RoomView {
-  const { round } = lobby;
-  if (round === null || round.phase === "skipped") return { ...lobby, round, questionsLeft };
-  const question = questionText(round.question_id);
-  if (question === null) {
-    const code = QUESTION_ID_PATTERN.test(round.question_id) ? round.question_id : undefined;
+// The text of a question of the base, or null for an id the base does not have (the database checks only the id's
+// format), logged with the id when it has the id's form. Never with a text: an own question's text is the host's.
+function baseQuestionText(questionId: string, roomId: string): string | null {
+  const text = questionText(questionId);
+  if (text === null) {
+    const code = QUESTION_ID_PATTERN.test(questionId) ? questionId : undefined;
     logEvent("error", { op: "question_text", step: "unknown_question", roomId, code });
   }
-  return { ...lobby, round: { ...round, question }, questionsLeft };
+  return text;
 }
 
-// For the host once the latest round is revealed or skipped: whether the game's pool has a question not played yet,
-// so the screen offers "Następne pytanie" or says the questions ran out. Each round of a game has its own question of
-// the pool (FR-015), so round N has played N of them. null in every other state, for a guest, and when the room's
-// categories could not be read (logged by hostRoomCategories). On null the two screens differ on purpose: after a
-// reveal (RoundReveal) the screen still offers "Następne pytanie", and if none is left the route answers
+// The game's question list as its host's screen shows it: the host's own text of an entry, else its text from the
+// base. An entry whose question the base does not have is left out, and logged as in a round: the screen has no text
+// to show for it.
+function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
+  const questions: ListQuestion[] = [];
+  for (const entry of list.entries) {
+    const text = entry.text ?? (entry.question_id === null ? null : baseQuestionText(entry.question_id, roomId));
+    if (text === null) continue;
+    questions.push({ position: entry.position, text, own: entry.text !== null });
+  }
+  return questions;
+}
+
+// The room's state for its screen: the round gets its question's text from the base, on the server only
+// (context/foundation/lessons.md, "Pytania gry tylko po stronie serwera"), or the host's own text of an own or reworded
+// question of the game's question list (question_text). A question the base does not have (the database checks only
+// the id's format) goes out as null: the round goes on, the screen says it could not load the question, and the log
+// says which id. A skipped round has no question to show. questionsLeft from hostQuestionsLeft. question_list stays
+// here: the host in the lobby gets the list's questions as text (questions), and nobody else gets anything of it.
+export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boolean | null): RoomView {
+  const { question_list: list, ...state } = lobby;
+  const questions =
+    state.role === "host" && state.status === "lobby" && list !== null ? listQuestions(list, roomId) : null;
+  const { round } = state;
+  if (round === null || round.phase === "skipped") return { ...state, round, questionsLeft, questions };
+  // parseLobbyState refuses a round with neither.
+  const question =
+    round.question_text ?? (round.question_id === null ? null : baseQuestionText(round.question_id, roomId));
+  return { ...state, round: { ...round, question }, questionsLeft, questions };
+}
+
+// For the host once the latest round is revealed or skipped: whether the game has a question not played yet (the
+// game's question list first, then the pool of the picked categories; questionsLeft in src/lib/rounds/draw.ts), so the
+// screen offers "Następne pytanie" or says the questions ran out. null in every other state, for a guest, and when the
+// room's categories could not be read (logged by hostRoomCategories). On null the two screens differ on purpose: after
+// a reveal (RoundReveal) the screen still offers "Następne pytanie", and if none is left the route answers
 // questions_ran_out (next_round's no_questions, src/pages/api/rooms/[id]/next.ts); a skipped latest round
 // (RoundSkipped) offers only "Zakończ grę", because skip_round opens the next question whenever there is one, so a skip
-// that stayed the latest round means the pool had run out.
+// that stayed the latest round means the game's questions had run out.
 export async function hostQuestionsLeft(
   supabase: SupabaseClient,
   lobby: LobbyState,
@@ -265,7 +295,7 @@ export async function hostQuestionsLeft(
   if (lobby.role !== "host" || lobby.status !== "playing" || round === null || round.phase === "voting") return null;
   const room = await hostRoomCategories(supabase, roomId);
   if (!room.ok || !room.selection) return null;
-  return questionPool(room.selection).length > round.number;
+  return questionsLeft(questionPool(room.selection).length, lobby.question_list, round.number);
 }
 
 // A round's answer: { ok: true } and nothing else, or the function's refusal. roomId only for the log line: a request
@@ -276,7 +306,9 @@ function actionResult(fn: string, data: unknown, roomId?: string): ActionResult 
   return refusal(data) ?? unexpectedShape(fn, "ok", roomId);
 }
 
-// "Zacznij grę": the host's session; the question was drawn by the Worker (src/lib/rounds/draw.ts).
+// "Zacznij grę": the host's session; the question was drawn by the Worker (src/lib/rounds/draw.ts). With the game's
+// question list the database opens its first entry not removed instead, and answers list_empty when every entry is
+// removed.
 export async function startGame(supabase: SupabaseClient, roomId: string, questionId: string): Promise<ActionResult> {
   const result = await callRpc(supabase, "start_game", { p_room_id: roomId, p_question_id: questionId }, roomId);
   return result.ok ? actionResult("start_game", result.data, roomId) : result;
@@ -361,6 +393,64 @@ export async function admitLatecomer(supabase: SupabaseClient, roomId: string, n
 export async function rejectLatecomer(supabase: SupabaseClient, roomId: string, nick: string): Promise<ActionResult> {
   const result = await callRpc(supabase, "reject_latecomer", { p_room_id: roomId, p_nick: nick }, roomId);
   return result.ok ? actionResult("reject_latecomer", result.data, roomId) : result;
+}
+
+// "Przejrzyj pytania": the host's session, in the lobby. candidates is the game's pool in random order
+// (src/lib/rounds/draw.ts), of which the database writes the first 15 as the game's question list; a list that exists
+// already stays as it is (ok).
+export async function openQuestionList(
+  supabase: SupabaseClient,
+  roomId: string,
+  candidates: string[],
+): Promise<ActionResult> {
+  const result = await callRpc(supabase, "open_question_list", { p_room_id: roomId, p_candidates: candidates }, roomId);
+  return result.ok ? actionResult("open_question_list", result.data, roomId) : result;
+}
+
+// "Dolosuj pytanie": the host's session, in the lobby. candidates as in openQuestionList; the first one on no row of
+// the list becomes a new entry at its end.
+export async function drawListQuestion(
+  supabase: SupabaseClient,
+  roomId: string,
+  candidates: string[],
+): Promise<ActionResult> {
+  const result = await callRpc(supabase, "draw_list_question", { p_room_id: roomId, p_candidates: candidates }, roomId);
+  return result.ok ? actionResult("draw_list_question", result.data, roomId) : result;
+}
+
+// "Usuń": the host's session, in the lobby. position is the entry's handle on the host's list; the entry is marked
+// removed and its question does not come up in this game.
+export async function removeListQuestion(
+  supabase: SupabaseClient,
+  roomId: string,
+  position: number,
+): Promise<ActionResult> {
+  const result = await callRpc(supabase, "remove_list_question", { p_room_id: roomId, p_position: position }, roomId);
+  return result.ok ? actionResult("remove_list_question", result.data, roomId) : result;
+}
+
+// "Popraw": the host's session, in the lobby. text is what the host typed, which the database normalizes and checks
+// (1-90 characters); it travels only in this POST's body.
+export async function editListQuestion(
+  supabase: SupabaseClient,
+  roomId: string,
+  position: number,
+  text: string,
+): Promise<ActionResult> {
+  const result = await callRpc(
+    supabase,
+    "edit_list_question",
+    { p_room_id: roomId, p_position: position, p_text: text },
+    roomId,
+  );
+  return result.ok ? actionResult("edit_list_question", result.data, roomId) : result;
+}
+
+// "Dodaj własne": the host's session, in the lobby. text as in editListQuestion; the own question becomes a new entry
+// at the end of the list.
+export async function addOwnQuestion(supabase: SupabaseClient, roomId: string, text: string): Promise<ActionResult> {
+  const result = await callRpc(supabase, "add_own_question", { p_room_id: roomId, p_text: text }, roomId);
+  return result.ok ? actionResult("add_own_question", result.data, roomId) : result;
 }
 
 // The host's open room, read through RLS: a host has at most one room in the lobby or with a game in play.

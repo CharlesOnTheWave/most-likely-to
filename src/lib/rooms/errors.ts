@@ -2,9 +2,11 @@
 // screen shows the Polish text from this map, so text typed into `?error=` never reaches the screen (same as
 // src/lib/auth-errors.ts).
 
-// The refusals of the game's actions (start, vote, reveal, next, skip, end) and of the host's answer to a latecomer
-// ("Wpuść", "Odrzuć"), each with its own text (audit G2). tests/unit/room-errors.test.ts checks this list against the
-// plans. game_started is also join_room's: a game in play takes a latecomer only through a request to the host (S-08).
+// The refusals of the game's actions (start, vote, reveal, next, skip, end), of the host's answer to a latecomer
+// ("Wpuść", "Odrzuć") and of the host's moves on the game's question list ("Przejrzyj pytania", "Dolosuj pytanie",
+// "Usuń", "Popraw", "Dodaj własne"; list_empty is the start's), each with its own text (audit G2).
+// tests/unit/room-errors.test.ts checks this list against the plans. game_started is also join_room's: a game in play
+// takes a latecomer only through a request to the host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -19,6 +21,11 @@ export const ROUND_REFUSALS = [
   "questions_ran_out",
   "request_unknown",
   "latecomer_nick_taken",
+  "question_unknown",
+  "invalid_question_text",
+  "list_full",
+  "list_empty",
+  "no_new_questions",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -54,6 +61,15 @@ const MESSAGES: Record<string, string> = {
   round_over: "To pytanie już się zmieniło.",
   round_in_progress: "Głosowanie jeszcze trwa. Najpierw odsłoń wynik.",
   questions_ran_out: QUESTIONS_RAN_OUT,
+  // "Usuń" or "Popraw" of an entry removed already (a double tap, the host's second screen).
+  question_unknown: "Tego pytania nie ma już na liście.",
+  invalid_question_text: "Pytanie może mieć od 1 do 90 znaków.",
+  list_full: "Na liście nie zmieszczą się kolejne pytania.",
+  // "Zacznij grę" with every entry of the game's question list removed.
+  list_empty: "Lista pytań jest pusta. Dolosuj albo dodaj pytanie.",
+  // "Dolosuj pytanie" once every question of the picked categories is on the list: draw_list_question's no_questions,
+  // whose start text would send the host to a new game (src/pages/api/rooms/[id]/question-draw.ts).
+  no_new_questions: "W wybranych kategoriach nie ma już nowych pytań. Dodaj własne.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";

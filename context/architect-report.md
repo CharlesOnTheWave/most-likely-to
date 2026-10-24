@@ -1,6 +1,6 @@
 # Raport 10xArchitect: moduł 4
 
-2026-10-20 · repo `most-likely-to` (ta gra) · HEAD `0fad991`
+2026-10-20 · repo `most-likely-to` (ta gra) · HEAD `b706ec9`
 
 ## 1. Opisane projekty
 
@@ -15,7 +15,7 @@ Lekcja nazywa mapę domeny `01-domain-distillation.md`; skill zapisał ją jako 
 ## 2. Mapa projektu (L2)
 
 - **Logika gry siedzi w SQL, TypeScript ma do niej jedną bramę.** `src/lib/rooms/server.ts` woła 10 funkcji bazy po nazwach w napisach, ma 381 linii i nie importuje go żaden test (`repo-map.md:78`, `:95`).
-- **Strefa ryzyka 1: logowanie hosta.** Realny defekt po wydaniu (`d4bff27a`) i poprawki prosto na `main` (`957bb6d3`) (`repo-map.md:121-124`).
+- **Strefa ryzyka 1: logowanie hosta.** Realny defekt po wydaniu (`26844054`) i poprawki prosto na `main` (`4823cfc7`) (`repo-map.md:121-124`).
 - **Strefa ryzyka 2: pokój, poczekalnia i wejście gościa.** Jedyne publiczne wejście bez logowania, wydane ze znanymi dziurami F1/F4, około 5–7 dni na produkcji (`inference`, `repo-map.md:134`, `:140`).
 - **Entry pointy i centra:** strona pokoju `src/pages/r/[id].astro`, wejście gościa `src/pages/j/[token].astro` → `join.ts`, middleware logowania (`repo-map.md:179-183`). Największy zasięg ma dzwonek Realtime: mapa liczy 14 wejść, a ast-grep w L3 doprecyzował, że dzwoni 9 miejsc (`repo-map.md:152`; `research.md:247`).
 - **Unknowns:** brak grafu SQL, kontrakt TS↔SQL bez typów bazy, kontrakt dzwonka, niechroniony `main` (`repo-map.md:208-210`, `:214`).
@@ -40,12 +40,12 @@ Lekcja nazywa mapę domeny `01-domain-distillation.md`; skill zapisał ją jako 
 
 **Czego nie robimy** (`plan.md:63-77`): K2–K5, wygenerowane typy bazy (10/10 funkcji zwraca `jsonb`), testy gałęzi awarii i zmiany w `server.ts`, migracje, decyzje produktowe S-04, lint skryptów `<script>` w `.astro`. Przegląd planu: REVISE → SOUND; jedyne ustalenie krytyczne (D7 nie widzi `<script>` w `.astro`) stało się jawną luką, a pierwszy push przesunięto do ostatniej fazy (`plan-review.md:7`, `:56`, `:66`).
 
-| Faza | Co | Auto | Ręcznie |
-| --- | --- | --- | --- |
-| 1 | test bramy RPC (K1) | 12 testów zielonych, `src` bez zmian | próbne alarmy: literówka w `reveal_round`, zamiana argumentów |
-| 2 | D7 jako ostrzeżenie | lint zielony, dokładnie 3 ostrzeżenia | lektura komunikatu reguły |
-| 3 | D7 jako błąd, 3 komentarze wyjątku | lint czysty, diff to same komentarze | próbny alarm w trzech formach |
-| 4 | krok smoke z odsłoną, pierwszy push i PR | CI zielone, smoke 54 kroki | próbny alarm w CI i revert |
+| Faza | Co                                       | Auto                                  | Ręcznie                                                       |
+| ---- | ---------------------------------------- | ------------------------------------- | ------------------------------------------------------------- |
+| 1    | test bramy RPC (K1)                      | 12 testów zielonych, `src` bez zmian  | próbne alarmy: literówka w `reveal_round`, zamiana argumentów |
+| 2    | D7 jako ostrzeżenie                      | lint zielony, dokładnie 3 ostrzeżenia | lektura komunikatu reguły                                     |
+| 3    | D7 jako błąd, 3 komentarze wyjątku       | lint czysty, diff to same komentarze  | próbny alarm w trzech formach                                 |
+| 4    | krok smoke z odsłoną, pierwszy push i PR | CI zielone, smoke 54 kroki            | próbny alarm w CI i revert                                    |
 
 Status `plan_reviewed`, Progress bez odhaczeń: plan nie jest wdrożony (`change.md:4`, `plan.md:346-400`).
 

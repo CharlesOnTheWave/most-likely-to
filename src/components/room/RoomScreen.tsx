@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PartyPopper, Plus, SkipForward } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import type { HostActionsPreview } from "@/components/room/HostActions";
 import JoinRequests from "@/components/room/JoinRequests";
 import { LiveBanner } from "@/components/room/LiveBanner";
+import type { QuestionListActions } from "@/components/room/QuestionList";
 import RoomLobby, { type LobbyPreview } from "@/components/room/RoomLobby";
 import { RoomErrorBoundary } from "@/components/room/RoomErrorBoundary";
 import { roomColumn } from "@/components/room/room-frame";
@@ -72,7 +73,8 @@ function EveningEnd({ view, titleAs: Title }: { view: RoomView; titleAs: "h1" | 
 }
 
 // The host's moves that replace the whole view; after them the focus goes to the new view's heading. The host's answer
-// to a latecomer ("Wpuść", "Odrzuć") keeps the view, so it keeps the focus too.
+// to a latecomer ("Wpuść", "Odrzuć") and the moves on the game's question list in the lobby ("Przejrzyj pytania",
+// "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj") keep the view, so they keep the focus too (QuestionList moves it).
 const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
@@ -131,6 +133,17 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const end = useCallback(() => act("end", {}), [act]);
   const admit = useCallback((nick: string) => act("admit", { nick }), [act]);
   const reject = useCallback((nick: string) => act("reject", { nick }), [act]);
+  // The game's question list carries the entry's position, the handle that never changes, and the host's text.
+  const questionActions = useMemo<QuestionListActions>(
+    () => ({
+      onOpen: () => act("question-list", {}),
+      onDraw: () => act("question-draw", {}),
+      onRemove: (position) => act("question-remove", { position }),
+      onEdit: (position, text) => act("question-edit", { position, text }),
+      onAdd: (text) => act("question-add", { text }),
+    }),
+    [act],
+  );
 
   let content;
   if (view.status === "closed") {
@@ -144,6 +157,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         linkUrl={linkUrl}
         refreshFailed={refreshFailed}
         onStart={start}
+        questionActions={questionActions}
         preview={preview}
       />
     );

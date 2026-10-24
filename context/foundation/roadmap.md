@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-22
+updated: 2026-10-24
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -48,7 +48,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                                | S-02             | FR-006, FR-015                                            | done        |
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | proposed    |
 | S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                           | —                | FR-001                                                    | done        |
-| S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | proposed    |
+| S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | in-progress |
 | S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | proposed    |
 | S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | in-progress |
 | S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | proposed    |
@@ -184,7 +184,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Przegląd nie może spowolnić ścieżki „gra w mniej niż 5 minut”, dlatego zostaje opcjonalny.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-07: Współhost
 

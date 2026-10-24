@@ -39,11 +39,11 @@ import { isRecord } from "./rooms";
 // end_game(p_room_id uuid): authenticated only. "Zakończ grę" while the game is in play: the room is closed and its
 //   round's in-progress state deleted. { ok: true } or { ok: false, reason } with reason in room_unknown, room_closed,
 //   no_round (a lobby).
-// room_lobby: the fields of S-01 plus round and requests, with exactly the keys below: a skipped round shows only its
-//   number and phase, and a voting round says who may vote in it (eligible: the players when it opened, in seat order)
-//   and whether the round before it was skipped (after_skip). requests: the nicks of the latecomers waiting, in the
-//   order of asking, for the host; [] for a guest. room_link of a game in play: { status: "started", room_id }.
-//   join_room into a game in play: reason game_started.
+// room_lobby: the fields of S-01 plus round, requests and question_list (S-06, below), with exactly the keys below: a
+//   skipped round shows only its number and phase, and a voting round says who may vote in it (eligible: the players
+//   when it opened, in seat order) and whether the round before it was skipped (after_skip). requests: the nicks of the
+//   latecomers waiting, in the order of asking, for the host; [] for a guest. room_link of a game in play:
+//   { status: "started", room_id }. join_room into a game in play: reason game_started.
 //
 // The latecomer's way in (S-08, context/changes/latecomer-admission/plan.md, Faza 1), from
 // supabase/migrations/*_latecomer_admission.sql:
@@ -60,6 +60,30 @@ import { isRecord } from "./rooms";
 //   "Wpuść" (the request becomes a player at the next seat and is deleted) and "Odrzuć" (the request stays, rejected).
 //   { ok: true } or { ok: false, reason } with reason in room_unknown (another host's room), request_unknown (no
 //   request with that nick waiting, or the room not in play), latecomer_nick_taken (admit only, a backstop).
+//
+// The game's question list (S-06, context/changes/question-list-review/plan.md, Faza 1), from
+// supabase/migrations/*_question_list_review.sql. Every move on it is authenticated only, the room's host's and the
+// lobby's: { ok: true } or { ok: false, reason } with reason in room_unknown (another host's room), room_closed,
+// game_started, or one of the move's own below. An entry is named by its position, which never changes.
+// open_question_list(p_room_id uuid, p_candidates text[]): "Przejrzyj pytania". The first 15 distinct candidates in the
+//   id format, in the given order, become positions 1-15; a list with rows already stays as it is (ok). no_questions
+//   when no candidate is usable; more than 1000 candidates raise 22023.
+// draw_list_question(p_room_id uuid, p_candidates text[]): "Dolosuj pytanie". The first candidate in the id format on
+//   no row of the list (removed and reworded entries included) becomes a new entry at the end. list_full at 100 rows,
+//   no_questions when no candidate is left; more than 1000 candidates raise 22023.
+// remove_list_question(p_room_id uuid, p_position integer): "Usuń". The entry is marked removed and stays a row.
+//   question_unknown when there is no such entry or it is removed already.
+// edit_list_question(p_room_id uuid, p_position integer, p_text text): "Popraw". The entry gets a text of its own and
+//   keeps its question id. question_unknown as in "Usuń"; invalid_question_text for a text over 400 characters as
+//   sent, or outside 1-90 characters once normalized as a nick is and without the trailing "?" and spaces.
+// add_own_question(p_room_id uuid, p_text text): "Dodaj własne". A new entry at the end with the text and no question
+//   id. invalid_question_text as in "Popraw", list_full at 100 rows.
+// With a list, start_game opens round 1 with its first entry not removed, whatever p_question_id, or answers
+//   list_empty when every entry is removed; next_round and skip_round take the list's next entry not removed before any
+//   candidate, and after the list the first candidate on no row of it. room_lobby adds question_list, the host's in
+//   every status of a room with a list: { entries, base_count }, the entries not removed as { position, question_id,
+//   text } in the order of positions and the number of rows with a question id; null for a guest and with no list. A
+//   voting or revealed round adds question_text: the entry's text when the round has no question_id, else null.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -76,15 +100,35 @@ export const EVENING_QUESTION_IDS = [
 
 // Exact key sets, sorted, of room_lobby and its round. A key outside these lists is a possible leak (counts before the
 // reveal, a voter next to a target) until a decision adds it here.
-// requests: the nicks of the latecomers waiting, the host's only (S-08).
-export const LOBBY_KEYS = ["me", "players", "requests", "role", "round", "status"];
+// requests: the nicks of the latecomers waiting, the host's only (S-08). question_list: the game's question list, the
+// host's only, null for a guest and with no list (S-06).
+export const LOBBY_KEYS = ["me", "players", "question_list", "requests", "role", "round", "status"];
 export const PLAYER_KEYS = ["host", "nick"];
 // voted: nicks in seat order, never in the order of voting. after_skip: whether the round before this one was skipped,
 // public to everyone and tied to no one's vote. eligible: who may vote in this round, nicks in seat order, tied to no
-// one's vote either (S-08).
-export const VOTING_ROUND_KEYS = ["after_skip", "eligible", "me_voted", "number", "phase", "question_id", "voted"];
-// results: every eligible player in seat order, zeros included; counts only, per nick.
-export const REVEALED_ROUND_KEYS = ["abstained", "ballots", "number", "phase", "question_id", "results"];
+// one's vote either (S-08). question_text: the text of an own or reworded question of the list, which has no
+// question_id; null otherwise (S-06).
+export const VOTING_ROUND_KEYS = [
+  "after_skip",
+  "eligible",
+  "me_voted",
+  "number",
+  "phase",
+  "question_id",
+  "question_text",
+  "voted",
+];
+// results: every eligible player in seat order, zeros included; counts only, per nick. question_text as in a voting
+// round.
+export const REVEALED_ROUND_KEYS = [
+  "abstained",
+  "ballots",
+  "number",
+  "phase",
+  "question_id",
+  "question_text",
+  "results",
+];
 export const RESULT_KEYS = ["nick", "votes"];
 // A skipped round: its votes are gone, so nothing of them is left to show, not even who voted.
 export const SKIPPED_ROUND_KEYS = ["number", "phase"];
@@ -200,6 +244,32 @@ export function admitLatecomer(client: TestClient, roomId: string, nick: string)
 // "Odrzuć" as the host: nick is the nick on the host's list.
 export function rejectLatecomer(client: TestClient, roomId: string, nick: string): Promise<Answer> {
   return call(client, "reject_latecomer", { p_room_id: roomId, p_nick: nick });
+}
+
+// "Przejrzyj pytania" as the host. candidates: the pool of the picked categories in the Worker's order; null and
+// malformed ids only in the probes of the candidates' filter.
+export function openQuestionList(client: TestClient, roomId: string, candidates: (string | null)[]): Promise<Answer> {
+  return call(client, "open_question_list", { p_room_id: roomId, p_candidates: candidates });
+}
+
+// "Dolosuj pytanie" as the host, with candidates as in openQuestionList.
+export function drawListQuestion(client: TestClient, roomId: string, candidates: (string | null)[]): Promise<Answer> {
+  return call(client, "draw_list_question", { p_room_id: roomId, p_candidates: candidates });
+}
+
+// "Usuń" as the host: position is the entry's place on the host's list.
+export function removeListQuestion(client: TestClient, roomId: string, position: number): Promise<Answer> {
+  return call(client, "remove_list_question", { p_room_id: roomId, p_position: position });
+}
+
+// "Popraw" as the host: text is what the host typed, before the database's normalization.
+export function editListQuestion(client: TestClient, roomId: string, position: number, text: string): Promise<Answer> {
+  return call(client, "edit_list_question", { p_room_id: roomId, p_position: position, p_text: text });
+}
+
+// "Dodaj własne" as the host: text as in editListQuestion.
+export function addOwnQuestion(client: TestClient, roomId: string, text: string): Promise<Answer> {
+  return call(client, "add_own_question", { p_room_id: roomId, p_text: text });
 }
 
 // The function's own refusal code, never its arguments: they hold nicks, vote targets and tokens.

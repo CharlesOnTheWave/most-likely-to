@@ -2,9 +2,10 @@
 import Layout from "@/layouts/Layout.astro";
 import AppHeader from "@/components/room/AppHeader.astro";
 import type { HostActionsPreview } from "@/components/room/HostActions";
+import type { QuestionListPreview } from "@/components/room/QuestionList";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomScreen from "@/components/room/RoomScreen";
-import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
+import type { ListQuestion, LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 
 // One room screen in the real page's frame (the wide header and <main> of /r/[id]), for screenshots of the whole
 // window and for checking the host's bar at the window's bottom edge: /dev/room-window?state=reveal-host; without a
@@ -66,6 +67,29 @@ const fiveResults: [string, number][] = [
 ];
 const twentyCounts = [3, 2, 0, 3, 1, 0, 2, 1, 0, 0, 1, 0, 0, 2, 0, 1, 0, 0, 1, 0];
 const twentyResults: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, twentyCounts[index]]);
+// The host's game's question list after a review (S-06), as on /dev/room-states: 15 questions, 1 reworded, 2 and 9
+// removed, 16 drawn, 17 the host's own of 90 characters.
+const questionList: ListQuestion[] = [
+  { position: 1, text: "wypiłby mleko prosto z kartonu", own: true },
+  { position: 3, text: QUESTION, own: false },
+  { position: 4, text: "zjadłby wszystkie przekąski, zanim przyjdą goście", own: false },
+  { position: 5, text: "oglądałby ten sam serial po raz piąty, zamiast zacząć nowy", own: false },
+  { position: 6, text: "wygrałby teleturniej w telewizji", own: false },
+  { position: 7, text: "zasnąłby w kinie na najgłośniejszej scenie", own: false },
+  { position: 8, text: "zgubiłby telefon, trzymając go w ręce", own: false },
+  { position: 10, text: LONG_QUESTION, own: false },
+  { position: 11, text: "krzyczałby na sędziego przez telewizor", own: false },
+  { position: 12, text: "biegałby codziennie o szóstej rano", own: false },
+  { position: 13, text: "odpowiedziałby „do wszystkich” na maila do jednej osoby", own: false },
+  { position: 14, text: "skoczyłby na bungee", own: false },
+  { position: 15, text: "zostałby przewodniczącym samorządu", own: false },
+  { position: 16, text: "mieszkałby za dziesięć lat na innym kontynencie", own: false },
+  {
+    position: 17,
+    text: "zorganizowałby wieczór gier dla całej ekipy i zapomniał, że to on miał przynieść przekąski",
+    own: true,
+  },
+];
 
 // By default every player was in the room when the round opened, so all of them may vote in it (eligible); no
 // latecomer is waiting (requests, set by the samples of S-08).
@@ -84,6 +108,7 @@ function voting(
     round: {
       number: 1,
       question_id: QUESTION_ID,
+      question_text: null,
       phase: "voting",
       eligible,
       voted,
@@ -93,6 +118,7 @@ function voting(
     },
     requests: [],
     questionsLeft: null,
+    questions: null,
   };
 }
 
@@ -106,6 +132,7 @@ function revealed(players: LobbyPlayer[], results: [string, number][], abstained
     round: {
       number: 1,
       question_id: QUESTION_ID,
+      question_text: null,
       phase: "revealed",
       results: results.map(([nick, count]) => ({ nick, votes: count })),
       abstained,
@@ -114,6 +141,7 @@ function revealed(players: LobbyPlayer[], results: [string, number][], abstained
     },
     requests: [],
     questionsLeft: true,
+    questions: null,
   };
 }
 
@@ -124,6 +152,8 @@ interface Sample {
   myVote?: { target: string | null };
   // The host's buttons, e.g. a question "Na pewno…?" open in the bar.
   host?: HostActionsPreview;
+  // The host's "Przejrzyj pytania" in the lobby, e.g. the list unfolded.
+  questionList?: QuestionListPreview;
 }
 
 const SAMPLES: Record<string, Sample> = {
@@ -137,6 +167,7 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       questionsLeft: null,
+      questions: null,
     },
     linkUrl: LINK_URL,
   },
@@ -151,8 +182,25 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       questionsLeft: null,
+      questions: null,
     },
     linkUrl: LINK_URL,
+  },
+  // The game's question list unfolded: the game's column scrolls with the page instead of sticking.
+  "lobby-host-questions": {
+    label: "Poczekalnia: host, 8 graczy, lista pytań rozwinięta",
+    initial: {
+      status: "lobby",
+      role: "host",
+      me: "Ola",
+      players: eightPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+      questions: questionList,
+    },
+    linkUrl: LINK_URL,
+    questionList: { open: true },
   },
   "lobby-guest": {
     label: "Poczekalnia: gość, 8 graczy",
@@ -164,6 +212,7 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       questionsLeft: null,
+      questions: null,
     },
   },
   "vote-guest": {
@@ -232,6 +281,7 @@ const SAMPLES: Record<string, Sample> = {
       round: { number: 7, phase: "skipped" },
       requests: [],
       questionsLeft: false,
+      questions: null,
     },
   },
   "end-host": {
@@ -244,6 +294,7 @@ const SAMPLES: Record<string, Sample> = {
       round: null,
       requests: [],
       questionsLeft: null,
+      questions: null,
     },
   },
 };
@@ -263,7 +314,12 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
             initial={sample.initial}
             linkUrl={sample.linkUrl}
             realtime={null}
-            preview={{ idPrefix: "window", myVote: sample.myVote, host: sample.host }}
+            preview={{
+              idPrefix: "window",
+              myVote: sample.myVote,
+              host: sample.host,
+              questionList: sample.questionList,
+            }}
             client:load
           />
         </main>
