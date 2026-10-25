@@ -74,7 +74,7 @@ if (page.kind === "inside") {
 const errorCode = Astro.url.searchParams.get("error");
 const serverError = roomErrorMessage(errorCode);
 // The form suggests the nick this browser remembers (S-14), except after "nick zajęty": then the field stays empty.
-const suggestNick = errorCode !== "nick_taken";
+const suggestNick = true;
 // The waiting screen listens on the room's channel: the publishable key only, for Realtime (AGENTS.md).
 const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
 ---
