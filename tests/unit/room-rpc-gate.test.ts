@@ -58,7 +58,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261024094002_question_list_review.sql:556
+  // supabase/migrations/20261025122918_game_summary.sql:46
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },

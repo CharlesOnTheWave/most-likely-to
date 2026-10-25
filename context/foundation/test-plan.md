@@ -152,7 +152,8 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   - `nicks.test.ts`: reguła nicku z tabeli par (F4, domknięte w S-02);
   - `round-rules.test.ts`: reguły rundy z ręcznie rozpisanym scenariuszem (głosy i oczekiwane liczby wpisane w teście), także odmowy next/skip/end dla gościa i obcego hosta;
   - `game-rules.test.ts`: zasady wieczoru (S-03), jeden wieczór rozegrany raz w `beforeAll` (kolejne pytania, spóźnione głosy, pominięcia, wyczerpana pula, koniec), każda zapamiętana odpowiedź sprawdzana własnym testem;
-  - `round-anonymity.test.ts`: anonimowość przez drzwi ról (wzorzec w §6.3).
+  - `round-anonymity.test.ts`: anonimowość przez drzwi ról (wzorzec w §6.3);
+  - `game-summary.test.ts`: sumy z odsłon zamkniętego pokoju (S-15), jeden wieczór w `beforeAll` z ręczną wyrocznią (§6.3, „Sumy z odsłon”).
 - **Widok twórcy** (pgTAP): `supabase/tests/*.test.sql`, czyli to, czego klucz publishable nie widzi (katalog, granty, publikacja, resztki). Wzór: `round_creator_view.test.sql`.
   - Kontrola pozytywna pierwsza w pliku.
   - Asercje przez funkcje pgTAP, które przy brakującym obiekcie dają `not ok`, a nie błąd kończący plik: `table_privs_are`, `hasnt_column`, `to_regclass(…)` zamiast `::regclass`, wywołania przez `lives_ok` albo przez helper, który zwraca błąd jako tekst.
@@ -182,7 +183,7 @@ odpowiednia faza wdrożenia zostanie dowieziona; do tego czasu brzmi
   - jedyne, co może zawieść, to końcowe `expect`;
   - gdy wyrocznia oczekuje danych, a nie odmowy błędem: jeśli końcowe wywołanie zwróciło `error` (awaria, a nie odpowiedź funkcji), ciało robi `return` przed `expect`. Test wtedy przechodzi i `test.fails` pokazuje go na czerwono, zamiast liczyć awarię jako oczekiwaną porażkę;
   - asercja sprawdza tylko pola z wyroczni (`toMatchObject`, nie `toEqual`), żeby po naprawie test zrobił się czerwony, nawet gdy odpowiedź dostanie nowe pole.
-- **Sign-up limit**: lokalny Supabase przyjmuje 30 rejestracji i logowań na 5 minut z jednego IP (`sign_in_sign_ups` w `supabase/config.toml`). Jeden przebieg zakłada dziś 13 kont: `canary` 0, `roles` 6, `nicks` 1, `round-anonymity` 1, `round-rules` 2, `game-rules` 1, `latecomers` 1, `question-list` 1. pgTAP nie rejestruje kont (hosty wstawia wprost do `auth.users`).
+- **Sign-up limit**: lokalny Supabase przyjmuje 30 rejestracji i logowań na 5 minut z jednego IP (`sign_in_sign_ups` w `supabase/config.toml`). Jeden przebieg zakłada dziś 14 kont: `canary` 0, `roles` 6, `nicks` 1, `round-anonymity` 1, `round-rules` 2, `game-rules` 1, `latecomers` 1, `question-list` 1, `game-summary` 1. pgTAP nie rejestruje kont (hosty wstawia wprost do `auth.users`).
   - Nowy plik: jeden host na plik.
   - Host ma najwyżej jeden otwarty pokój, więc kolejny pokój tego samego hosta zakładaj przez `seedRoom(host, { confirmClose: true })`; zamyka on poprzedni.
   - Pliki biegną po kolei (`fileParallelism: false`).
@@ -223,10 +224,16 @@ Cel (ryzyko #1): po rundzie żadna rola i żaden kanał nie łączy głosująceg
   - Lista „kto zagłosował” idzie w kolejności miejsc, nie oddania. Scenariusz celowo głosuje w innej kolejności niż miejsca.
   - Po odsłonie tylko klucze odsłony, a każdy wynik to dokładnie `nick` i `votes`.
   - Po pominięciu (S-03): następna runda ma dokładnie klucze głosowania z `after_skip: true` i bez niczyjego głosu, a pominięta runda, która została najnowsza (pula wyczerpana), dokładnie `SKIPPED_ROUND_KEYS` (`number`, `phase`); widziane jako gość, który głosował, gość, który nie, i host.
-  - Po „Zakończ grę” w trakcie głosowania: stan `closed` bez rundy i tylko klucze lobby, dla każdej z tych trzech ról; link odpowiada dokładnie `{ status: closed }`.
+  - Po „Zakończ grę” w trakcie głosowania: stan `closed` bez rundy, tylko klucze lobby z `game_totals`, dla każdej z tych trzech ról; link odpowiada dokładnie `{ status: closed }`.
   - Dokładny zbiór kluczy odpowiedzi głosu sprawdzają tylko dwa testy w `round-anonymity.test.ts`, oba z numerem pytania: głos gościa i hosta w trwającej rundzie (próbny alarm (b) z S-02 w §6.2) i głos w rundzie, którą host zaraz pominie (S-03). Inne pliki sprawdzają przyjęty głos przez `toMatchObject`.
 - **`private` niewystawiony**: REST na każdą tabelę rundy, ze schematem `private` i bez, jako gość i jako host, daje konkretny kod (`PGRST106`, `PGRST205`) i `data` równe `null`. Strażnik nie zakłada rundy, więc nie zależy od funkcji rundy.
-- **Porzucona runda**: pokój zamknięty w trakcie rundy („Nowa gra” z potwierdzeniem) zwraca `closed` i żadnych liczb.
+- **Porzucona runda**: pokój zamknięty w trakcie rundy („Nowa gra” z potwierdzeniem) zwraca `closed` i żadnych liczb z przerwanej rundy (sumy wcześniejszych odsłon są w `game_totals`).
+- **Sumy z odsłon** (S-15, `tests/db/game-summary.test.ts`): zamknięty pokój ma w `game_totals` liczbę odsłoniętych rund i sumę wyników każdego gracza z wynikiem w co najmniej jednej z nich; poza `closed` i bez odsłony `null`.
+  - Wyrocznia ręczna: głosy każdej rundy, liczby jej odsłony i oczekiwane sumy wpisane w teście, nigdy liczone.
+  - Pominięta runda i runda przerwana końcem gry, obie z oddanymi głosami na osobę, której suma by się od nich zmieniła, nie dają liczb i nie wchodzą do `revealed`.
+  - Spóźniony, który nie był uprawniony w żadnej odsłoniętej rundzie, nie ma wpisu; zero gracza z wynikiem w odsłonie zostaje.
+  - Dokładne klucze: `GAME_TOTALS_KEYS` (`revealed`, `totals`), każdy wpis `RESULT_KEYS`; gość, spóźniony i host widzą to samo.
+  - `null` w poczekalni, w grze (także po odsłonie) i w pokoju zamkniętym bez odsłon; te same reguły po „Zakończ grę” i po „Nowej grze” w trakcie gry.
 - **pgTAP (widok twórcy)**:
   - tabele urny (`ballot_boxes`, `round_voters`) nielogowane: `relpersistence = 'u'`;
   - każda tabela rundy bez uprawnień dla `anon` i `authenticated`, poza publikacją `supabase_realtime`, bez kolumn czasu, `serial` i `identity`; `round_results` bez kolumny głosującego; `authenticated` bez `usage` na `private`;
