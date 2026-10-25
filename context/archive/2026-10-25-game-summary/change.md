@@ -1,10 +1,10 @@
 ---
 change_id: game-summary
 title: Podsumowanie wieczoru na ekranie końca gry
-status: implemented
+status: archived
 created: 2026-10-25
 updated: 2026-10-25
-archived_at: null
+archived_at: 2026-10-25T18:24:45Z
 ---
 
 ## Notes
