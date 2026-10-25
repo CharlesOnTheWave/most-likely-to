@@ -225,13 +225,13 @@ Nie dotyczy: bez zmian w bazie i bez nowych danych. Wycofanie to zwykły revert 
 
 #### Automated
 
-- [x] 1.1 `npm test` przechodzi, w tym nowe przypadki `seatColors` w `tests/unit/chart.test.ts`
-- [x] 1.2 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm run build` przechodzą
-- [x] 1.3 `npx prettier --check` dla zmienionych plików `.md`
+- [x] 1.1 `npm test` przechodzi, w tym nowe przypadki `seatColors` w `tests/unit/chart.test.ts` — 69ea056
+- [x] 1.2 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm run build` przechodzą — 69ea056
+- [x] 1.3 `npx prettier --check` dla zmienionych plików `.md` — 69ea056
 
 #### Manual
 
-- [x] 1.4 Karol ocenia zrzuty z `/dev/room-states` (laptop jako całe okno 1:1, telefon w prawdziwej wielkości): poczekalnia i głosowanie z kropkami na liście „Gracze”, dwie odsłony z różnymi zwycięzcami (ta sama osoba w tym samym kolorze, widok „Koło” i „Paski”), podsumowanie z kołem i legendą
+- [x] 1.4 Karol ocenia zrzuty z `/dev/room-states` (laptop jako całe okno 1:1, telefon w prawdziwej wielkości): poczekalnia i głosowanie z kropkami na liście „Gracze”, dwie odsłony z różnymi zwycięzcami (ta sama osoba w tym samym kolorze, widok „Koło” i „Paski”), podsumowanie z kołem i legendą — 69ea056
 
 ### Phase 2: PR i wdrożenie
 
