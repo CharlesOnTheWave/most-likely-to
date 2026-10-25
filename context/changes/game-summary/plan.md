@@ -359,13 +359,13 @@ ekrany pokoju (pięć miejsc z „Critical Implementation Details”).
 
 #### Automated
 
-- [x] 1.1 `npm run lint`, `npx astro check`, `npm test`, `npm run build` przechodzą lokalnie
-- [ ] 1.2 `npx supabase db push --dry-run` pokazuje tylko nową migrację (za zgodą, nie z eduroam)
-- [ ] 1.3 CI na gałęzi: job `db` zielony (nowy plik testów, `round-anonymity.test.ts` z nowym `LOBBY_KEYS`, pgTAP bez zmian)
+- [x] 1.1 `npm run lint`, `npx astro check`, `npm test`, `npm run build` przechodzą lokalnie — 8eb43ed
+- [x] 1.2 `npx supabase db push --dry-run` pokazuje tylko nową migrację (za zgodą, nie z eduroam) — 8eb43ed
+- [x] 1.3 CI na gałęzi: job `db` zielony (nowy plik testów, `round-anonymity.test.ts` z nowym `LOBBY_KEYS`, pgTAP bez zmian) — 8eb43ed
 
 #### Manual
 
-- [ ] 1.4 Karol czyta w PR diff migracji: `game_totals` tylko przy `closed`, same `nick` i `votes`
+- [x] 1.4 Karol czyta w PR diff migracji: `game_totals` tylko przy `closed`, same `nick` i `votes` — 8eb43ed
 
 ### Phase 2: Wybór wyróżnień i ekran końca
 
