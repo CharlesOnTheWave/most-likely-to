@@ -5,7 +5,15 @@ import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { afterRoundActions, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
-import { pieSlices, resultBars, resultViews, slicePath, type PieSlice, type ResultView } from "@/lib/rooms/chart";
+import {
+  pieSlices,
+  resultBars,
+  resultViews,
+  seatColors,
+  slicePath,
+  type PieSlice,
+  type ResultView,
+} from "@/lib/rooms/chart";
 import type { RoomView, RoundView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -33,22 +41,20 @@ const VIEW_OPTIONS: { view: ResultView; label: string; Icon: typeof ChartPie }[]
   { view: "bars", label: "Paski", Icon: ChartBarDecreasing },
 ];
 
-// The pie for the eye only (the table below holds the data): slices from 12 o'clock clockwise, each edged in the
-// page's background so neighbours stay apart; one player with every vote is a plain circle.
-function ResultPie({ slices }: { slices: PieSlice[] }) {
+// The pie for the eye only (the table below holds the data): slices from 12 o'clock clockwise, each in its player's
+// colour from the place at the table (seatColors), not from its place in the result, and edged in the page's background
+// so neighbours stay apart; one player with every vote is a plain circle.
+function ResultPie({ slices, colors }: { slices: PieSlice[]; colors: ReadonlyMap<string, number> }) {
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true" className="mx-auto size-48 sm:size-56">
-      {slices.map((slice, index) => {
+      {slices.map((slice) => {
+        const color = colors.get(slice.nick);
+        const fill = color === undefined ? undefined : SLICE_FILLS[color];
         const path = slicePath(slice, 50, 48);
         return path === null ? (
-          <circle key={slice.nick} cx="50" cy="50" r="48" className={SLICE_FILLS[index]} />
+          <circle key={slice.nick} cx="50" cy="50" r="48" className={fill} />
         ) : (
-          <path
-            key={slice.nick}
-            d={path}
-            strokeLinejoin="round"
-            className={cn(SLICE_FILLS[index], "stroke-background stroke-2")}
-          />
+          <path key={slice.nick} d={path} strokeLinejoin="round" className={cn(fill, "stroke-background stroke-2")} />
         );
       })}
     </svg>
@@ -57,10 +63,11 @@ function ResultPie({ slices }: { slices: PieSlice[] }) {
 
 // The reveal (PRD FR-009; decision D3: always the counts, also after one vote): every player, most votes first, a tie
 // in seat order, zeros dimmed at the bottom (sortResults), and how many abstained. Only counts per person, never who
-// voted for whom. "Koło" or "Paski" changes only this player's screen. The result stays until the host opens the next
-// question or ends the game; when the game's pool ran out, only "Zakończ grę" (questionsLeft false). From lg the pie
-// stands next to the table and the host's buttons are a bar at the window's bottom, so the next move stays in view
-// however long the table is.
+// voted for whom. "Koło" or "Paski" changes only this player's screen. Each player keeps one colour from the place at
+// the table (seatColors) in every round: the slice of the pie and the dot in the row, in both views. The result stays
+// until the host opens the next question or ends the game; when the game's pool ran out, only "Zakończ grę"
+// (questionsLeft false). From lg the pie stands next to the table and the host's buttons are a bar at the window's
+// bottom, so the next move stays in view however long the table is.
 export default function RoundReveal({
   view,
   round,
@@ -76,7 +83,7 @@ export default function RoundReveal({
   const rows = resultBars(round.results);
   const top = rows[0]?.votes ?? 0;
   const slices = pieSlices(round.results);
-  const sliceIndex = new Map(slices.map((slice, index) => [slice.nick, index]));
+  const colors = seatColors(view.players);
   const { toggle, initial } = resultViews(round.results);
   const shown: ResultView = toggle ? (chosenView ?? initial) : "bars";
   const isHost = view.role === "host";
@@ -115,7 +122,7 @@ export default function RoundReveal({
           )}
         </div>
 
-        {shown === "pie" && <ResultPie slices={slices} />}
+        {shown === "pie" && <ResultPie slices={slices} colors={colors} />}
 
         {/* Next to the pie from lg; across the section when the pie is not shown ("Paski"). */}
         <div className={cn("overflow-hidden rounded-md border", shown !== "pie" && "lg:col-span-2")}>
@@ -133,7 +140,7 @@ export default function RoundReveal({
             <tbody className="divide-y">
               {rows.map((row) => {
                 const isTop = top > 0 && row.votes === top;
-                const dot = sliceIndex.get(row.nick);
+                const color = colors.get(row.nick);
                 return (
                   <tr key={row.nick} className={cn(row.votes === 0 && "text-muted-foreground")}>
                     <td className="relative px-3 py-2.5">
@@ -150,15 +157,14 @@ export default function RoundReveal({
                         />
                       )}
                       <span className="relative flex items-center gap-x-2">
-                        {shown === "pie" && (
-                          // The slice's colour; a row without votes keeps the space, so the nicks stay aligned. Outside
-                          // the wrapping span, so a long nick wraps next to its dot instead of pushing it onto a line
-                          // of its own.
-                          <span
-                            aria-hidden="true"
-                            className={cn("size-2.5 shrink-0 rounded-full", dot !== undefined && SLICE_DOTS[dot])}
-                          />
-                        )}
+                        {/* The player's colour from the place at the table, in every row and both views; in full also
+                            in a dimmed row without votes, as it is the person's colour, not the slice's. A nick
+                            without a colour keeps the space, so the nicks stay aligned. Outside the wrapping span, so
+                            a long nick wraps next to its dot instead of pushing it onto a line of its own. */}
+                        <span
+                          aria-hidden="true"
+                          className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
+                        />
                         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                           <span className={cn("min-w-0 wrap-anywhere", isTop && "font-semibold")}>{row.nick}</span>
                           {row.nick === view.me && <Badge variant="outline">ty</Badge>}

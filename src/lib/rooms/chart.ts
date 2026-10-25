@@ -1,5 +1,5 @@
 import { sortResults } from "@/lib/rooms/results";
-import type { RoundResult } from "@/lib/rooms/shared";
+import type { LobbyPlayer, RoundResult } from "@/lib/rooms/shared";
 
 // The reveal's two views (Karol's decision after the screenshot review of Faza 4,
 // context/archive/2026-10-13-first-live-round): "Koło", a pie with one slice per player who got votes, and "Paski", a
@@ -84,4 +84,14 @@ export function resultBars(results: readonly RoundResult[]): ResultBar[] {
   const sorted = sortResults(results);
   const top = sorted[0]?.votes ?? 0;
   return sorted.map(({ nick, votes }) => ({ nick, votes, percent: top > 0 ? (votes / top) * 100 : 0 }));
+}
+
+// Each player's colour for the whole game, from the place at the table: nick → the number of a colour (0 …
+// MAX_PIE_SLICES - 1, src/components/room/chart-colors.ts), the player's position in the players' list (the room's
+// state lists them in seat order, the host first), after MAX_PIE_SLICES players from the start again. The position
+// stays the same all game: nobody leaves the room and a latecomer comes in at the end, so the same person has the same
+// colour on the lists of players, in every reveal and in the summary, whoever got the most votes. A view takes the
+// number from this map; a nick outside it (unreachable while nobody leaves the room) has no colour.
+export function seatColors(players: readonly LobbyPlayer[]): ReadonlyMap<string, number> {
+  return new Map(players.map((player, index) => [player.nick, index % MAX_PIE_SLICES]));
 }

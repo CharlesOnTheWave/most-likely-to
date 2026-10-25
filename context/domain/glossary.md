@@ -45,6 +45,7 @@ Use these words in code, tests, commits and conversations. When a name in the co
 | zapamiętany nick | ostatni nick przyjęty w tej przeglądarce, podpowiadany w formularzu wejścia i „Nowej grze”; tylko nick, nigdy głos | `src/lib/rooms/remembered-nick.ts`, `mlt-nick` | „konto”, „login” |
 | link do pokoju | zaproszenie `/j/<kod>`, osobne od adresu pokoju | `link_token`, `/j/[token]` | „token” bez dopowiedzenia (token gościa to coś innego) |
 | miejsce | kolejność dołączenia: host 1, goście dalej | `seat` | „czas wejścia” |
+| kolor gracza | stały kolor gracza na całą grę, z jego miejsca (host pierwszy, po 20 graczach kolory od nowa); jego kawałek na kole odsłony i podsumowania i kropka przy nicku; usunięcie gracza (S-09) nie może zmienić kolorów pozostałych graczy | `seatColors` | „kolor zwycięzcy”, kolor z miejsca w wyniku |
 | token gościa | losowy sekret w ciasteczku, którym gość wraca do pokoju; w bazie tylko hash | `newPlayerToken`, `mlt_player_<roomId>`, `token_hash` | „sesja” |
 | powrót po odświeżeniu | gracz wraca na swój nick i do bieżącej rundy | ponowne wejście w `join.ts` i `/j/[token]` | „odzyskanie nicku” (bez ciasteczka: *missing in code*, S-04) |
 | usunięcie gracza | prowadzący usuwa gracza, pokój dostaje nowy link | *missing in code* (S-09) | „kick”, „ban” |
