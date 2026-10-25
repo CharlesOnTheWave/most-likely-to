@@ -1,7 +1,7 @@
-// Round steps shared by the E2E specs: the host starts the game, a player votes, a screen's reveal is read, and the
-// host moves the evening on (the next question, a skip, the end). Every step goes through the screen, by role and
-// accessible name, as a player would (src/components/room/RoundVoting.tsx, RoundReveal.tsx, HostActions.tsx,
-// RoomScreen.tsx).
+// Round steps shared by the E2E specs: the host starts the game, a player votes, a screen's reveal is read, the host
+// moves the evening on (the next question, a skip, the end), and the end's summary is read. Every step goes through the
+// screen, by role and accessible name, as a player would (src/components/room/RoundVoting.tsx, RoundReveal.tsx,
+// HostActions.tsx, RoomScreen.tsx, GameSummary.tsx).
 
 import { expect, type Locator, type Page } from "@playwright/test";
 
@@ -107,4 +107,49 @@ export function skipNotice(page: Page): Locator {
 // The screen's title once the game is over ("Zakończ grę"), the same for the host and every guest.
 export function eveningEnd(page: Page): Locator {
   return page.getByRole("heading", { level: 1, name: "Koniec wieczoru", exact: true });
+}
+
+// The summary under the end of the evening once the game had a revealed question (S-15, PRD FR-022;
+// src/components/room/GameSummary.tsx): the game's counts, each one term and its number (the end has no other term or
+// definition), the list under the region "Najwięcej głosów dziś" (one item per person, then one "pozostali" for the
+// rest, if any; the pie above it is for the eye only) and the list under the region "Nikt dziś nie głosował na".
+export function gameSummary(page: Page): { terms: Locator; numbers: Locator; top: Locator; unvoted: Locator } {
+  return {
+    terms: page.getByRole("term"),
+    numbers: page.getByRole("definition"),
+    top: page.getByRole("region", { name: "Najwięcej głosów dziś", exact: true }).getByRole("listitem"),
+    unvoted: page.getByRole("region", { name: "Nikt dziś nie głosował na", exact: true }).getByRole("listitem"),
+  };
+}
+
+export interface ExpectedSummary {
+  // Each count as the screen names it, with its number, in the screen's order.
+  counts: [term: string, value: number][];
+  // Everyone under "Najwięcej głosów dziś" in seat order, with their votes as the screen says them ("1 głos").
+  top: [nick: string, votes: string][];
+  // Everyone under "Nikt dziś nie głosował na", in seat order.
+  unvoted: string[];
+}
+
+// A screen shows the game's summary: exactly these counts, each term with the number at its place, and exactly these
+// items in this order under each heading, so a "pozostali" item or a missing person is one item off. `me` is the
+// screen's own player: their item, and only theirs, has the badge "ty" after the nick, as in the reveal.
+export async function expectGameSummary(page: Page, me: string, expected: ExpectedSummary): Promise<void> {
+  const summary = gameSummary(page);
+  await expect(summary.terms).toHaveText(expected.counts.map(([term]) => term));
+  await expect(summary.numbers).toHaveText(expected.counts.map(([, value]) => String(value)));
+  await expect(summary.top).toHaveText(expected.top.map(([nick, votes]) => summaryItem(nick, me, `— ${votes}`)));
+  await expect(summary.unvoted).toHaveText(expected.unvoted.map((nick) => summaryItem(nick, me, "")));
+}
+
+// One item of a summary list as its text reads: the nick, "ty" right after it on the player's own screen, then the
+// rest. A pattern, because the item's parts are separate elements with no space promised between them.
+function summaryItem(nick: string, me: string, rest: string): RegExp {
+  const badge = nick === me ? "ty\\s*" : "";
+  return new RegExp(`^\\s*${literal(nick)}\\s*${badge}${literal(rest)}\\s*$`);
+}
+
+// Text inside a pattern as the plain text it is.
+function literal(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

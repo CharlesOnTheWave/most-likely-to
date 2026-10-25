@@ -6,6 +6,7 @@ import type { QuestionListPreview } from "@/components/room/QuestionList";
 import { ROOM_FRAME } from "@/components/room/room-frame";
 import RoomScreen from "@/components/room/RoomScreen";
 import type { ListQuestion, LobbyPlayer, RoomView } from "@/lib/rooms/shared";
+import { gameSummary } from "@/lib/rooms/summary";
 
 // One room screen in the real page's frame (the wide header and <main> of /r/[id]), for screenshots of the whole
 // window and for checking the host's bar at the window's bottom edge: /dev/room-window?state=reveal-host; without a
@@ -65,6 +66,15 @@ const fiveResults: [string, number][] = [
   ["Zosia", 0],
   ["Kuba", 0],
 ];
+// The sums of a game's reveals as room_lobby would give them (game_totals, in seat order), for the summary the Worker
+// makes of them (gameSummary): three at the top, two zeros.
+const summaryTotals = [
+  { nick: "Ola", votes: 3 },
+  { nick: "Bartek", votes: 5 },
+  { nick: "Kasia 🎉", votes: 2 },
+  { nick: "Zosia", votes: 0 },
+  { nick: "Kuba", votes: 0 },
+];
 const twentyCounts = [3, 2, 0, 3, 1, 0, 2, 1, 0, 0, 1, 0, 0, 2, 0, 1, 0, 0, 1, 0];
 const twentyResults: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, twentyCounts[index]]);
 // The host's game's question list after a review (S-06), as on /dev/room-states: 15 questions, 1 reworded, 2 and 9
@@ -119,6 +129,7 @@ function voting(
     requests: [],
     questionsLeft: null,
     questions: null,
+    summary: null,
   };
 }
 
@@ -142,6 +153,7 @@ function revealed(players: LobbyPlayer[], results: [string, number][], abstained
     requests: [],
     questionsLeft: true,
     questions: null,
+    summary: null,
   };
 }
 
@@ -168,6 +180,7 @@ const SAMPLES: Record<string, Sample> = {
       requests: [],
       questionsLeft: null,
       questions: null,
+      summary: null,
     },
     linkUrl: LINK_URL,
   },
@@ -183,6 +196,7 @@ const SAMPLES: Record<string, Sample> = {
       requests: [],
       questionsLeft: null,
       questions: null,
+      summary: null,
     },
     linkUrl: LINK_URL,
   },
@@ -198,6 +212,7 @@ const SAMPLES: Record<string, Sample> = {
       requests: [],
       questionsLeft: null,
       questions: questionList,
+      summary: null,
     },
     linkUrl: LINK_URL,
     questionList: { open: true },
@@ -213,6 +228,7 @@ const SAMPLES: Record<string, Sample> = {
       requests: [],
       questionsLeft: null,
       questions: null,
+      summary: null,
     },
   },
   "vote-guest": {
@@ -282,10 +298,12 @@ const SAMPLES: Record<string, Sample> = {
       requests: [],
       questionsLeft: false,
       questions: null,
+      summary: null,
     },
   },
+  // S-15: the summary of a game of 4 reveals, as on /dev/room-states (81).
   "end-host": {
-    label: "Koniec wieczoru: host",
+    label: "Koniec wieczoru: host, z podsumowaniem",
     initial: {
       status: "closed",
       role: "host",
@@ -295,6 +313,7 @@ const SAMPLES: Record<string, Sample> = {
       requests: [],
       questionsLeft: null,
       questions: null,
+      summary: gameSummary({ revealed: 4, totals: summaryTotals }),
     },
   },
 };

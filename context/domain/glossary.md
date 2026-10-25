@@ -19,6 +19,7 @@ Use these words in code, tests, commits and conversations. When a name in the co
 | uprawnieni | gracze, którzy mogą głosować w tej rundzie: wszyscy w pokoju przy jej otwarciu | `eligible`; `round.eligible` w stanie pokoju | „gracze” (to nie zawsze ta sama lista) |
 | odsłona | moment, w którym wszyscy widzą, ile głosów dostała każda osoba | `reveal_round`, `finish_round`, `phase = 'revealed'` | „przewinięcie”, „advance” |
 | wynik | liczba głosów na każdą osobę w jednej rundzie | `round_results`, `RoundResult` | „wynik jakości” (to ocena pytania) |
+| podsumowanie | wyróżnienia z odsłon zamkniętej gry na ekranie końca: liczba odsłoniętych pytań, łączna liczba głosów, najwięcej głosów dziś (do 3 osób, więcej tylko przy remisie na szczycie; na wykresie reszta to jeden kawałek „pozostali” bez nicków), nikt dziś nie głosował na…; tylko sumy wyników, nigdy kto na kogo | `game_totals` (sumy z bazy, zostają w Workerze), `GameSummary`, `summary` w stanie pokoju dla ekranu, `gameSummary` | „ranking”, „wyniki wieczoru”, „tabela wyników” |
 | urna | stan rundy w toku: kto zagłosował i liczniki; znika przy odsłonie i każdym innym końcu | `ballot_boxes` (+ `round_voters`) | „głosy w bazie” |
 | pominięcie pytania | prowadzący porzuca rundę w trakcie głosowania; głosy przepadają | `skip_round`, `phase = 'skipped'` | „wstrzymanie się” |
 | następne pytanie | prowadzący otwiera kolejną rundę po odsłonie albo pominięciu | `next_round` | „przewinięcie”, „advance” |

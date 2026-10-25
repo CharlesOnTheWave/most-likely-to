@@ -26,6 +26,7 @@ function lobby(): RoomView {
     requests: [],
     questionsLeft: null,
     questions: null,
+    summary: null,
   };
 }
 
@@ -54,6 +55,7 @@ function voting(
     requests: [],
     questionsLeft: null,
     questions: null,
+    summary: null,
   };
 }
 
@@ -80,6 +82,7 @@ function revealed(number: number): RoomView {
     requests: [],
     questionsLeft: null,
     questions: null,
+    summary: null,
   };
 }
 
@@ -93,6 +96,7 @@ function skipped(number: number, role: "host" | "guest" = "guest"): RoomView {
     requests: [],
     questionsLeft: role === "host" ? false : null,
     questions: null,
+    summary: null,
   };
 }
 
@@ -106,6 +110,7 @@ function closed(role: "host" | "guest"): RoomView {
     requests: [],
     questionsLeft: null,
     questions: null,
+    summary: null,
   };
 }
 

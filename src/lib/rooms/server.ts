@@ -11,10 +11,12 @@ import {
   type LobbyState,
   type RoomView,
 } from "@/lib/rooms/shared";
+import { gameSummary } from "@/lib/rooms/summary";
 
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
-// *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql and
-// *_question_list_review.sql; failures come back as codes for the URL or the JSON answer (src/lib/rooms/errors.ts).
+// *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
+// *_question_list_review.sql and *_game_summary.sql; failures come back as codes for the URL or the JSON answer
+// (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
 // a vote's target and the text of a question the host typed.
 
@@ -266,16 +268,19 @@ function listQuestions(list: GameQuestionList, roomId: string): ListQuestion[] {
 // the id's format) goes out as null: the round goes on, the screen says it could not load the question, and the log
 // says which id. A skipped round has no question to show. questionsLeft from hostQuestionsLeft. question_list stays
 // here: the host in the lobby gets the list's questions as text (questions), and nobody else gets anything of it.
+// game_totals stays here too: a closed room's players get only the summary made of it (gameSummary, S-15), never the
+// sums outside it.
 export function roomView(lobby: LobbyState, roomId: string, questionsLeft: boolean | null): RoomView {
-  const { question_list: list, ...state } = lobby;
+  const { question_list: list, game_totals: totals, ...state } = lobby;
   const questions =
     state.role === "host" && state.status === "lobby" && list !== null ? listQuestions(list, roomId) : null;
+  const summary = totals === null ? null : gameSummary(totals);
   const { round } = state;
-  if (round === null || round.phase === "skipped") return { ...state, round, questionsLeft, questions };
+  if (round === null || round.phase === "skipped") return { ...state, round, questionsLeft, questions, summary };
   // parseLobbyState refuses a round with neither.
   const question =
     round.question_text ?? (round.question_id === null ? null : baseQuestionText(round.question_id, roomId));
-  return { ...state, round: { ...round, question }, questionsLeft, questions };
+  return { ...state, round: { ...round, question }, questionsLeft, questions, summary };
 }
 
 // For the host once the latest round is revealed or skipped: whether the game has a question not played yet (the

@@ -39,11 +39,11 @@ import { isRecord } from "./rooms";
 // end_game(p_room_id uuid): authenticated only. "Zakończ grę" while the game is in play: the room is closed and its
 //   round's in-progress state deleted. { ok: true } or { ok: false, reason } with reason in room_unknown, room_closed,
 //   no_round (a lobby).
-// room_lobby: the fields of S-01 plus round, requests and question_list (S-06, below), with exactly the keys below: a
-//   skipped round shows only its number and phase, and a voting round says who may vote in it (eligible: the players
-//   when it opened, in seat order) and whether the round before it was skipped (after_skip). requests: the nicks of the
-//   latecomers waiting, in the order of asking, for the host; [] for a guest. room_link of a game in play:
-//   { status: "started", room_id }. join_room into a game in play: reason game_started.
+// room_lobby: the fields of S-01 plus round, requests, question_list (S-06, below) and game_totals (S-15, below), with
+//   exactly the keys below: a skipped round shows only its number and phase, and a voting round says who may vote in
+//   it (eligible: the players when it opened, in seat order) and whether the round before it was skipped (after_skip).
+//   requests: the nicks of the latecomers waiting, in the order of asking, for the host; [] for a guest. room_link of a
+//   game in play: { status: "started", room_id }. join_room into a game in play: reason game_started.
 //
 // The latecomer's way in (S-08, context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1), from
 // supabase/migrations/*_latecomer_admission.sql:
@@ -84,6 +84,13 @@ import { isRecord } from "./rooms";
 //   every status of a room with a list: { entries, base_count }, the entries not removed as { position, question_id,
 //   text } in the order of positions and the number of rows with a question id; null for a guest and with no list. A
 //   voting or revealed round adds question_text: the entry's text when the round has no question_id, else null.
+//
+// The game's summary (S-15, context/changes/game-summary/plan.md, Faza 1), from
+// supabase/migrations/*_game_summary.sql: room_lobby adds game_totals, the same for the host and every player of the
+// room. null in the lobby, while the game is in play and for a closed room with no revealed round; for a closed room
+// with one, { revealed, totals }: the number of its revealed rounds, and every player with a result in at least one of
+// them as { nick, votes } with the sum of those results, in seat order, zeros included. A skipped round and a round
+// ended without a reveal add nothing and are not counted; a latecomer with no result in a revealed round is not there.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -101,8 +108,10 @@ export const EVENING_QUESTION_IDS = [
 // Exact key sets, sorted, of room_lobby and its round. A key outside these lists is a possible leak (counts before the
 // reveal, a voter next to a target) until a decision adds it here.
 // requests: the nicks of the latecomers waiting, the host's only (S-08). question_list: the game's question list, the
-// host's only, null for a guest and with no list (S-06).
-export const LOBBY_KEYS = ["me", "players", "question_list", "requests", "role", "round", "status"];
+// host's only, null for a guest and with no list (S-06). game_totals: the sums of the reveals, only in a closed room and
+// null otherwise (S-15); they are counts per nick that the reveals already showed the whole room, so they hold no
+// voter, and the room's every player sees the same ones.
+export const LOBBY_KEYS = ["game_totals", "me", "players", "question_list", "requests", "role", "round", "status"];
 export const PLAYER_KEYS = ["host", "nick"];
 // voted: nicks in seat order, never in the order of voting. after_skip: whether the round before this one was skipped,
 // public to everyone and tied to no one's vote. eligible: who may vote in this round, nicks in seat order, tied to no
@@ -132,6 +141,9 @@ export const REVEALED_ROUND_KEYS = [
 export const RESULT_KEYS = ["nick", "votes"];
 // A skipped round: its votes are gone, so nothing of them is left to show, not even who voted.
 export const SKIPPED_ROUND_KEYS = ["number", "phase"];
+// game_totals of a closed room with a revealed round (S-15): revealed, the number of its revealed rounds; totals, one
+// entry per player with a result in at least one of them, each exactly RESULT_KEYS (votes: the sum of those results).
+export const GAME_TOTALS_KEYS = ["revealed", "totals"];
 
 export interface Answer {
   data: unknown;

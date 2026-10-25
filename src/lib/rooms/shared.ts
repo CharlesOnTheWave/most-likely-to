@@ -78,12 +78,23 @@ export interface GameQuestionList {
   base_count: number;
 }
 
+// The sums of a closed game's reveals as room_lobby names them (context/changes/game-summary/plan.md, Faza 1 #1): the
+// number of its revealed rounds (at least 1), and for every player with a result in at least one of them, in seat
+// order, the sum of those results, zeros included. Counts per nick the reveals already showed the whole room, never a
+// voter; a skipped round and one cut short by the end of the game add nothing.
+export interface GameTotals {
+  revealed: number;
+  totals: RoundResult[];
+}
+
 // What room_lobby returns: nicks in join order, no ids, hashes or link code; a round only while a game is in play.
 // requests: the nicks of the latecomers waiting for the host to let them in, in the order of asking; only the host sees
 // them, a guest always gets [] (and so does the host before the start and once the room is closed). question_list: the
 // game's question list for the host of a room that has one ("Przejrzyj pytania"), in every status of the room; null for
 // a guest and before the host opens it. The Worker keeps it: the browser gets only the host's questions in the lobby
-// (RoomView.questions).
+// (RoomView.questions). game_totals: for everyone in a closed room whose game had a revealed round; null in the lobby,
+// while the game is in play and for a closed room with no reveal. The Worker keeps it too: the browser gets only the
+// summary made of it (RoomView.summary).
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -92,6 +103,7 @@ export interface LobbyState {
   round: RoundState | null;
   requests: string[];
   question_list: GameQuestionList | null;
+  game_totals: GameTotals | null;
 }
 
 // What the room screen gets: the round with its question's text, which the Worker adds from the question base, or the
@@ -109,15 +121,31 @@ export interface ListQuestion {
   own: boolean;
 }
 
+// The summary of a closed game on the end of the evening (S-15, PRD FR-022), made by the Worker from game_totals
+// (src/lib/rooms/summary.ts, gameSummary): the number of revealed questions; votes, the number of votes for players in
+// all of them (an abstention is no vote for anyone), which the chart cuts into the top's slices and one for the rest;
+// top, the players with the most votes, at most 3 unless the top tie alone is more, in seat order within a tie, each
+// with their sum; unvoted, the nicks of the players who could get a vote in a reveal and got none, in seat order.
+// Nothing else of the sums: the rest is one number, never a nick.
+export interface GameSummary {
+  revealed: number;
+  votes: number;
+  top: RoundResult[];
+  unvoted: string[];
+}
+
 // questionsLeft: for the host once the latest round is revealed or skipped, whether the game has a question not played
 // yet ("Następne pytanie" or "Pytań już nie ma. Możesz zakończyć grę."); null in every other state, for a guest, and
 // when the Worker could not tell. questions: the game's question list for its host in the lobby, the entries not
 // removed in the order of positions; null before the host opens it, for a guest and once the game has started. Never
-// question_list itself: its question ids would tell nothing the screen needs.
-export interface RoomView extends Omit<LobbyState, "question_list"> {
+// question_list itself: its question ids would tell nothing the screen needs. summary: for everyone in a closed room
+// whose game had a revealed round, null otherwise; never game_totals itself, whose sums outside the summary the screen
+// does not show.
+export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals"> {
   round: RoundView | null;
   questionsLeft: boolean | null;
   questions: ListQuestion[] | null;
+  summary: GameSummary | null;
 }
 
 // A parser's answer: the value with only the contract's keys, or the field that did not pass (a dotted path without
@@ -160,16 +188,23 @@ function parsePlayers(value: unknown): ParseResult<LobbyPlayer[]> {
   return { ok: true, value: players };
 }
 
-function parseResults(value: unknown): ParseResult<RoundResult[]> {
-  if (!Array.isArray(value)) return fail("round.results");
+// Counts per nick: a revealed round's results, a closed game's sums and its summary's top. field names the list in the
+// answer ("round.results", "game_totals.totals", "summary.top"), so a failure says which one.
+function parseResults(value: unknown, field: string): ParseResult<RoundResult[]> {
+  if (!Array.isArray(value)) return fail(field);
   const results: RoundResult[] = [];
   for (const entry of value as unknown[]) {
-    if (!isRecord(entry)) return fail("round.results");
-    if (typeof entry.nick !== "string") return fail("round.results.nick");
-    if (!isCount(entry.votes)) return fail("round.results.votes");
+    if (!isRecord(entry)) return fail(field);
+    if (typeof entry.nick !== "string") return fail(`${field}.nick`);
+    if (!isCount(entry.votes)) return fail(`${field}.votes`);
     results.push({ nick: entry.nick, votes: entry.votes });
   }
   return { ok: true, value: results };
+}
+
+// The number of a closed game's revealed questions: a game with none has no sums and no summary at all (null).
+function isRevealedCount(value: unknown): value is number {
+  return isCount(value) && value >= 1;
 }
 
 // Copies only the contract's keys: a key the database might add by mistake (a count before the reveal) stays here.
@@ -207,7 +242,7 @@ function parseRound(value: Record<string, unknown>): ParseResult<RoundState> {
       },
     };
   }
-  const results = parseResults(value.results);
+  const results = parseResults(value.results, "round.results");
   if (!results.ok) return results;
   if (!isCount(value.abstained)) return fail("round.abstained");
   if (!isCount(value.ballots)) return fail("round.ballots");
@@ -246,9 +281,22 @@ function parseQuestionList(value: unknown): ParseResult<GameQuestionList | null>
   return { ok: true, value: { entries, base_count: value.base_count } };
 }
 
-// What room_lobby and the Worker's view share: everything but the game's question list, which only the Worker reads.
-// A round only while a game is in play, and always one then.
-function parseRoomState(value: Record<string, unknown>): ParseResult<Omit<LobbyState, "question_list">> {
+// The sums of a closed game's reveals, or null (no closed room, or no reveal). Copies only the contract's keys, as the
+// round does: a key the database might add by mistake (a voter, a round's own counts) stays here.
+function parseGameTotals(value: unknown, status: RoomStatus): ParseResult<GameTotals | null> {
+  if (value === null) return { ok: true, value: null };
+  if (!isRecord(value) || status !== "closed") return fail("game_totals");
+  if (!isRevealedCount(value.revealed)) return fail("game_totals.revealed");
+  const totals = parseResults(value.totals, "game_totals.totals");
+  if (!totals.ok) return totals;
+  return { ok: true, value: { revealed: value.revealed, totals: totals.value } };
+}
+
+// What room_lobby and the Worker's view share: everything but the game's question list and the sums of its reveals,
+// which only the Worker reads. A round only while a game is in play, and always one then.
+function parseRoomState(
+  value: Record<string, unknown>,
+): ParseResult<Omit<LobbyState, "question_list" | "game_totals">> {
   const { status, role, me } = value;
   if (status !== "lobby" && status !== "playing" && status !== "closed") return fail("status");
   if (role !== "host" && role !== "guest") return fail("role");
@@ -270,8 +318,9 @@ function parseRoomState(value: Record<string, unknown>): ParseResult<Omit<LobbyS
   return { ok: true, value: { status, role, me, players: players.value, round: round.value, requests } };
 }
 
-// room_lobby's answer (src/lib/rooms/server.ts). question_list is always there, null included: a database without it
-// (before *_question_list_review.sql) is refused, not read as "no list".
+// room_lobby's answer (src/lib/rooms/server.ts). question_list and game_totals are always there, null included: a
+// database without them (before *_question_list_review.sql, *_game_summary.sql) is refused, not read as "no list" or
+// "no reveal".
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -279,7 +328,10 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (value.question_list === undefined) return fail("question_list");
   const questionList = parseQuestionList(value.question_list);
   if (!questionList.ok) return questionList;
-  return { ok: true, value: { ...state.value, question_list: questionList.value } };
+  if (value.game_totals === undefined) return fail("game_totals");
+  const gameTotals = parseGameTotals(value.game_totals, state.value.status);
+  if (!gameTotals.ok) return gameTotals;
+  return { ok: true, value: { ...state.value, question_list: questionList.value, game_totals: gameTotals.value } };
 }
 
 // How a latecomer's own request stands (join_request_state, through GET /api/rooms/<id>/request), for the /j/<code>
@@ -320,8 +372,27 @@ function parseQuestions(
   return { ok: true, value: questions };
 }
 
-// The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state without question_list, plus
-// the round's question, a text or null for a question the base does not have, questionsLeft and the host's questions.
+// The summary in the view, or null (no closed room, or no reveal), by the rules of game_totals. Copies only the
+// contract's keys: the browser gets nothing of the sums beyond what the end of the evening shows. votes is never fewer
+// than the top's own, so the chart's rest is never below 0.
+function parseSummary(value: unknown, status: RoomStatus): ParseResult<GameSummary | null> {
+  if (value === null) return { ok: true, value: null };
+  if (!isRecord(value) || status !== "closed") return fail("summary");
+  if (!isRevealedCount(value.revealed)) return fail("summary.revealed");
+  const top = parseResults(value.top, "summary.top");
+  if (!top.ok) return top;
+  const topVotes = top.value.reduce((sum, { votes }) => sum + votes, 0);
+  if (!isCount(value.votes) || value.votes < topVotes) return fail("summary.votes");
+  if (!isStringList(value.unvoted)) return fail("summary.unvoted");
+  return {
+    ok: true,
+    value: { revealed: value.revealed, votes: value.votes, top: top.value, unvoted: [...value.unvoted] },
+  };
+}
+
+// The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state without question_list and
+// game_totals, plus the round's question, a text or null for a question the base does not have, questionsLeft, the
+// host's questions and the summary. summary is always there, null included, as questions is.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -331,9 +402,15 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (value.questions === undefined) return fail("questions");
   const questions = parseQuestions(value.questions, state.value);
   if (!questions.ok) return questions;
+  if (value.summary === undefined) return fail("summary");
+  const summary = parseSummary(value.summary, state.value.status);
+  if (!summary.ok) return summary;
   const { round } = state.value;
   if (round === null || round.phase === "skipped") {
-    return { ok: true, value: { ...state.value, round, questionsLeft, questions: questions.value } };
+    return {
+      ok: true,
+      value: { ...state.value, round, questionsLeft, questions: questions.value, summary: summary.value },
+    };
   }
 
   const rawRound = value.round;
@@ -341,7 +418,13 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (typeof question !== "string" && question !== null) return fail("round.question");
   return {
     ok: true,
-    value: { ...state.value, round: { ...round, question }, questionsLeft, questions: questions.value },
+    value: {
+      ...state.value,
+      round: { ...round, question },
+      questionsLeft,
+      questions: questions.value,
+      summary: summary.value,
+    },
   };
 }
 
