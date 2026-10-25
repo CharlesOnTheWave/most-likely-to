@@ -194,10 +194,10 @@ begin
 
   -- The sums of the reveals, only once the room is closed: every count in them is one a reveal already showed the room.
   -- Skipped rounds and a round ended without a reveal have no results, and are not counted.
-  if v_status = 'closed' then
+  if v_status <> 'lobby' then
     select count(*) into v_revealed
     from private.rounds r
-    where r.room_id = p_room_id and r.phase = 'revealed';
+    where r.room_id = p_room_id;
 
     if v_revealed > 0 then
       -- Every player with a result in a revealed round, in seat order, zeros included: a sum per nick and nothing more.
