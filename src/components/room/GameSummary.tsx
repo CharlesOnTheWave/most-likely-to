@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
-import { slicePath, slicesInOrder } from "@/lib/rooms/chart";
+import { seatColors, slicePath, slicesInOrder } from "@/lib/rooms/chart";
 import type { GameSummary as Summary, RoomView, RoundResult } from "@/lib/rooms/shared";
 import { plural } from "@/lib/rooms/summary";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,9 @@ interface Props {
 export default function GameSummary({ view, summary, idPrefix, halves }: Props) {
   const { revealed, votes, top, unvoted } = summary;
   const rest = votes - top.reduce((sum, entry) => sum + entry.votes, 0);
+  // The top's players in the colours the reveals gave them, from the place at the table.
+  const colors = seatColors(view.players);
+  const topColors = top.map((entry) => colors.get(entry.nick));
   return (
     <>
       <dl className={cn("grid w-full grid-cols-2 gap-4 text-left", halves && "lg:col-start-1")}>
@@ -41,18 +44,24 @@ export default function GameSummary({ view, summary, idPrefix, halves }: Props) 
           <h2 id={`${idPrefix}summary-top-heading`} className="text-muted-foreground text-sm font-medium">
             Najwięcej głosów dziś
           </h2>
-          <SummaryPie top={top} rest={rest} />
+          <SummaryPie top={top} rest={rest} topColors={topColors} />
           <ul className="flex flex-col gap-2 self-center">
-            {top.map(({ nick, votes: count }, index) => (
-              <li key={nick} className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span aria-hidden="true" className={cn("size-3 shrink-0 rounded-full", SLICE_DOTS[index])} />
-                <span className="min-w-0 font-semibold wrap-anywhere">{nick}</span>
-                {nick === view.me && <Badge variant="outline">ty</Badge>}
-                <span className="text-muted-foreground tabular-nums">
-                  — {count} {plural(count, "głos", "głosy", "głosów")}
-                </span>
-              </li>
-            ))}
+            {top.map(({ nick, votes: count }, index) => {
+              const color = topColors[index];
+              return (
+                <li key={nick} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span
+                    aria-hidden="true"
+                    className={cn("size-3 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
+                  />
+                  <span className="min-w-0 font-semibold wrap-anywhere">{nick}</span>
+                  {nick === view.me && <Badge variant="outline">ty</Badge>}
+                  <span className="text-muted-foreground tabular-nums">
+                    — {count} {plural(count, "głos", "głosy", "głosów")}
+                  </span>
+                </li>
+              );
+            })}
             {rest > 0 && (
               <li className="text-muted-foreground flex items-center gap-2">
                 <span aria-hidden="true" className="bg-muted-foreground size-3 shrink-0 rounded-full" />
@@ -102,15 +111,26 @@ function Count({ label, value }: { label: string; value: number }) {
   );
 }
 
-// The pie for the eye only (the list under it holds the data): the top's slices in their order, in the reveal's
-// colours, then one grey slice for everyone else, each edged in the card's colour; a top with every vote is a plain
-// circle. Every slice of the top has votes, so the slices keep the top's indexes.
-function SummaryPie({ top, rest }: { top: RoundResult[]; rest: number }) {
+// The pie for the eye only (the list under it holds the data): the top's slices in their order, each in its player's
+// colour from the place at the table (topColors, as in the reveals), then one grey slice for everyone else, each edged
+// in the card's colour; a top with every vote is a plain circle. Every player of the top has votes, so no slice of the
+// top drops out and a slice's index is its player's position in the top, the same as in topColors.
+function SummaryPie({
+  top,
+  rest,
+  topColors,
+}: {
+  top: RoundResult[];
+  rest: number;
+  topColors: readonly (number | undefined)[];
+}) {
   const slices = slicesInOrder([...top, { nick: "", votes: rest }]);
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true" className="mx-auto size-56 lg:size-72">
       {slices.map((slice, index) => {
-        const fill = index < top.length ? SLICE_FILLS[index] : "fill-muted-foreground";
+        const color = topColors[index];
+        const topFill = color === undefined ? undefined : SLICE_FILLS[color];
+        const fill = index < top.length ? topFill : "fill-muted-foreground";
         const path = slicePath(slice, 50, 48);
         return path === null ? (
           <circle key={index} cx="50" cy="50" r="48" className={fill} />

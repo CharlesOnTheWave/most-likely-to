@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { pieSlices, resultBars, resultViews, slicePath, slicesInOrder } from "@/lib/rooms/chart";
-import type { RoundResult } from "@/lib/rooms/shared";
+import { pieSlices, resultBars, resultViews, seatColors, slicePath, slicesInOrder } from "@/lib/rooms/chart";
+import type { LobbyPlayer, RoundResult } from "@/lib/rooms/shared";
 
 // The reveal's two views, "Koło" and "Paski" (Karol's decision after the screenshot review of Faza 4):
 // - the toggle shows only when 1 to 20 players got a vote, and then the pie is the default; with nobody (everyone
@@ -139,5 +139,56 @@ describe("resultBars", () => {
 
   it("gives no bar when everyone abstained", () => {
     expect(resultBars(seats(["Ola", 0], ["Bartek", 0])).map((bar) => bar.percent)).toEqual([0, 0]);
+  });
+});
+
+// Each player's colour from the place at the table: the position in the players' list (seat order, the host first),
+// after 20 players from the start again; never from the votes.
+describe("seatColors", () => {
+  // The players in seat order, the first one the host.
+  function players(...nicks: string[]): LobbyPlayer[] {
+    return nicks.map((nick, index) => ({ nick, host: index === 0 }));
+  }
+
+  function numbered(count: number): LobbyPlayer[] {
+    return players(...Array.from({ length: count }, (_, index) => `Gracz ${index + 1}`));
+  }
+
+  it("gives the host and four guests 0 to 4 in the list's order", () => {
+    expect([...seatColors(players("Ola", "Bartek", "Kuba", "Zosia", "Igor"))]).toEqual([
+      ["Ola", 0],
+      ["Bartek", 1],
+      ["Kuba", 2],
+      ["Zosia", 3],
+      ["Igor", 4],
+    ]);
+  });
+
+  it("gives a latecomer at the end the next number and keeps everyone else's", () => {
+    expect([...seatColors(players("Ola", "Bartek", "Kuba"))]).toEqual([
+      ["Ola", 0],
+      ["Bartek", 1],
+      ["Kuba", 2],
+    ]);
+    expect([...seatColors(players("Ola", "Bartek", "Kuba", "Kasia"))]).toEqual([
+      ["Ola", 0],
+      ["Bartek", 1],
+      ["Kuba", 2],
+      ["Kasia", 3],
+    ]);
+  });
+
+  it("starts again after 20 players: the 21st gets 0, the 22nd gets 1", () => {
+    const twentyOne = seatColors(numbered(21));
+    const twentyTwo = seatColors(numbered(22));
+
+    expect(twentyOne.get("Gracz 20")).toBe(19);
+    expect(twentyOne.get("Gracz 21")).toBe(0);
+    expect(twentyTwo.get("Gracz 21")).toBe(0);
+    expect(twentyTwo.get("Gracz 22")).toBe(1);
+  });
+
+  it("gives an empty list an empty map", () => {
+    expect(seatColors([]).size).toBe(0);
   });
 });

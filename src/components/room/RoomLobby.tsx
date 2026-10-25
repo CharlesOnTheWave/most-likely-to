@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { SLICE_DOTS } from "@/components/room/chart-colors";
 import QuestionList, { type QuestionListActions, type QuestionListPreview } from "@/components/room/QuestionList";
 import type { ActionOutcome } from "@/components/room/room-actions";
+import { seatColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +61,7 @@ export default function RoomLobby({
   const isPreview = Boolean(preview);
   const isHost = view.role === "host";
   const canStart = view.players.length >= MIN_PLAYERS;
+  const colors = seatColors(view.players);
   const startHintId = `${idPrefix}start-hint`;
   const questionsShown = isHost && questionsOpen && view.questions !== null;
 
@@ -197,15 +200,26 @@ export default function RoomLobby({
           </p>
         </div>
         <ul className="divide-y rounded-md border">
-          {view.players.map((player) => (
-            <li key={player.nick} className="flex items-center justify-between gap-3 px-3 py-2.5">
-              <span className="min-w-0 break-words">{player.nick}</span>
-              <span className="flex shrink-0 gap-1.5">
-                {player.host && <Badge variant="secondary">host</Badge>}
-                {!isHost && player.nick === view.me && <Badge variant="outline">ty</Badge>}
-              </span>
-            </li>
-          ))}
+          {view.players.map((player) => {
+            const color = colors.get(player.nick);
+            return (
+              <li key={player.nick} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                <span className="flex min-w-0 items-center gap-x-2">
+                  {/* The player's colour for the whole game, from the place at the table (seatColors), as on the
+                      reveal's pie. Outside the nick's span, so a long nick wraps next to its dot. */}
+                  <span
+                    aria-hidden="true"
+                    className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
+                  />
+                  <span className="min-w-0 break-words">{player.nick}</span>
+                </span>
+                <span className="flex shrink-0 gap-1.5">
+                  {player.host && <Badge variant="secondary">host</Badge>}
+                  {!isHost && player.nick === view.me && <Badge variant="outline">ty</Badge>}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </section>
     </div>

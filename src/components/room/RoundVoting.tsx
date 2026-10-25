@@ -6,10 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FieldError, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import { SLICE_DOTS } from "@/components/room/chart-colors";
 import { endGameAction, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
+import { seatColors } from "@/lib/rooms/chart";
 import type { LobbyPlayer, RoomView, RoundView } from "@/lib/rooms/shared";
+import { cn } from "@/lib/utils";
 
 type VotingRoundView = Extract<RoundView, { phase: "voting" }>;
 
@@ -107,6 +110,7 @@ export default function RoundVoting({
   const canVote = eligible.has(view.me);
   // Whom the form offers: the eligible players, in seat order (the players' order).
   const candidates = view.players.filter((player) => eligible.has(player.nick));
+  const colors = seatColors(view.players);
   const choiceErrorId = `${idPrefix}vote-choice-error`;
   const votedOf = `${String(round.voted.length)} z ${String(round.eligible.length)}`;
 
@@ -155,7 +159,8 @@ export default function RoundVoting({
   );
 
   // Every player, a latecomer too: one let in during this question has a grey "od następnego pytania" and never the
-  // vote's badge.
+  // vote's badge. Each with the dot of the player's colour for the whole game, from the place at the table
+  // (seatColors), as in the lobby and the reveal; the form's list has none.
   const players = (
     <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
       <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">
@@ -164,11 +169,19 @@ export default function RoundVoting({
       <ul className="divide-y rounded-md border">
         {view.players.map((player) => {
           const mayVote = eligible.has(player.nick);
+          const color = colors.get(player.nick);
           return (
             <li key={player.nick} className={`${ROW} justify-between py-2.5`}>
-              <span className="flex min-w-0 flex-col">
-                <span className="wrap-anywhere">{player.nick}</span>
-                {!mayVote && <span className="text-muted-foreground text-xs">od następnego pytania</span>}
+              <span className="flex min-w-0 items-center gap-x-2">
+                {/* Outside the nick's span, so a long nick wraps next to its dot. */}
+                <span
+                  aria-hidden="true"
+                  className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
+                />
+                <span className="flex min-w-0 flex-col">
+                  <span className="wrap-anywhere">{player.nick}</span>
+                  {!mayVote && <span className="text-muted-foreground text-xs">od następnego pytania</span>}
+                </span>
               </span>
               <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
                 <PlayerBadges
