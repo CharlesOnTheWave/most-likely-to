@@ -16,6 +16,7 @@ import RoundVoting, { type VotingPreview } from "@/components/room/RoundVoting";
 import { useRoomState, type LiveConfig, type LivePreview } from "@/components/room/useRoomState";
 import { announcement, announcementKey, skipNotice } from "@/lib/rooms/announce";
 import type { ResultView } from "@/lib/rooms/chart";
+import { browserNickStorage, rememberNick } from "@/lib/rooms/remembered-nick";
 import type { RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -112,6 +113,12 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
     heading.classList.add("outline-none");
     heading.focus();
   }, [key]);
+  // The nick the database took for this player (the host, a guest or a latecomer let in) becomes this browser's
+  // remembered nick for the next join form and "Nowa gra" (S-14): only the nick, never a vote. Never from a preview.
+  useEffect(() => {
+    if (isPreview) return;
+    rememberNick(browserNickStorage(), view.me);
+  }, [isPreview, view.me]);
 
   const act = useCallback(
     async (action: RoomAction, body: unknown): Promise<ActionOutcome> => {

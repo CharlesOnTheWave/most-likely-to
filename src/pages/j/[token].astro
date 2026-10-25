@@ -71,7 +71,10 @@ if (page.kind === "inside") {
 } else if (page.kind === "error") {
   Astro.response.status = page.reason === "service_unavailable" ? 503 : 500;
 }
-const serverError = roomErrorMessage(Astro.url.searchParams.get("error"));
+const errorCode = Astro.url.searchParams.get("error");
+const serverError = roomErrorMessage(errorCode);
+// The form suggests the nick this browser remembers (S-14), except after "nick zajęty": then the field stays empty.
+const suggestNick = errorCode !== "nick_taken";
 // The waiting screen listens on the room's channel: the publishable key only, for Realtime (AGENTS.md).
 const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
 ---
@@ -82,7 +85,7 @@ const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
     <main class="mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
       {page.kind === "join" && (
         <RoomCard title="Dołącz do gry" description="Wpisz nick i jesteś w grze. Konto nie jest potrzebne.">
-          <JoinForm linkToken={page.linkToken} serverError={serverError} client:load />
+          <JoinForm linkToken={page.linkToken} serverError={serverError} suggestNick={suggestNick} client:load />
         </RoomCard>
       )}
       {page.kind === "unknown" && <RoomMessage title="Nie znamy tego linku." text="Sprawdź, czy skopiował się cały." />}
@@ -91,7 +94,13 @@ const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
           title="Poproś o wejście"
           description="Gra już trwa, więc host musi cię wpuścić. Wpisz nick i poproś o wejście."
         >
-          <JoinForm linkToken={page.linkToken} serverError={serverError} variant="request" client:load />
+          <JoinForm
+            linkToken={page.linkToken}
+            serverError={serverError}
+            variant="request"
+            suggestNick={suggestNick}
+            client:load
+          />
         </RoomCard>
       )}
       {page.kind === "started" && page.rejectedNick !== null && (

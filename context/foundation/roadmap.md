@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-24
+updated: 2026-10-25
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -39,23 +39,24 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 
 ## At a glance
 
-| ID   | Change ID                    | Outcome (user can …)                                                                                                | Prerequisites    | PRD refs                                                  | Status   |
-| ---- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------- | -------- |
-| F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona: kanał-dzwonek + stan z serwera, 20 graczy, 95% w ≤ 2 s, max 5 s           | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | done     |
-| F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                       | —                | FR-005, FR-015, Access Control (twórca gry)               | done     |
-| S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | done     |
-| S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                                 | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | done     |
-| S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                                | S-02             | FR-006, FR-015                                            | done     |
-| S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | proposed |
-| S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                           | —                | FR-001                                                    | done     |
-| S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | done     |
-| S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | proposed |
-| S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | done     |
-| S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | proposed |
-| S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | proposed |
-| S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | proposed |
-| S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych, bez powtórek z ostatnich wieczorów                   | S-11             | FR-015, FR-017                                            | proposed |
-| S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | proposed |
+| ID   | Change ID                    | Outcome (user can …)                                                                                                | Prerequisites    | PRD refs                                                  | Status      |
+| ---- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------- | --------------------------------------------------------- | ----------- |
+| F-01 | live-sync-spike              | (foundation) Technika na żywo sprawdzona: kanał-dzwonek + stan z serwera, 20 graczy, 95% w ≤ 2 s, max 5 s           | —                | FR-007, FR-009, NFR (≤ 2 s, 20 graczy, prywatność głosów) | done        |
+| F-02 | starter-question-base        | (foundation) Baza startowa pytań po polsku w kilku kategoriach, zatwierdzona przez twórcę gry                       | —                | FR-005, FR-015, Access Control (twórca gry)               | done        |
+| S-01 | room-lobby                   | Host tworzy pokój z kategoriami (18+ osobno w każdej) i linkiem; goście wchodzą z nickiem, a host widzi ich na żywo | F-01, F-02       | US-01, FR-002, FR-005                                     | done        |
+| S-02 | first-live-round             | Wszyscy widzą to samo pytanie, głosują anonimowo i widzą odsłonę po ostatnim głosie                                 | S-01, F-01, F-02 | US-01, FR-006, FR-007, FR-008, FR-009, FR-015             | done        |
+| S-03 | full-game-evening            | Prowadzący przechodzi do kolejnych pytań, pomija rundę i kończy grę z potwierdzeniem                                | S-02             | FR-006, FR-015                                            | done        |
+| S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | proposed    |
+| S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                           | —                | FR-001                                                    | done        |
+| S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | done        |
+| S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | proposed    |
+| S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | done        |
+| S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | proposed    |
+| S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | proposed    |
+| S-11 | question-reactions-play-data | Gracz daje kciuk na ekranie odsłony, a gra zbiera zbiorcze dane o pytaniach                                         | S-03, S-06       | FR-016, FR-018                                            | proposed    |
+| S-12 | learning-question-selection  | Ekipa częściej dostaje pytania, które dobrze zagrały u innych, bez powtórek z ostatnich wieczorów                   | S-11             | FR-015, FR-017                                            | proposed    |
+| S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | proposed    |
+| S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | in-progress |
 
 ## Streams
 
@@ -67,6 +68,7 @@ Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanonic
 | B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03.                     |
 | C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`          | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07. |
 | D      | Logowanie hosta     | `S-05`                                     | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                |
+| E      | Dodatki             | `S-14`                                     | Dodatki „miło mieć” zdjęte z Parked; niezależne od reszty (decyzja hosta 2026-10-25).          |
 
 ## Baseline
 
@@ -275,6 +277,18 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Idzie po S-11, żeby kasowanie dało się sprawdzić na prawdziwych danych zbiorczych: nicki znikają, dane o pytaniach zostają.
 - **Status:** proposed
 
+### S-14: Zapamiętany nick
+
+- **Outcome:** Gość, który wchodzi do pokoju z tego samego telefonu co ostatnio, ma już wpisany swój poprzedni nick i tylko klika „Dołącz”; host ma swój nick wpisany w formularzu „Nowa gra”. Nick da się zmienić przed wejściem.
+- **Change ID:** remembered-nick
+- **PRD refs:** FR-024, Access Control (gość)
+- **Prerequisites:** S-01
+- **Parallel with:** każdy element (nic od niego nie zależy)
+- **Blockers:** —
+- **Unknowns:** —
+- **Risk:** Zapis w przeglądarce sąsiaduje z zasadą „głos tylko w pamięci”: zapamiętany może być wyłącznie nick, nigdy głos ani cel głosu.
+- **Status:** in-progress
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
@@ -294,6 +308,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-11       | question-reactions-play-data | Kciuki na odsłonie i zbiorcze dane o pytaniach                         | no                    | Czeka na S-03 i S-06                                                       |
 | S-12       | learning-question-selection  | Dobór pytań uczący się z rozgrywek                                     | no                    | Czeka na S-11                                                              |
 | S-13       | host-game-history            | Lista gier hosta i kasowanie                                           | no                    | Czeka na S-11                                                              |
+| S-14       | remembered-nick              | Zapamiętany nick w przeglądarce                                        | yes                   | Run `/10x-plan remembered-nick`; S-01 gotowe                               |
 
 ## Open Roadmap Questions
 
@@ -324,7 +339,6 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **FR-022: podsumowanie wieczoru** — Why parked: dodatek, niepotrzebny do sprawdzenia rundy na żywo; wrócić po pierwszych wieczorach.
 - **FR-023: emotki i gify do pokoju** — Why parked: dodatek; rozmowa i tak toczy się na Discordzie.
 - **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
-- **Nick zapamiętany w przeglądarce** — Why parked: PRD przesuwa go do v2 (Access Control: „Poza MVP”).
 - **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
 - **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy.
 

@@ -62,7 +62,7 @@ Główna ścieżka MVP (v1, zablokowana w sesji kształtowania):
 8. Po zebraniu głosów albo gdy prowadzący przewinie: odsłona (kto ile głosów).
 9. Następne pytanie. Po ostatnim: koniec wieczoru (bez punktacji).
 
-Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy pytań przed startem, propozycje gości z zatwierdzaniem, dobór uczący się z rozgrywki, współhost, minimalna lista własnych gier z kasowaniem. Do v2: pełna historia wieczorów w panelu, nick przypięty w przeglądarce, panel weryfikacji dla twórcy gry. Koszt czasu: 8 tygodni pracy po godzinach, zaakceptowany 2026-09-19 (szacunek roboczy, do rewizji po pierwszym kamieniu milowym: pokój + runda działają z 3 osobami).
+Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy pytań przed startem, propozycje gości z zatwierdzaniem, dobór uczący się z rozgrywki, współhost, minimalna lista własnych gier z kasowaniem. Do v2: pełna historia wieczorów w panelu, panel weryfikacji dla twórcy gry. Nick przypięty w przeglądarce wszedł do v1 jako dodatek (FR-024, decyzja hosta 2026-10-25). Koszt czasu: 8 tygodni pracy po godzinach, zaakceptowany 2026-09-19 (szacunek roboczy, do rewizji po pierwszym kamieniu milowym: pokój + runda działają z 3 osobami).
 
 ### US-01: Ekipa rozgrywa pierwszą rundę
 
@@ -133,6 +133,7 @@ Model puli: wspólna baza pytań z kategoriami, kuratorowana przez twórcę gry;
 ### Dodatki
 - FR-022: Players can see an end-of-evening summary with highlights such as "most voted tonight" and "nobody voted for X tonight"; no points and no ranking across evenings. Priority: nice-to-have
 - FR-023: Player can send an emoji or gif reaction visible to the room during the evening; voice and text conversation stays on Discord. Priority: nice-to-have
+- FR-024: The same browser suggests the nick its player used last time when they join a room or create a game; the player can change it before joining. Priority: nice-to-have
 
 ## Non-Functional Requirements
 
@@ -160,7 +161,7 @@ Aplikacja prowadzi rundę na żywo: pokazuje wszystkim to samo pytanie w tej sam
 - **Współhost** — gość, któremu host w pokoju nadaje uprawnienia prowadzenia: start i pominięcie rundy, zatwierdzanie propozycji (trafiają tylko do listy tej gry, więc nic trwałego nie psuje), wpuszczanie spóźnionych, usunięcie gracza z pokoju. Nie ma dostępu do panelu hosta. Cel: wieczór nie umiera, gdy host wyjdzie.
 - **Gość** — wchodzi linkiem do pokoju, wpisuje nick, bez konta. Może głosować, pomijać, proponować pytania. Tożsamość żyje w tej sesji.
 - **Niezalogowany na trasie hosta** (panel, tworzenie pokoju) → przekierowanie do logowania. Link do pokoju działa bez logowania.
-- Poza MVP: nick „przypięty" w przeglądarce, żeby ten sam telefon proponował ten sam nick następnym razem.
+- Dodatek v1 (FR-024, decyzja hosta 2026-10-25): nick „przypięty" w przeglądarce, żeby ten sam telefon proponował ten sam nick następnym razem.
 
 | możliwość | twórca gry | host | współhost | gość |
 |---|---|---|---|---|
@@ -179,7 +180,7 @@ Aplikacja prowadzi rundę na żywo: pokazuje wszystkim to samo pytanie w tej sam
 Funkcjonalne:
 - **Żadnej odsłony ani zapisu „kto na kogo głosował", w jakiejkolwiek formie** — trwała zasada gry, nie „na później"; aplikacja nie ma zbierać, że gość X głosował na gościa Y, ani razu, ani 200 razy.
 - **Bez punktów i rankingu między wieczorami** — zabawą jest odsłona i rozmowa; jednorazowe „podsumowanie wieczoru" (FR-022) to dodatek, nie tabela wyników.
-- **Bez kont gości w v1** — gość wchodzi linkiem i wpisuje nick; nick pamiętany w przeglądarce to v2. Konto gościa nie jest zakazane na przyszłość: jeśli ktoś chce je mieć, nie będziemy tego zabraniać, ale najpierw trzeba ustalić, po co gość w ogóle chce mieć konto (Open Questions).
+- **Bez kont gości w v1** — gość wchodzi linkiem i wpisuje nick; nick pamiętany w przeglądarce to dodatek v1 (FR-024), a nie konto. Konto gościa nie jest zakazane na przyszłość: jeśli ktoś chce je mieć, nie będziemy tego zabraniać, ale najpierw trzeba ustalić, po co gość w ogóle chce mieć konto (Open Questions).
 - **Bez innych mini-gier** — jedna gra; inne tryby najwyżej później, jeśli ekipa i inni hości polubią koncept.
 - **Bez generowania pytań przez AI w v1** — nie wykluczone na przyszłość; wcześniej host chce zrobić research, jakie pytania działają najlepiej (Open Questions).
 - **Bez wielu kuratorów bazy i narzędzi moderacji** — jedna osoba (twórca gry) weryfikuje pytania; żadnych ról moderatorów, zgłoszeń, banów.

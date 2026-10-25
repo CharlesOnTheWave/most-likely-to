@@ -11,6 +11,17 @@
 > - Smoke ma nowe kroki tej zmiany, więc liczby przypadków i kroków smoke przelicz przy starcie K1, z `smoke.mjs` i z
 >   testu.
 
+> Po S-14 (`remembered-nick`, decyzja właściciela 2026-10-25, tylko nick):
+>
+> - D7 ma dwa dozwolone dostępy do pamięci przeglądarki: znacznik przeładowania w `useRoomState.ts` i
+>   `window.localStorage` w `src/lib/rooms/remembered-nick.ts` (`browserNickStorage`, jedna linia; reszta modułu pracuje
+>   na zwróconym obiekcie).
+> - Faza 2 oczekuje 4 ostrzeżeń zamiast 3: `useRoomState.ts:99,100,110` i jedno w `remembered-nick.ts`.
+> - Komunikat reguły wymienia oba wyjątki.
+> - Faza 3: linia w module dostaje komentarz `eslint-disable-next-line no-restricted-properties -- <powód>` (tylko nick,
+>   nigdy głos ani jego cel), tak jak 3 linie znacznika.
+> - Próbny alarm 3.4 w `JoinForm.tsx` pozostaje ważny: formularz woła tylko funkcje modułu i sam nie dotyka pamięci.
+
 ## Overview
 
 Plan realizuje dwie pozycje z rankingu `research.md` tej zmiany, wybrane przez Karola 20.10.2026: **K1** (strażnik
