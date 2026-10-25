@@ -1,10 +1,11 @@
 // risk: test-plan.md #2 and #3, the evening on the players' screens: after "Następne pytanie" and after a skip every
 // screen shows the same new question, one this game has not played yet (FR-015), ready for a fresh vote; after a skip
 // every screen says its votes are gone; "Zakończ grę" ends the evening on every screen (PRD FR-006; decisions D2 and D4
-// of context/archive/2026-10-15-full-game-evening/research.md). One time is checked: guest B gets the next question
-// from the room's bell, before its own poll could have run (test-plan §6.4, "Bell vs poll"). The 2 s budget is the
-// probe's. The evening plays twice (playwright.config.ts): in a laptop's window (project chromium) and in a phone's
-// (project phone, 390×844), where the room has the layout below lg; every player's window is checked first.
+// of context/archive/2026-10-15-full-game-evening/research.md), with a summary from the game's reveals only (PRD
+// FR-022, S-15). One time is checked: guest B gets the next question from the room's bell, before its own poll could
+// have run (test-plan §6.4, "Bell vs poll"). The 2 s budget is the probe's. The evening plays twice
+// (playwright.config.ts): in a laptop's window (project chromium) and in a phone's (project phone, 390×844), where the
+// room has the layout below lg; every player's window is checked first.
 // seed: tests/e2e/seed.spec.ts
 import { test, expect } from "@playwright/test";
 import { LOBBY_POLL_MS } from "../../src/lib/live-sync/shared";
@@ -14,6 +15,7 @@ import {
   endGame,
   eveningEnd,
   expectFreshVote,
+  expectGameSummary,
   nextQuestion,
   resultTable,
   ROUND_UPDATE_MS,
@@ -48,10 +50,11 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
     await joinRoom(pageB, room.link, nickB);
     await expect(playerRow(page, nickA)).toBeVisible();
     await expect(playerRow(page, nickB)).toBeVisible();
+    // Each screen with its player's nick.
     const screens = [
-      ["the host", page],
-      ["guest A", pageA],
-      ["guest B", pageB],
+      ["the host", page, room.hostNick],
+      ["guest A", pageA, nickA],
+      ["guest B", pageB, nickB],
     ] as const;
     const guests = screens.slice(1);
 
@@ -158,6 +161,25 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
     for (const [who, screen] of screens) {
       await test.step(`${who} sees the end of the evening`, async () => {
         await expect(eveningEnd(screen)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+      });
+    }
+
+    // Assertion: every screen sums up the game from its only reveal, question 1: A 1 vote (the host's), B 1 (A's), the
+    // host none, B abstained. Question 2 was skipped with A's vote for herself and question 3 was cut short, so neither
+    // counts: 1 question, 2 votes, A and B with 1 each in seat order and no "pozostali", and the host has none.
+    for (const [who, screen, me] of screens) {
+      await test.step(`${who} sees the game's summary`, async () => {
+        await expectGameSummary(screen, me, {
+          counts: [
+            ["Odsłoniętych pytań:", 1],
+            ["Ilość głosów łącznie:", 2],
+          ],
+          top: [
+            [nickA, "1 głos"],
+            [nickB, "1 głos"],
+          ],
+          unvoted: [room.hostNick],
+        });
       });
     }
     await expect(page.getByRole("link", { name: "Nowa gra", exact: true })).toBeVisible();

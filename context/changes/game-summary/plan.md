@@ -371,20 +371,20 @@ ekrany pokoju (pięć miejsc z „Critical Implementation Details”).
 
 #### Automated
 
-- [x] 2.1 `npm test` przechodzi, w tym nowy `tests/unit/summary.test.ts`
-- [x] 2.2 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm run build` przechodzą
-- [x] 2.3 `npx prettier --check` dla zmienionych plików `.md`
+- [x] 2.1 `npm test` przechodzi, w tym nowy `tests/unit/summary.test.ts` — e3029a1
+- [x] 2.2 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm run build` przechodzą — e3029a1
+- [x] 2.3 `npx prettier --check` dla zmienionych plików `.md` — e3029a1
 
 #### Manual
 
-- [x] 2.4 Karol ocenia zrzuty nowych stanów z `/dev/room-states` i `end-host` z `/dev/room-window` (laptop jako całe okno 1:1, telefon w prawdziwej wielkości), w tym brzmienie napisów
+- [x] 2.4 Karol ocenia zrzuty nowych stanów z `/dev/room-states` i `end-host` z `/dev/room-window` (laptop jako całe okno 1:1, telefon w prawdziwej wielkości), w tym brzmienie napisów — e3029a1
 
 ### Phase 3: Test E2E i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 `npx playwright test --list` pokazuje test wieczoru
-- [ ] 3.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
+- [x] 3.1 `npx playwright test --list` pokazuje test wieczoru
+- [x] 3.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
 - [ ] 3.3 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
 - [ ] 3.4 `npx supabase migration list` pokazuje nową migrację na produkcji przed scaleniem
 
