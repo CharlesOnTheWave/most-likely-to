@@ -31,8 +31,8 @@ function nextRequestFetch(page: Page, roomId: string): Promise<Response> {
 }
 
 // The latecomer's form on /j/<code> during a game: the nick, then "Poproś o wejście" ("Poproś jeszcze raz" after a
-// refusal), until the waiting screen shows. The form is a React island that drops what is typed before it hydrates, so
-// fill and submit are retried, as in joinRoom; once the request is sent the page is the waiting screen.
+// refusal), until the waiting screen shows. The form is a React island, so fill and submit are retried, as in joinRoom;
+// once the request is sent the page is the waiting screen.
 async function askToJoin(page: Page, nick: string, button: "Poproś o wejście" | "Poproś jeszcze raz"): Promise<void> {
   await expect(async () => {
     if (await waitingTitle(page).isVisible()) return;

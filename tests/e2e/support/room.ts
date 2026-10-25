@@ -60,8 +60,9 @@ export function newGuestContext(browser: Browser): Promise<BrowserContext> {
   return browser.newContext({ storageState: { cookies: [], origins: [] } });
 }
 
-// The join form is a React island: input typed before it hydrates is dropped. Joining again from the same browser
-// only goes back to the room (src/pages/api/rooms/join.ts), so fill + submit can be retried until the guest is in.
+// The join form is a React island; since S-14 (useNickField) it keeps what was typed before it hydrates, and the
+// retry stays as a safety net. Joining again from the same browser only goes back to the room
+// (src/pages/api/rooms/join.ts), so fill + submit can be retried until the guest is in.
 export async function joinRoom(page: Page, link: string, nick: string): Promise<void> {
   await page.goto(link);
   await expect(async () => {

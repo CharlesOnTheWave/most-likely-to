@@ -4,13 +4,13 @@ import { FormField } from "@/components/auth/FormField";
 import { ServerError } from "@/components/auth/ServerError";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useSubmitPending } from "@/components/auth/useSubmitPending";
+import { useNickField } from "@/components/room/useNickField";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldDescription, FieldError, FieldGroup, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { browserNickStorage, readRememberedNick } from "@/lib/rooms/remembered-nick";
 import { NICK_MAX_LENGTH, nickLength, playerCountLabel } from "@/lib/rooms/shared";
 
 // Only id and name: the page passes them as props, so the question base itself never reaches the browser (lessons.md).
@@ -62,7 +62,9 @@ function getFieldErrors(nick: string, choices: Record<string, CategoryChoice>): 
 }
 
 export default function NewGameForm({ categories, roomToClose, serverError, preview }: Props) {
-  const [nick, setNick] = useState(preview?.nick ?? "");
+  const formRef = useRef<HTMLFormElement>(null);
+  // The host's remembered nick (S-14): creating a game never answers nick_taken, so only a preview goes without it.
+  const [nick, setNick] = useNickField(preview?.nick ?? "", formRef, { enabled: !preview, suggest: true });
   // All categories on, 18+ off: the defaults from the interview with Karol (plan.md).
   const [choices, setChoices] = useState<Record<string, CategoryChoice>>(() =>
     Object.fromEntries(categories.map((category) => [category.id, { on: !preview?.noCategories, adult: false }])),
@@ -70,20 +72,9 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
   const [errors, setErrors] = useState<FieldErrors>(() => (preview?.showErrors ? getFieldErrors(nick, choices) : {}));
   const [confirming, setConfirming] = useState(preview?.confirming ?? false);
   const [pending, setPending] = useSubmitPending(preview?.pending);
-  const formRef = useRef<HTMLFormElement>(null);
   const isPreview = Boolean(preview);
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
   const length = nickLength(nick);
-
-  // The host's remembered nick (S-14), as in JoinForm: after mounting and only into a still empty field. Creating a
-  // game never answers nick_taken, so only a preview goes without it.
-  useEffect(() => {
-    if (isPreview) return;
-    const remembered = readRememberedNick(browserNickStorage());
-    if (remembered === null) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one read of the browser's storage after hydration
-    setNick((current) => (current === "" ? remembered : current));
-  }, [isPreview]);
 
   // The warning replaces "Załóż grę"; focus moves to the button that confirms instead of falling to the page top.
   useEffect(() => {
