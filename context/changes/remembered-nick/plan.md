@@ -350,11 +350,11 @@ Brak zmian w bazie. Przeglądarki bez zapisanego nicku zachowują się jak dziś
 
 #### Automated
 
-- [x] 3.1 `npx playwright test --list` pokazuje nowy test w projekcie `chromium`
-- [x] 3.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
-- [ ] 3.3 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` (w tym nowy test)
+- [x] 3.1 `npx playwright test --list` pokazuje nowy test w projekcie `chromium` — 19a3162
+- [x] 3.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą — 19a3162
+- [x] 3.3 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` (w tym nowy test) — 0bf4320
 
 #### Manual
 
-- [ ] 3.4 Smoke na produkcji zielony po scaleniu (za zgodą)
-- [ ] 3.5 Karol na telefonie i laptopie: nick wpisany w następnej grze i w „Nowej grze”, zmiana nicku przed wejściem działa
+- [x] 3.4 Smoke na produkcji zielony po scaleniu (za zgodą) — 5ecd38b
+- [x] 3.5 Karol na telefonie i laptopie: nick wpisany w następnej grze i w „Nowej grze”, zmiana nicku przed wejściem działa — 5ecd38b
