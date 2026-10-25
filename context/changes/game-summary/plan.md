@@ -383,12 +383,12 @@ ekrany pokoju (pięć miejsc z „Critical Implementation Details”).
 
 #### Automated
 
-- [x] 3.1 `npx playwright test --list` pokazuje test wieczoru
-- [x] 3.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
-- [ ] 3.3 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 3.4 `npx supabase migration list` pokazuje nową migrację na produkcji przed scaleniem
+- [x] 3.1 `npx playwright test --list` pokazuje test wieczoru — 2b9ce76
+- [x] 3.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą — 2b9ce76
+- [x] 3.3 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` — 2b9ce76
+- [x] 3.4 `npx supabase migration list` pokazuje nową migrację na produkcji przed scaleniem — 2b9ce76
 
 #### Manual
 
-- [ ] 3.5 Smoke na produkcji zielony po scaleniu (za zgodą)
-- [ ] 3.6 Karol: krótka gra na telefonie i laptopie z co najmniej dwiema odsłonami, potem „Zakończ grę”; podsumowanie zgadza się z odsłonami na obu ekranach
+- [x] 3.5 Smoke na produkcji zielony po scaleniu (za zgodą) — 2b9ce76
+- [x] 3.6 Karol: krótka gra na telefonie i laptopie z co najmniej dwiema odsłonami, potem „Zakończ grę”; podsumowanie zgadza się z odsłonami na obu ekranach — 2b9ce76
