@@ -4,11 +4,11 @@ import { browserNickStorage, readRememberedNick, rememberNick, type NickStorage 
 
 // S-14 (FR-024): the same browser suggests the nick its player last joined with. The browser keeps only that nick,
 // never a vote or its target (roadmap S-14, Risk; AGENTS.md, Hard Rules), so remembering a nick is exactly one setItem
-// of the nick under the planned key and nothing else (context/changes/remembered-nick/plan.md, Faza 1 #1). A value is
-// written or suggested only when the form would take it: 1 to 20 characters as the database counts them, an emoji as
-// one (invalid_nick, supabase/migrations/20261014101922_first_live_round.sql:355-359). Storage that refuses (blocked
-// site data, a full quota) never throws to the screen, and its log line carries the step and the error's name, never
-// the nick. Every expected value is written out by hand; nothing here is counted with nickLength.
+// of the nick under the planned key and nothing else (context/archive/2026-10-25-remembered-nick/plan.md, Faza 1 #1).
+// A value is written or suggested only when the form would take it: 1 to 20 characters as the database counts them, an
+// emoji as one (invalid_nick, supabase/migrations/20261014101922_first_live_round.sql:355-359). Storage that refuses
+// (blocked site data, a full quota) never throws to the screen, and its log line carries the step and the error's
+// name, never the nick. Every expected value is written out by hand; nothing here is counted with nickLength.
 
 const KEY = "mlt-nick";
 
@@ -137,9 +137,27 @@ describe("remembered nick round trip", () => {
 });
 
 describe("browserNickStorage", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   // The unit tests run in node (vitest.config.ts), with no window, as in a server render.
   it("gives no storage and logs nothing outside the browser", () => {
     expect(browserNickStorage()).toBeNull();
     expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  // A browser in private mode or with blocked site data throws on merely reaching its storage.
+  it("gives no storage when reaching it throws, and logs the step without the nick", () => {
+    vi.stubGlobal("window", {
+      get localStorage(): never {
+        throw Object.assign(new Error(`storage refused ${TWENTY}`), { name: "SecurityError" });
+      },
+    });
+
+    expect(browserNickStorage()).toBeNull();
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    expect(consoleWarn.mock.calls[0]).toContainEqual({ op: "remembered_nick", step: "open", errName: "SecurityError" });
+    expect(logged()).not.toContain(TWENTY);
   });
 });
