@@ -137,9 +137,27 @@ describe("remembered nick round trip", () => {
 });
 
 describe("browserNickStorage", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   // The unit tests run in node (vitest.config.ts), with no window, as in a server render.
   it("gives no storage and logs nothing outside the browser", () => {
     expect(browserNickStorage()).toBeNull();
     expect(consoleWarn).not.toHaveBeenCalled();
+  });
+
+  // A browser in private mode or with blocked site data throws on merely reaching its storage.
+  it("gives no storage when reaching it throws, and logs the step without the nick", () => {
+    vi.stubGlobal("window", {
+      get localStorage(): never {
+        throw Object.assign(new Error(`storage refused ${TWENTY}`), { name: "SecurityError" });
+      },
+    });
+
+    expect(browserNickStorage()).toBeNull();
+    expect(consoleWarn).toHaveBeenCalledTimes(1);
+    expect(consoleWarn.mock.calls[0]).toContainEqual({ op: "remembered_nick", step: "open", errName: "SecurityError" });
+    expect(logged()).not.toContain(TWENTY);
   });
 });
