@@ -338,20 +338,20 @@ Brak zmian w bazie. Przeglądarki bez zapisanego nicku zachowują się jak dziś
 
 #### Automated
 
-- [x] 2.1 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
-- [x] 2.2 Grep pamięci przeglądarki w `src/` daje dokładnie 4 linie: 3 w `useRoomState.ts` i 1 w `remembered-nick.ts`
-- [x] 2.3 `npx prettier --check` dla zmienionych plików `.md` poza `glossary.md`
+- [x] 2.1 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą — 9791d42
+- [x] 2.2 Grep pamięci przeglądarki w `src/` daje dokładnie 4 linie: 3 w `useRoomState.ts` i 1 w `remembered-nick.ts` — 9791d42
+- [x] 2.3 `npx prettier --check` dla zmienionych plików `.md` poza `glossary.md` — 9791d42
 
 #### Manual
 
-- [x] 2.4 Karol ocenia zrzuty stanów `new-remembered` i `join-remembered` z `/dev/room-states`
+- [x] 2.4 Karol ocenia zrzuty stanów `new-remembered` i `join-remembered` z `/dev/room-states` — 9791d42
 
 ### Phase 3: Test E2E i wdrożenie
 
 #### Automated
 
-- [ ] 3.1 `npx playwright test --list` pokazuje nowy test w projekcie `chromium`
-- [ ] 3.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
+- [x] 3.1 `npx playwright test --list` pokazuje nowy test w projekcie `chromium`
+- [x] 3.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
 - [ ] 3.3 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` (w tym nowy test)
 
 #### Manual
