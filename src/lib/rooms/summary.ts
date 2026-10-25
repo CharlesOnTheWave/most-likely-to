@@ -8,13 +8,14 @@ import type { GameSummary, GameTotals, RoundResult } from "@/lib/rooms/shared";
 // At most this many people under "Najwięcej głosów dziś", unless the top tie alone is more.
 const TOP_LIMIT = 3;
 
-// The rule of context/changes/game-summary/plan.md ("Implementation Approach", Karol's decisions of 2026-10-25), from
-// the sums of the game's reveals only (a skipped round and one cut short add nothing, so they are not in totals). top:
-// the players with a sum above 0, grouped by sum, highest first; the highest group always whole, each next one only if
-// the whole group still fits in TOP_LIMIT people, and the first that does not fit ends the list; a group in seat order
-// (the order of totals). unvoted: the players with a sum of 0, in seat order. Only a player with a result in at least
-// one reveal is in totals, so a latecomer let in after the last one is in neither list. votes: all the sums together,
-// "Ilość głosów łącznie" and the whole of the chart (Karol's decisions of 2026-10-25 after the screenshots).
+// The rule of context/archive/2026-10-25-game-summary/plan.md ("Implementation Approach", Karol's decisions of
+// 2026-10-25), from the sums of the game's reveals only (a skipped round and one cut short add nothing, so they are not
+// in totals). top: the players with a sum above 0, grouped by sum, highest first; the highest group always whole, each
+// next one only if the whole group still fits in TOP_LIMIT people, and the first that does not fit ends the list; a
+// group in seat order (the order of totals). unvoted: the players with a sum of 0, in seat order. Only a player with a
+// result in at least one reveal is in totals, so a latecomer let in after the last one is in neither list. votes: all
+// the sums together, "Ilość głosów łącznie" and the whole of the chart (Karol's decisions of 2026-10-25 after the
+// screenshots).
 export function gameSummary({ revealed, totals }: GameTotals): GameSummary {
   const sums = [...new Set(totals.map(({ votes }) => votes).filter((votes) => votes > 0))].sort((a, b) => b - a);
   const top: RoundResult[] = [];

@@ -85,7 +85,7 @@ import { isRecord } from "./rooms";
 //   text } in the order of positions and the number of rows with a question id; null for a guest and with no list. A
 //   voting or revealed round adds question_text: the entry's text when the round has no question_id, else null.
 //
-// The game's summary (S-15, context/changes/game-summary/plan.md, Faza 1), from
+// The game's summary (S-15, context/archive/2026-10-25-game-summary/plan.md, Faza 1), from
 // supabase/migrations/*_game_summary.sql: room_lobby adds game_totals, the same for the host and every player of the
 // room. null in the lobby, while the game is in play and for a closed room with no revealed round; for a closed room
 // with one, { revealed, totals }: the number of its revealed rounds, and every player with a result in at least one of
