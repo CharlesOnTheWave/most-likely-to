@@ -408,7 +408,8 @@ const allForOne: [string, number][] = [
 
           <section id="new-server-error" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">8. Błąd: serwer (po przekierowaniu)</h2>
-            {/* Empty nick: after the redirect the real form is empty too, because the nick never goes in a URL. */}
+            {/* Empty nick: the nick still never goes in a URL, but on the real page a browser that remembers one fills
+                it in after the redirect (S-14, state 79). */}
             <RoomCard titleAs="h2" {...newGameCard}>
               <NewGameForm
                 categories={categories}
@@ -416,6 +417,17 @@ const allForOne: [string, number][] = [
                 preview={{ idPrefix: "new-server-error" }}
                 client:load
               />
+            </RoomCard>
+          </section>
+
+          <section id="new-remembered" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">
+              79. Nowa gra: nick podpowiedziany z poprzedniej gry
+            </h2>
+            {/* The host's nick from their last game in this browser (S-14), as the real form fills it in after loading;
+                a preview never reads the browser's memory, so the nick is set here. */}
+            <RoomCard titleAs="h2" {...newGameCard}>
+              <NewGameForm categories={categories} preview={{ idPrefix: "new-remembered", nick: "Ola" }} client:load />
             </RoomCard>
           </section>
         </div>
@@ -433,7 +445,7 @@ const allForOne: [string, number][] = [
 
           <section id="join-nick-taken" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">10. Błąd: nick zajęty (po przekierowaniu)</h2>
-            {/* Empty nick, as on the real page after the redirect. */}
+            {/* Empty nick, as on the real page after the redirect: no remembered nick after nick_taken (S-14). */}
             <RoomCard titleAs="h2" {...joinCard}>
               <JoinForm
                 linkToken={LINK_TOKEN}
@@ -507,6 +519,15 @@ const allForOne: [string, number][] = [
           <section id="join-request-closed" class="flex w-full max-w-lg flex-col gap-3">
             <h2 class="text-muted-foreground text-sm font-medium">68. Czekający: gra się skończyła</h2>
             <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kuba" preview={{ closed: true }} client:load />
+          </section>
+
+          <section id="join-remembered" class="flex w-full max-w-lg flex-col gap-3">
+            <h2 class="text-muted-foreground text-sm font-medium">80. Dołącz: nick podpowiedziany z poprzedniej gry</h2>
+            {/* The guest's nick from their last game in this browser (S-14), as the real form fills it in after loading;
+                a preview never reads the browser's memory, so the nick is set here. */}
+            <RoomCard titleAs="h2" {...joinCard}>
+              <JoinForm linkToken={LINK_TOKEN} preview={{ idPrefix: "join-remembered", nick: "Bartek" }} client:load />
+            </RoomCard>
           </section>
         </div>
       </div>

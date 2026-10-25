@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DoorOpen, Hand, User } from "lucide-react";
 import { FormField } from "@/components/auth/FormField";
 import { ServerError } from "@/components/auth/ServerError";
@@ -6,6 +6,7 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useSubmitPending } from "@/components/auth/useSubmitPending";
 import { FieldGroup } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
+import { browserNickStorage, readRememberedNick } from "@/lib/rooms/remembered-nick";
 import { NICK_MAX_LENGTH, nickLength } from "@/lib/rooms/shared";
 
 // Starting state for /dev/room-states, which renders several forms on one page; the real page never sets it.
@@ -27,6 +28,9 @@ interface Props {
   variant?: JoinFormVariant;
   // The nick asked with before, after "Odrzuć": the page has it from the latecomer's own request, never from a URL.
   initialNick?: string;
+  // The page lets the form suggest the nick this browser remembers from its last game (S-14); off after nick_taken, so
+  // the field stays empty then.
+  suggestNick?: boolean;
   preview?: Preview;
 }
 
@@ -55,13 +59,32 @@ function getNickError(nick: string): string | undefined {
   return undefined;
 }
 
-export default function JoinForm({ linkToken, serverError, variant = "join", initialNick, preview }: Props) {
+export default function JoinForm({
+  linkToken,
+  serverError,
+  variant = "join",
+  initialNick,
+  suggestNick = false,
+  preview,
+}: Props) {
   const [nick, setNick] = useState(preview?.nick ?? initialNick ?? "");
   const [error, setError] = useState(() => (preview?.showErrors ? getNickError(nick) : undefined));
   const [pending, setPending] = useSubmitPending(preview?.pending);
+  const isPreview = Boolean(preview);
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
   const length = nickLength(nick);
   const texts = TEXTS[variant];
+
+  // The remembered nick (S-14) only after mounting, so the server's render and the first one stay empty and match; it
+  // goes in only while the field is still empty, never over what the player typed meanwhile. Not in a preview, nor
+  // with the nick from the server ("Poproś jeszcze raz").
+  useEffect(() => {
+    if (!suggestNick || isPreview || initialNick) return;
+    const remembered = readRememberedNick(browserNickStorage());
+    if (remembered === null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one read of the browser's storage after hydration
+    setNick((current) => (current === "" ? remembered : current));
+  }, [suggestNick, isPreview, initialNick]);
 
   function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     const next = getNickError(nick);

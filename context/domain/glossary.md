@@ -41,6 +41,7 @@ Use these words in code, tests, commits and conversations. When a name in the co
 | spóźniony | ktoś, kto prosi o wejście do trwającej gry | `join_requests` (jego prośba); po wpuszczeniu zwykły gracz | — |
 | prośba o wejście | spóźniony prosi o wejście do trwającej gry, host wpuszcza („Wpuść”) albo odrzuca („Odrzuć”); po odrzuceniu można poprosić jeszcze raz | `join_requests`, `request_join`, `admit_latecomer`, `reject_latecomer`; `requests` w stanie pokoju (tylko host) | „dołączenie” (to wejście z linku w poczekalni, bez hosta) |
 | nick | nazwa gracza w pokoju; unikalna po normalizacji, wielkość liter się liczy | `nick`, `nick_key` | „login”, „imię” |
+| zapamiętany nick | ostatni nick przyjęty w tej przeglądarce, podpowiadany w formularzu wejścia i „Nowej grze”; tylko nick, nigdy głos | `src/lib/rooms/remembered-nick.ts`, `mlt-nick` | „konto”, „login” |
 | link do pokoju | zaproszenie `/j/<kod>`, osobne od adresu pokoju | `link_token`, `/j/[token]` | „token” bez dopowiedzenia (token gościa to coś innego) |
 | miejsce | kolejność dołączenia: host 1, goście dalej | `seat` | „czas wejścia” |
 | token gościa | losowy sekret w ciasteczku, którym gość wraca do pokoju; w bazie tylko hash | `newPlayerToken`, `mlt_player_<roomId>`, `token_hash` | „sesja” |

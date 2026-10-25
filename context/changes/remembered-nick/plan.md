@@ -327,24 +327,24 @@ Brak zmian w bazie. Przeglądarki bez zapisanego nicku zachowują się jak dziś
 
 #### Automated
 
-- [x] 1.1 `npx vitest run --project unit tests/unit/remembered-nick.test.ts` zielony
-- [x] 1.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
+- [x] 1.1 `npx vitest run --project unit tests/unit/remembered-nick.test.ts` zielony — 29c1b87
+- [x] 1.2 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą — 29c1b87
 
 #### Manual
 
-- [x] 1.3 Próbny alarm: drugi klucz albo wartość inna niż nick daje czerwony przypadek „dokładnie jedno setItem”; po cofnięciu `git diff -- src` pusty
+- [x] 1.3 Próbny alarm: drugi klucz albo wartość inna niż nick daje czerwony przypadek „dokładnie jedno setItem”; po cofnięciu `git diff -- src` pusty — 29c1b87
 
 ### Phase 2: Ekrany, podglądy i dokumenty
 
 #### Automated
 
-- [ ] 2.1 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
-- [ ] 2.2 Grep pamięci przeglądarki w `src/` daje dokładnie 4 linie: 3 w `useRoomState.ts` i 1 w `remembered-nick.ts`
-- [ ] 2.3 `npx prettier --check` dla zmienionych plików `.md` poza `glossary.md`
+- [x] 2.1 `npm test`, `npm run lint`, `npx astro check`, `npm run build` przechodzą
+- [x] 2.2 Grep pamięci przeglądarki w `src/` daje dokładnie 4 linie: 3 w `useRoomState.ts` i 1 w `remembered-nick.ts`
+- [x] 2.3 `npx prettier --check` dla zmienionych plików `.md` poza `glossary.md`
 
 #### Manual
 
-- [ ] 2.4 Karol ocenia zrzuty stanów `new-remembered` i `join-remembered` z `/dev/room-states`
+- [x] 2.4 Karol ocenia zrzuty stanów `new-remembered` i `join-remembered` z `/dev/room-states`
 
 ### Phase 3: Test E2E i wdrożenie
 

@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FieldDescription, FieldError, FieldGroup, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { browserNickStorage, readRememberedNick } from "@/lib/rooms/remembered-nick";
 import { NICK_MAX_LENGTH, nickLength, playerCountLabel } from "@/lib/rooms/shared";
 
 // Only id and name: the page passes them as props, so the question base itself never reaches the browser (lessons.md).
@@ -73,6 +74,16 @@ export default function NewGameForm({ categories, roomToClose, serverError, prev
   const isPreview = Boolean(preview);
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
   const length = nickLength(nick);
+
+  // The host's remembered nick (S-14), as in JoinForm: after mounting and only into a still empty field. Creating a
+  // game never answers nick_taken, so only a preview goes without it.
+  useEffect(() => {
+    if (isPreview) return;
+    const remembered = readRememberedNick(browserNickStorage());
+    if (remembered === null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one read of the browser's storage after hydration
+    setNick((current) => (current === "" ? remembered : current));
+  }, [isPreview]);
 
   // The warning replaces "Załóż grę"; focus moves to the button that confirms instead of falling to the page top.
   useEffect(() => {
