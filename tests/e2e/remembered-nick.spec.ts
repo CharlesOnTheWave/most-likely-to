@@ -1,7 +1,8 @@
 // risk: test-plan.md #6 for the remembered nick (S-14, PRD FR-024): the browser a player last got into a game with
 // suggests that nick in the next game's form, a guest's on the next link and the host's in "Nowa gra"; after "nick
-// zajęty" the field stays empty, so the taken nick is not offered again (the owner's decision in the change's plan).
-// The room's screen remembers the nick, so only a nick the database took. Laptop window only (project chromium).
+// zajęty" the field stays empty, so the taken nick is not offered again (the owner's decision in the change's plan);
+// a nick typed before the form runs in the browser stays and is the one posted. The room's screen remembers the nick,
+// so only a nick the database took. Laptop window only (project chromium).
 // seed: tests/e2e/seed.spec.ts
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { joinRoom, newGuestContext, nextListFetch, openRoom, uniqueNick } from "./support/room";
@@ -12,7 +13,7 @@ function nickField(page: Page): Locator {
 }
 
 test.describe("risk #6 (remembered nick) — the next game suggests the nick this browser last got in with", () => {
-  test("a guest and the host find their last nick in the next game's form, and after nick taken the field is empty", async ({
+  test("a guest and the host find their last nick in the next game's form, after nick taken the field is empty, and a nick typed early stays", async ({
     page,
     browser,
     baseURL,
@@ -68,6 +69,33 @@ test.describe("risk #6 (remembered nick) — the next game suggests the nick thi
     // scripts to have loaded and run (no request for 500 ms).
     await pageA.waitForLoadState("networkidle");
     await expect(nickField(pageA)).toHaveValue("");
+
+    // Setup: A opens room 2's link again, where the form may suggest her remembered nick, but her form's script is held
+    // back until she has typed a new nick, as on a slow phone. Routing also turns off the browser's cache, so the
+    // script is fetched again. (impl-review F1 of remembered-nick)
+    const newNickA = uniqueNick("Nowa");
+    let releaseForm = (): void => undefined;
+    const typed = new Promise<void>((resolve) => {
+      releaseForm = resolve;
+    });
+    await pageA.route(/\/_astro\/JoinForm\.[\w-]+\.js$/, async (route) => {
+      await typed;
+      await route.continue();
+    });
+    await pageA.goto(room2.link);
+
+    // Action: A types her new nick before the form runs, then the form's script arrives.
+    await nickField(pageA).fill(newNickA);
+    releaseForm();
+
+    // Assertion: once the form runs, its counter counts the typed nick (the page arrived with 0/20, so this shows the
+    // form has run), and the field still has it, not the remembered nick.
+    await expect(pageA.getByText(`${String(newNickA.length)}/20`, { exact: true })).toBeVisible();
+    await expect(nickField(pageA)).toHaveValue(newNickA);
+
+    // Assertion: "Dołącz" takes her in under the nick she typed.
+    await pageA.getByRole("button", { name: "Dołącz", exact: true }).click();
+    await expect(pageA.getByRole("heading", { name: `Jesteś w grze jako ${newNickA}` })).toBeVisible();
 
     // Cleanup: both guests' browsers close. Both rooms and their players stay in the database, because nothing can
     // delete them yet (S-13); the next test's room closes room 2. CI runs on a throwaway local Supabase; unique nicks
