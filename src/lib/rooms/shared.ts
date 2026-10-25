@@ -78,10 +78,10 @@ export interface GameQuestionList {
   base_count: number;
 }
 
-// The sums of a closed game's reveals as room_lobby names them (context/changes/game-summary/plan.md, Faza 1 #1): the
-// number of its revealed rounds (at least 1), and for every player with a result in at least one of them, in seat
-// order, the sum of those results, zeros included. Counts per nick the reveals already showed the whole room, never a
-// voter; a skipped round and one cut short by the end of the game add nothing.
+// The sums of a closed game's reveals as room_lobby names them (context/archive/2026-10-25-game-summary/plan.md,
+// Faza 1 #1): the number of its revealed rounds (at least 1), and for every player with a result in at least one of
+// them, in seat order, the sum of those results, zeros included. Counts per nick the reveals already showed the whole
+// room, never a voter; a skipped round and one cut short by the end of the game add nothing.
 export interface GameTotals {
   revealed: number;
   totals: RoundResult[];

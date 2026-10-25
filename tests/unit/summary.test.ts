@@ -3,10 +3,11 @@ import type { GameTotals } from "@/lib/rooms/shared";
 import { gameSummary, plural } from "@/lib/rooms/summary";
 
 // The summary on the end of the evening (S-15, PRD FR-022), made from the sums of a closed game's reveals, and the
-// Polish plural of its counts. Oracle: Karol's decisions of 2026-10-25 in context/changes/game-summary/plan.md
-// ("Implementation Approach": the examples 5/4/2/2, 5/3/3, 5/4/3/3, 4/4/4/4 and everyone at 0, at most 3 people unless
-// the top tie alone is more, zeros in seat order). Every expected list is written out by hand, never computed. The sums
-// come in seat order, as room_lobby gives them, and on purpose not sorted by votes.
+// Polish plural of its counts. Oracle: Karol's decisions of 2026-10-25 in
+// context/archive/2026-10-25-game-summary/plan.md ("Implementation Approach": the examples 5/4/2/2, 5/3/3, 5/4/3/3,
+// 4/4/4/4 and everyone at 0, at most 3 people unless the top tie alone is more, zeros in seat order). Every expected
+// list is written out by hand, never computed. The sums come in seat order, as room_lobby gives them, and on purpose
+// not sorted by votes.
 
 function sums(revealed: number, ...entries: [string, number][]): GameTotals {
   return { revealed, totals: entries.map(([nick, votes]) => ({ nick, votes })) };

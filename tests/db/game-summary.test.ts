@@ -29,12 +29,13 @@ import {
 // The game's summary (S-15) in the room's state, through the roles' own doors: RPC with the publishable key, as the
 // room's guests, as a latecomer let in mid-game and as the signed-in host, past the Worker. Oracle: PRD FR-022 (the end
 // of the game may show highlights of the whole game, such as the most votes tonight or nobody voted for X, with no
-// points and no ranking across evenings) and Karol's decisions written in context/changes/game-summary/plan.md: only
-// revealed rounds count, so a skipped round and a round ended without a reveal give nobody votes and are not counted
-// among the revealed questions; a player is in the sums once they had a result in a revealed round, zeros included, so
-// a latecomer who could vote in no revealed round is not; the sums appear only once the room is closed, the same whichever way
-// it closed ("Zakończ grę" or "Nowa gra"), and the same for the host and every guest. Each round's votes and counts and
-// every sum expected here are written out by hand from the scenario, never computed.
+// points and no ranking across evenings) and Karol's decisions written in
+// context/archive/2026-10-25-game-summary/plan.md: only revealed rounds count, so a skipped round and a round ended
+// without a reveal give nobody votes and are not counted among the revealed questions; a player is in the sums once
+// they had a result in a revealed round, zeros included, so a latecomer who could vote in no revealed round is not; the
+// sums appear only once the room is closed, the same whichever way it closed ("Zakończ grę" or "Nowa gra"), and the
+// same for the host and every guest. Each round's votes and counts and every sum expected here are written out by hand
+// from the scenario, never computed.
 //
 // room_lobby's game_totals comes from supabase/migrations/*_game_summary.sql. Without it no answer here has the key, so
 // every test that reads it is red, a null one included (toMatchObject fails on a missing key).

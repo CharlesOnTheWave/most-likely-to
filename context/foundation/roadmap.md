@@ -300,7 +300,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:**
   - Jakie wyróżnienia i ile (PRD podaje dwa przykłady)? Na start proste, liczone z samych odsłon tej gry. — Owner: Karol. Block: no.
-  - Czy wyniki odsłon całej gry są jeszcze dostępne, gdy gra się kończy (urna znika przy każdej odsłonie)? Rozstrzygnięte 2026-10-25: tak, liczby na osobę z każdej odsłony zostają w bazie także po końcu gry, ale stan zamkniętego pokoju ich dziś nie oddaje (`context/changes/game-summary/research.md`). — Owner: Karol. Block: no.
+  - Czy wyniki odsłon całej gry są jeszcze dostępne, gdy gra się kończy (urna znika przy każdej odsłonie)? Rozstrzygnięte 2026-10-25: tak, liczby na osobę z każdej odsłony zostają w bazie także po końcu gry, ale stan zamkniętego pokoju ich dziś nie oddaje (`context/archive/2026-10-25-game-summary/research.md`). — Owner: Karol. Block: no.
 - **Risk:** Podsumowanie łatwo zamienić w tabelę wyników, a punkty i ranking są poza zakresem (PRD §Non-Goals); liczy się wyłącznie z wyników odsłon, które ekipa już widziała (pominięte pytania i wstrzymania się nie dają nikomu głosów), nigdy z par „kto na kogo”.
 - **Status:** done
 
