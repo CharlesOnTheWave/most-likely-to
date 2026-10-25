@@ -9,7 +9,8 @@ import { parseJoinRequestState, parseLobbyState, parseRoomView, questionLength }
 // context/archive/2026-10-15-full-game-evening/plan.md, Faza 1 #2 and Faza 3 #2;
 // context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1 #1: requests and round.eligible;
 // context/archive/2026-10-24-question-list-review/plan.md, Faza 1 #1 and Faza 2 #1: question_list, round.question_text
-// and the view's questions; tests/db/support/rounds.ts, the exact key sets), never from the parser.
+// and the view's questions; context/changes/game-summary/plan.md, Faza 1 #1 and Faza 2 #1: game_totals and the view's
+// summary; tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 const PLAYERS = [
   { nick: "Ola", host: true },
@@ -18,7 +19,8 @@ const PLAYERS = [
 ];
 
 // requests: the latecomers waiting, for the host only; a guest always gets []. question_list: the game's question
-// list, for the host of a room with one only; null for a guest and before the host opens it.
+// list, for the host of a room with one only; null for a guest and before the host opens it. game_totals: the sums of
+// a closed game's reveals, for everyone; null in every other status and for a closed room with no reveal.
 const LOBBY = {
   status: "lobby",
   role: "host",
@@ -27,6 +29,7 @@ const LOBBY = {
   round: null,
   requests: [],
   question_list: null,
+  game_totals: null,
 };
 const CLOSED = {
   status: "closed",
@@ -36,6 +39,7 @@ const CLOSED = {
   round: null,
   requests: [],
   question_list: null,
+  game_totals: null,
 };
 // question_text: null for a question of the base, which the round names by its id.
 const VOTING_ROUND = {
@@ -56,6 +60,7 @@ const VOTING = {
   round: VOTING_ROUND,
   requests: [],
   question_list: null,
+  game_totals: null,
 };
 // S-08: Kuba was let in after the round opened, so he is among the players but not among those who may vote in it;
 // the host sees two latecomers still waiting, in the order of asking.
@@ -68,6 +73,7 @@ const HOST_WITH_REQUESTS = {
   round: LATECOMER_ROUND,
   requests: ["Zosia", "Igor"],
   question_list: null,
+  game_totals: null,
 };
 // Every eligible player in seat order, zeros included; one abstention among four ballots.
 const REVEALED_ROUND = {
@@ -91,6 +97,7 @@ const REVEALED = {
   round: REVEALED_ROUND,
   requests: [],
   question_list: null,
+  game_totals: null,
 };
 // S-03: the host skipped the last question of the pool, so the skipped round stays the latest one. Its votes are gone:
 // only its number and phase.
@@ -103,6 +110,7 @@ const SKIPPED = {
   round: SKIPPED_ROUND,
   requests: [],
   question_list: null,
+  game_totals: null,
 };
 // The round after a skip says so to every screen, including one that slept through the skip.
 const AFTER_SKIP_ROUND = { ...VOTING_ROUND, number: 3, after_skip: true };
@@ -131,6 +139,23 @@ const OWN_ROUND = { ...VOTING_ROUND, question_id: null, question_text: REWORDED 
 const OWN = { ...VOTING, round: OWN_ROUND };
 const OWN_REVEALED_ROUND = { ...REVEALED_ROUND, question_id: null, question_text: OWN_QUESTION };
 const OWN_REVEALED = { ...REVEALED, round: OWN_REVEALED_ROUND };
+
+// S-15: a game of two reveals, closed. Ola and Bartek could vote and be voted for in both; between them Ola got 2 votes
+// and Bartek none (2 abstentions). Kuba was let in after the last reveal, so he has no result anywhere and no entry.
+const GAME_TOTALS = {
+  revealed: 2,
+  totals: [
+    { nick: "Ola", votes: 2 },
+    { nick: "Bartek", votes: 0 },
+  ],
+};
+const CLOSED_AFTER_GAME = { ...CLOSED, game_totals: GAME_TOTALS };
+// The same for the host, who also sees it.
+const CLOSED_AFTER_GAME_HOST = { ...CLOSED_AFTER_GAME, role: "host", me: "Ola" };
+
+function withTotals(totals: unknown, state: Record<string, unknown> = CLOSED): Record<string, unknown> {
+  return { ...state, game_totals: totals };
+}
 
 function without(record: Record<string, unknown>, key: string): Record<string, unknown> {
   return Object.fromEntries(Object.entries(record).filter(([name]) => name !== key));
@@ -163,6 +188,12 @@ describe("parseLobbyState", () => {
     { why: "a list whose every entry is removed", state: withList({ entries: [], base_count: 15 }) },
     { why: "a round of an own or reworded question, open for votes", state: OWN },
     { why: "a revealed round of an own question", state: OWN_REVEALED },
+    { why: "a closed room after a game with reveals, for a guest", state: CLOSED_AFTER_GAME },
+    { why: "a closed room after a game with reveals, for the host", state: CLOSED_AFTER_GAME_HOST },
+    {
+      why: "a closed room whose every reveal had no votes",
+      state: withTotals({ revealed: 1, totals: [{ nick: "Ola", votes: 0 }] }),
+    },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -179,7 +210,7 @@ describe("parseLobbyState", () => {
     expect(parseLobbyState({ ...LOBBY, status })).toEqual({ ok: false, field: "status" });
   });
 
-  it.each(["status", "role", "me", "players", "round", "requests", "question_list"])(
+  it.each(["status", "role", "me", "players", "round", "requests", "question_list", "game_totals"])(
     "names the missing field %s",
     (field) => {
       expect(parseLobbyState(without(LOBBY, field))).toEqual({ ok: false, field });
@@ -202,6 +233,46 @@ describe("parseLobbyState", () => {
       expect(parseLobbyState(without(state, "question_list"))).toEqual({ ok: false, field: "question_list" });
     },
   );
+
+  // Likewise a database without the sums of the reveals (before *_game_summary.sql): not read as "no reveal".
+  it.each([{ state: REVEALED }, { state: SKIPPED }, { state: CLOSED }, { state: CLOSED_AFTER_GAME }])(
+    "names game_totals when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "game_totals"))).toEqual({ ok: false, field: "game_totals" });
+    },
+  );
+
+  // The sums come only once the room is closed: in the lobby and while the game is in play, after a reveal too, the
+  // database has none to give.
+  it.each([
+    { why: "the lobby", state: withTotals(GAME_TOTALS, LOBBY) },
+    { why: "a round open for votes", state: withTotals(GAME_TOTALS, VOTING) },
+    { why: "a revealed round", state: withTotals(GAME_TOTALS, REVEALED) },
+    { why: "a skipped round", state: withTotals(GAME_TOTALS, SKIPPED) },
+  ])("names game_totals for sums in $why", ({ state }) => {
+    expect(parseLobbyState(state)).toEqual({ ok: false, field: "game_totals" });
+  });
+
+  it.each([
+    { field: "game_totals", totals: [] },
+    { field: "game_totals", totals: "Ola" },
+    { field: "game_totals", totals: 2 },
+    // A game with no reveal has no sums at all (null), never sums of 0 questions.
+    { field: "game_totals.revealed", totals: { ...GAME_TOTALS, revealed: 0 } },
+    { field: "game_totals.revealed", totals: { ...GAME_TOTALS, revealed: 1.5 } },
+    { field: "game_totals.revealed", totals: { ...GAME_TOTALS, revealed: "2" } },
+    { field: "game_totals.revealed", totals: { totals: GAME_TOTALS.totals } },
+    { field: "game_totals.totals", totals: { revealed: 2 } },
+    { field: "game_totals.totals", totals: { revealed: 2, totals: {} } },
+    { field: "game_totals.totals", totals: { revealed: 2, totals: [null] } },
+    { field: "game_totals.totals.nick", totals: { revealed: 2, totals: [{ nick: 1, votes: 2 }] } },
+    { field: "game_totals.totals.nick", totals: { revealed: 2, totals: [{ votes: 2 }] } },
+    { field: "game_totals.totals.votes", totals: { revealed: 2, totals: [{ nick: "Ola", votes: -1 }] } },
+    { field: "game_totals.totals.votes", totals: { revealed: 2, totals: [{ nick: "Ola", votes: "2" }] } },
+    { field: "game_totals.totals.votes", totals: { revealed: 2, totals: [{ nick: "Ola" }] } },
+  ])("names $field for wrong sums", ({ field, totals }) => {
+    expect(parseLobbyState(withTotals(totals))).toEqual({ ok: false, field });
+  });
 
   it.each([
     { field: "role", state: { ...LOBBY, role: "admin" } },
@@ -346,17 +417,35 @@ describe("parseLobbyState", () => {
       },
     });
   });
+
+  // Anonymity (test-plan #1): of the sums, only the number of reveals and a count per nick reach the Worker, even if
+  // the database sent more (who voted for whom, a round's own counts, a player's id).
+  it("passes on nothing of the sums outside the contract", () => {
+    const leaky = withTotals({
+      ...GAME_TOTALS,
+      rounds: [{ number: 1, results: GAME_TOTALS.totals, abstained: 2 }],
+      totals: [
+        { nick: "Ola", votes: 2, voters: ["Bartek"], player_id: "planted" },
+        { nick: "Bartek", votes: 0, voters: [] },
+      ],
+    });
+
+    expect(parseLobbyState(leaky)).toEqual({ ok: true, value: CLOSED_AFTER_GAME });
+  });
 });
 
-// The Worker's view keeps question_list to itself and adds questionsLeft and questions. questionsLeft: for the host
-// once the latest round is revealed or skipped, whether the game has a question not played yet; null in every other
-// state and for a guest. questions: the game's question list for its host in the lobby, as text; null otherwise.
+// The Worker's view keeps question_list and game_totals to itself and adds questionsLeft, questions and summary.
+// questionsLeft: for the host once the latest round is revealed or skipped, whether the game has a question not played
+// yet; null in every other state and for a guest. questions: the game's question list for its host in the lobby, as
+// text; null otherwise. summary: for everyone in a closed room whose game had a reveal, what the end of the evening
+// shows of the sums; null otherwise.
 function view(
   state: Record<string, unknown>,
   questionsLeft: boolean | null = null,
   questions: unknown[] | null = null,
+  summary: Record<string, unknown> | null = null,
 ): Record<string, unknown> {
-  return { ...without(state, "question_list"), questionsLeft, questions };
+  return { ...without(without(state, "question_list"), "game_totals"), questionsLeft, questions, summary };
 }
 
 // QUESTION_LIST as the host's screen gets it: the host's own text of an entry, else its text from the base.
@@ -366,6 +455,15 @@ const QUESTIONS = [
   { position: 16, text: OWN_QUESTION, own: true },
 ];
 
+// GAME_TOTALS as the end of the evening gets it, written by hand: 2 questions, Ola with the most votes, Bartek with
+// none; Kuba, with no entry, in neither list.
+const SUMMARY = { revealed: 2, votes: 2, top: [{ nick: "Ola", votes: 2 }], unvoted: ["Bartek"] };
+
+// The closed room's view with the summary given.
+function withSummary(summary: unknown, state: Record<string, unknown> = CLOSED_AFTER_GAME): Record<string, unknown> {
+  return { ...view(state), summary };
+}
+
 describe("parseRoomView", () => {
   it.each([
     { why: "the lobby", state: view(LOBBY) },
@@ -373,6 +471,30 @@ describe("parseRoomView", () => {
     { why: "a skipped round, for a guest", state: view(SKIPPED) },
     { why: "a skipped round, for the host with no question left", state: view({ ...SKIPPED, role: "host" }, false) },
   ])("accepts $why without a question", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: true, value: state });
+  });
+
+  it.each([
+    { why: "with reveals, for a guest", state: view(CLOSED_AFTER_GAME, null, null, SUMMARY) },
+    { why: "with reveals, for the host", state: view(CLOSED_AFTER_GAME_HOST, null, null, SUMMARY) },
+    // Everyone abstained in every reveal: nobody has the most votes.
+    {
+      why: "where nobody got a vote",
+      state: withSummary({ revealed: 1, votes: 0, top: [], unvoted: ["Ola", "Bartek"] }),
+    },
+    {
+      why: "where everyone got a vote",
+      state: withSummary({
+        revealed: 3,
+        votes: 3,
+        top: [
+          { nick: "Bartek", votes: 2 },
+          { nick: "Ola", votes: 1 },
+        ],
+        unvoted: [],
+      }),
+    },
+  ])("accepts the end of a game $why with its summary", ({ state }) => {
     expect(parseRoomView(state)).toEqual({ ok: true, value: state });
   });
 
@@ -414,7 +536,7 @@ describe("parseRoomView", () => {
   });
 
   it.each([
-    { why: "missing", state: { ...without(LOBBY, "question_list"), questions: null } },
+    { why: "missing", state: without(view(LOBBY), "questionsLeft") },
     { why: "not true, false or null", state: { ...view(LOBBY), questionsLeft: "yes" } },
     { why: "a number", state: { ...view(LOBBY), questionsLeft: 3 } },
   ])("names questionsLeft when it is $why", ({ state }) => {
@@ -449,6 +571,47 @@ describe("parseRoomView", () => {
     expect(parseRoomView(view(LOBBY_WITH_LIST, null, [entry]))).toEqual({ ok: false, field });
   });
 
+  // The summary is always there, null included, and comes only once the room is closed: a Worker deployed before it is
+  // not read as "no reveal", and a game in play shows no sums.
+  it.each([
+    { why: "missing from a closed room", state: without(view(CLOSED), "summary") },
+    { why: "missing from a game in play", state: without(view(SKIPPED), "summary") },
+    { why: "not an object", state: withSummary([]) },
+    { why: "a text", state: withSummary("Ola") },
+    { why: "in the lobby", state: withSummary(SUMMARY, LOBBY) },
+    {
+      why: "in a game in play, after a reveal",
+      state: { ...view(withRound(REVEALED, { ...REVEALED_ROUND, question: QUESTION }), true), summary: SUMMARY },
+    },
+    { why: "in a game in play, after a skip", state: withSummary(SUMMARY, SKIPPED) },
+  ])("names summary when it is $why", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: false, field: "summary" });
+  });
+
+  it.each([
+    { field: "summary.revealed", summary: { ...SUMMARY, revealed: 0 } },
+    { field: "summary.revealed", summary: { ...SUMMARY, revealed: "2" } },
+    { field: "summary.revealed", summary: { top: SUMMARY.top, unvoted: SUMMARY.unvoted } },
+    { field: "summary.top", summary: { ...SUMMARY, top: undefined } },
+    { field: "summary.top", summary: { ...SUMMARY, top: { Ola: 2 } } },
+    { field: "summary.top", summary: { ...SUMMARY, top: [null] } },
+    { field: "summary.top.nick", summary: { ...SUMMARY, top: [{ nick: 1, votes: 2 }] } },
+    { field: "summary.top.votes", summary: { ...SUMMARY, top: [{ nick: "Ola", votes: -1 }] } },
+    { field: "summary.top.votes", summary: { ...SUMMARY, top: [{ nick: "Ola", votes: "2" }] } },
+    { field: "summary.votes", summary: { revealed: 2, top: SUMMARY.top, unvoted: SUMMARY.unvoted } },
+    { field: "summary.votes", summary: { ...SUMMARY, votes: -1 } },
+    { field: "summary.votes", summary: { ...SUMMARY, votes: "2" } },
+    // Fewer votes in all than the top got alone: the chart's rest would be below 0.
+    { field: "summary.votes", summary: { ...SUMMARY, votes: 1 } },
+    { field: "summary.unvoted", summary: { ...SUMMARY, unvoted: undefined } },
+    { field: "summary.unvoted", summary: { ...SUMMARY, unvoted: "Bartek" } },
+    { field: "summary.unvoted", summary: { ...SUMMARY, unvoted: [1] } },
+    // A nick only: an entry with a count next to it is not ours.
+    { field: "summary.unvoted", summary: { ...SUMMARY, unvoted: [{ nick: "Bartek", votes: 0 }] } },
+  ])("names $field for a wrong summary", ({ field, summary }) => {
+    expect(parseRoomView(withSummary(summary))).toEqual({ ok: false, field });
+  });
+
   // The browser never gets question_list itself, nor anything of a question beyond its position, text and whether it
   // is the host's own.
   it("passes on no question_list and no key outside the contract", () => {
@@ -458,6 +621,21 @@ describe("parseRoomView", () => {
     };
 
     expect(parseRoomView(leaky)).toEqual({ ok: true, value: view(LOBBY_WITH_LIST, null, [QUESTIONS[1]]) });
+  });
+
+  // Anonymity (test-plan #1): the browser never gets game_totals itself, nor anything of the summary beyond the
+  // number of questions, the top's nicks and counts and the nicks with none.
+  it("passes on no game_totals and nothing of the summary outside the contract", () => {
+    const leaky = {
+      ...withSummary({
+        ...SUMMARY,
+        totals: GAME_TOTALS.totals,
+        top: [{ nick: "Ola", votes: 2, voters: ["Bartek"] }],
+      }),
+      game_totals: GAME_TOTALS,
+    };
+
+    expect(parseRoomView(leaky)).toEqual({ ok: true, value: view(CLOSED_AFTER_GAME, null, null, SUMMARY) });
   });
 
   it("names the field the lobby parser names", () => {

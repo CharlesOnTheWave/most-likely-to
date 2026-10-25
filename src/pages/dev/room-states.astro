@@ -14,6 +14,7 @@ import RoomScreen from "@/components/room/RoomScreen";
 import { CATEGORIES } from "@/data/questions";
 import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { ListQuestion, LobbyPlayer, RoomView } from "@/lib/rooms/shared";
+import { gameSummary } from "@/lib/rooms/summary";
 
 // Every state of the room screens side by side: the visual gate of /10x-ui. Sample data only: no database queries,
 // no Realtime, no polling, no reports; the round's buttons only answer "ok" on this page (RoomScreen's preview). Local
@@ -142,7 +143,17 @@ const TOO_LONG_QUESTION =
 
 // questions: the host's game's question list in the lobby (S-06); null until "Przejrzyj pytania", and for a guest.
 function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
-  return { status: "lobby", role, me, players, round: null, requests: [], questionsLeft: null, questions: null };
+  return {
+    status: "lobby",
+    role,
+    me,
+    players,
+    round: null,
+    requests: [],
+    questionsLeft: null,
+    questions: null,
+    summary: null,
+  };
 }
 
 // The host's lobby once "Przejrzyj pytania" drew the game's question list; [] once every question was removed.
@@ -180,6 +191,7 @@ function voting(
     requests: [],
     questionsLeft: null,
     questions: null,
+    summary: null,
   };
 }
 
@@ -213,6 +225,7 @@ function revealed(
     // Only the host learns whether the game has a question left.
     questionsLeft: role === "host" ? questionsLeft : null,
     questions: null,
+    summary: null,
   };
 }
 
@@ -227,12 +240,37 @@ function skipped(role: "host" | "guest", me: string, players: LobbyPlayer[]): Ro
     requests: [],
     questionsLeft: role === "host" ? false : null,
     questions: null,
+    summary: null,
   };
 }
 
-// The end of the evening: the room is closed, no round, no counts.
+// The end of the evening: the room is closed, no round, no counts. With no revealed question (closed from the lobby,
+// every question skipped, or ended during the first one) there is no summary either.
 function closed(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
-  return { status: "closed", role, me, players, round: null, requests: [], questionsLeft: null, questions: null };
+  return {
+    status: "closed",
+    role,
+    me,
+    players,
+    round: null,
+    requests: [],
+    questionsLeft: null,
+    questions: null,
+    summary: null,
+  };
+}
+
+// The end of a game with reveals (S-15): sums as room_lobby would give them (game_totals: [nick, votes] in seat order,
+// every player with a result in at least one reveal), the summary as the Worker makes it of them (gameSummary).
+function ended(
+  role: "host" | "guest",
+  me: string,
+  players: LobbyPlayer[],
+  revealed: number,
+  sums: [string, number][],
+): RoomView {
+  const totals = sums.map(([nick, votes]) => ({ nick, votes }));
+  return { ...closed(role, me, players), summary: gameSummary({ revealed, totals }) };
 }
 
 // The host's screen with latecomers waiting to be let in (S-08), in the order of asking; only the host gets them.
@@ -277,6 +315,37 @@ const allForOne: [string, number][] = [
   ["Zosia", 0],
   ["Kuba", 0],
 ];
+
+// The sums of a game's reveals (S-15), in seat order. Three sums of one person each fill the top; two zeros.
+const summarySums: [string, number][] = [
+  ["Ola", 3],
+  ["Bartek", 5],
+  ["Kasia 🎉", 2],
+  ["Zosia", 0],
+  ["Kuba", 0],
+];
+// Four people at the top with the same sum: all four, past the limit of 3.
+const topTieSums: [string, number][] = [
+  ["Ola", 2],
+  ["Bartek", 2],
+  ["Kasia 🎉", 2],
+  ["Zosia", 2],
+  ["Kuba", 0],
+];
+// Everyone got a vote; the three at 1 would make five at the top, so the list ends after two.
+const noZeroSums: [string, number][] = [
+  ["Ola", 4],
+  ["Bartek", 1],
+  ["Kasia 🎉", 3],
+  ["Zosia", 1],
+  ["Kuba", 1],
+];
+// Everyone abstained in every reveal: nobody has the most votes, and everyone is among the zeros.
+const abstainedSums: [string, number][] = roundPlayers.map(({ nick }) => [nick, 0]);
+// 20 players after 12 questions: six at the top with 3 each (four nicks of 20 characters among them), six with 1 or 2,
+// eight zeros (one of them the widest nick).
+const bigRoomCounts = [3, 3, 0, 3, 1, 0, 3, 2, 0, 0, 3, 1, 0, 3, 0, 0, 2, 1, 0, 2];
+const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [nick, bigRoomCounts[index]]);
 ---
 
 {isDev && (
@@ -619,6 +688,7 @@ const allForOne: [string, number][] = [
                 requests: [],
                 questionsLeft: null,
                 questions: null,
+                summary: null,
               }}
               realtime={null}
               preview={{ idPrefix: "lobby-closed-host" }}
@@ -639,6 +709,7 @@ const allForOne: [string, number][] = [
                 requests: [],
                 questionsLeft: null,
                 questions: null,
+                summary: null,
               }}
               realtime={null}
               preview={{ idPrefix: "lobby-closed-guest" }}
@@ -1299,7 +1370,7 @@ const allForOne: [string, number][] = [
           </section>
 
           <section id="evening-end-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">59. Koniec wieczoru po grze: host</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">59. Koniec wieczoru po grze bez odsłon: host</h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={closed("host", "Ola", roundPlayers)}
@@ -1310,12 +1381,77 @@ const allForOne: [string, number][] = [
           </section>
 
           <section id="evening-end-guest" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
-            <h2 class="text-muted-foreground text-sm font-medium">60. Koniec wieczoru po grze: gość</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">60. Koniec wieczoru po grze bez odsłon: gość</h2>
             <RoomScreen
               roomId={ROOM_ID}
               initial={closed("guest", "Bartek", roundPlayers)}
               realtime={null}
               preview={{ idPrefix: "evening-end-guest" }}
+              client:load
+            />
+          </section>
+
+          <section id="summary-host" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              81. Koniec wieczoru z podsumowaniem: host, 3 osoby z najwięcej głosami i 2 zera
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={ended("host", "Ola", roundPlayers, 4, summarySums)}
+              realtime={null}
+              preview={{ idPrefix: "summary-host" }}
+              client:load
+            />
+          </section>
+
+          <section id="summary-top-tie" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              82. Koniec wieczoru z podsumowaniem: gość, remis 4 osób na szczycie
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={ended("guest", "Bartek", roundPlayers, 2, topTieSums)}
+              realtime={null}
+              preview={{ idPrefix: "summary-top-tie" }}
+              client:load
+            />
+          </section>
+
+          <section id="summary-no-zeros" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              83. Koniec wieczoru z podsumowaniem: bez zer (remis 3 osób po 1 głosie się nie mieści)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={ended("guest", "Bartek", roundPlayers, 2, noZeroSums)}
+              realtime={null}
+              preview={{ idPrefix: "summary-no-zeros" }}
+              client:load
+            />
+          </section>
+
+          <section id="summary-all-abstained" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              84. Koniec wieczoru z podsumowaniem: wszyscy się wstrzymali (bez „Najwięcej głosów dziś”)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={ended("host", "Ola", roundPlayers, 1, abstainedSums)}
+              realtime={null}
+              preview={{ idPrefix: "summary-all-abstained" }}
+              client:load
+            />
+          </section>
+
+          <section id="summary-big-room" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              85. Koniec wieczoru z podsumowaniem: 20 graczy, remis 6 osób na szczycie, 8 zer, 12 pytań
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={ended("guest", "Tomek", twentyPlayers, 12, bigRoomSums)}
+              realtime={null}
+              preview={{ idPrefix: "summary-big-room" }}
               client:load
             />
           </section>

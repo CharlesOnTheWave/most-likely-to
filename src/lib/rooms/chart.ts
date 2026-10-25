@@ -27,11 +27,17 @@ export interface PieSlice {
   endAngle: number;
 }
 
-// One slice per player with votes, in the reveal's order (sortResults). The last slice ends exactly at 360°, so the
-// shares never leave a gap or an overlap from rounding.
+// One slice per player with votes, in the reveal's order (sortResults).
 export function pieSlices(results: readonly RoundResult[]): PieSlice[] {
-  const voted = sortResults(results).filter((result) => result.votes > 0);
-  const total = voted.reduce((sum, result) => sum + result.votes, 0);
+  return slicesInOrder(sortResults(results));
+}
+
+// One slice per part with votes, in the order given: the reveal's players (pieSlices), or the top of the end of the
+// evening and its one slice for everyone else (GameSummary). The last slice ends exactly at 360°, so the shares never
+// leave a gap or an overlap from rounding.
+export function slicesInOrder(parts: readonly RoundResult[]): PieSlice[] {
+  const voted = parts.filter((part) => part.votes > 0);
+  const total = voted.reduce((sum, part) => sum + part.votes, 0);
   let angle = 0;
   return voted.map(({ nick, votes }, index) => {
     const startAngle = angle;

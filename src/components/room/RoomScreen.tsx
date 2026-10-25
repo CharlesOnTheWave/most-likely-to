@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PartyPopper, Plus, SkipForward } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
+import GameSummary from "@/components/room/GameSummary";
 import type { HostActionsPreview } from "@/components/room/HostActions";
 import JoinRequests from "@/components/room/JoinRequests";
 import { LiveBanner } from "@/components/room/LiveBanner";
 import type { QuestionListActions } from "@/components/room/QuestionList";
 import RoomLobby, { type LobbyPreview } from "@/components/room/RoomLobby";
 import { RoomErrorBoundary } from "@/components/room/RoomErrorBoundary";
-import { roomColumn } from "@/components/room/room-frame";
+import { endInHalves, roomColumn } from "@/components/room/room-frame";
 import { sendRoomAction, type ActionOutcome, type RoomAction } from "@/components/room/room-actions";
 import RoundReveal from "@/components/room/RoundReveal";
 import RoundSkipped from "@/components/room/RoundSkipped";
@@ -53,22 +54,36 @@ function PreviewCrash() {
 }
 
 // "Koniec wieczoru" for everyone once the room is closed: "Zakończ grę", "Nowa gra" or the sweep of abandoned games
-// (decision D4 of context/archive/2026-10-15-full-game-evening/research.md). No counts and no summary of the evening
-// (FR-022 is parked).
-function EveningEnd({ view, titleAs: Title }: { view: RoomView; titleAs: "h1" | "h2" }) {
+// (decision D4 of context/archive/2026-10-15-full-game-evening/research.md), the same screen whichever way it closed.
+// Under the thanks the summary of the game (S-15, PRD FR-022: GameSummary) when it had a revealed question; a game with
+// none ends as before, with no summary. With the summary's chart, from lg two halves (endInHalves): the title, the
+// counts, the nicks with none and the next step on the left, the chart on the right; below lg, and without a chart,
+// one column in the order of the DOM. The title stays first, so the focus after "Zakończ grę" goes to it.
+function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPrefix: string; titleAs: "h1" | "h2" }) {
+  const halves = endInHalves(view);
   return (
-    <section className="flex flex-col items-center gap-4 py-12 text-center">
-      <PartyPopper aria-hidden="true" className="text-muted-foreground size-10" />
-      <Title className="text-2xl font-semibold text-balance">Koniec wieczoru</Title>
-      <p className="text-lg">Dzięki za grę!</p>
-      {view.role === "host" ? (
-        <a href="/" className={buttonVariants()}>
-          <Plus />
-          Nowa gra
-        </a>
-      ) : (
-        <p className="text-muted-foreground">Chcesz zagrać jeszcze raz? Poproś hosta o nowy link.</p>
+    <section
+      className={cn(
+        "flex flex-col items-center gap-4 py-12 text-center",
+        halves && "lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10 lg:gap-y-5 lg:py-0 lg:text-left",
       )}
+    >
+      <div className={cn("flex flex-col items-center gap-4", halves && "lg:col-start-1 lg:items-start")}>
+        <PartyPopper aria-hidden="true" className="text-muted-foreground size-10" />
+        <Title className={cn("text-2xl font-semibold text-balance", halves && "lg:text-4xl")}>Koniec wieczoru</Title>
+        <p className="text-lg">Dzięki za grę!</p>
+      </div>
+      {view.summary !== null && <GameSummary view={view} summary={view.summary} idPrefix={idPrefix} halves={halves} />}
+      <div className={cn(halves && "lg:col-start-1")}>
+        {view.role === "host" ? (
+          <a href="/" className={buttonVariants()}>
+            <Plus />
+            Nowa gra
+          </a>
+        ) : (
+          <p className="text-muted-foreground">Chcesz zagrać jeszcze raz? Poproś hosta o nowy link.</p>
+        )}
+      </div>
     </section>
   );
 }
@@ -154,7 +169,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
 
   let content;
   if (view.status === "closed") {
-    content = <EveningEnd view={view} titleAs={titleAs} />;
+    content = <EveningEnd view={view} idPrefix={idPrefix} titleAs={titleAs} />;
   } else if (view.round === null) {
     content = (
       <RoomLobby

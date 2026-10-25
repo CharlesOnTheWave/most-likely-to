@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pieSlices, resultBars, resultViews, slicePath } from "@/lib/rooms/chart";
+import { pieSlices, resultBars, resultViews, slicePath, slicesInOrder } from "@/lib/rooms/chart";
 import type { RoundResult } from "@/lib/rooms/shared";
 
 // The reveal's two views, "Koło" and "Paski" (Karol's decision after the screenshot review of Faza 4):
@@ -80,6 +80,27 @@ describe("pieSlices", () => {
     expect(slices.at(-1)?.endAngle).toBe(360);
     expect(slices[0].endAngle).toBeCloseTo(120, 9);
     expect(slices[1].endAngle).toBeCloseTo(240, 9);
+  });
+});
+
+// The end of the evening: the top in its order, then one part for everyone else, last even when it is bigger.
+describe("slicesInOrder", () => {
+  it("keeps the order given: 6, 4, 3 and the rest's 5 of 18 votes", () => {
+    const slices = slicesInOrder(seats(["Bartek", 6], ["Ola", 4], ["Kasia", 3], ["", 5]));
+
+    expect(slices.map((slice) => slice.nick)).toEqual(["Bartek", "Ola", "Kasia", ""]);
+    expect(slices.map((slice) => [slice.startAngle, slice.endAngle])).toEqual([
+      [0, 120],
+      [120, 200],
+      [200, 260],
+      [260, 360],
+    ]);
+  });
+
+  it("leaves out a part with no votes: a top with every vote is the full circle", () => {
+    expect(slicesInOrder(seats(["Bartek", 3], ["", 0]))).toEqual([
+      { nick: "Bartek", votes: 3, startAngle: 0, endAngle: 360 },
+    ]);
   });
 });
 

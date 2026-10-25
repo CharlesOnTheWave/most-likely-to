@@ -1,6 +1,7 @@
 import { ChartBarDecreasing, ChartPie } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { afterRoundActions, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
@@ -26,53 +27,6 @@ interface Props {
   onEnd: () => Promise<ActionOutcome>;
   hostPreview?: HostActionsPreview;
 }
-
-// One colour per slice, in the slices' order (src/styles/global.css, --chart-1 … --chart-20). Full class names:
-// Tailwind generates only the classes it finds written out.
-const SLICE_FILLS = [
-  "fill-chart-1",
-  "fill-chart-2",
-  "fill-chart-3",
-  "fill-chart-4",
-  "fill-chart-5",
-  "fill-chart-6",
-  "fill-chart-7",
-  "fill-chart-8",
-  "fill-chart-9",
-  "fill-chart-10",
-  "fill-chart-11",
-  "fill-chart-12",
-  "fill-chart-13",
-  "fill-chart-14",
-  "fill-chart-15",
-  "fill-chart-16",
-  "fill-chart-17",
-  "fill-chart-18",
-  "fill-chart-19",
-  "fill-chart-20",
-];
-const SLICE_DOTS = [
-  "bg-chart-1",
-  "bg-chart-2",
-  "bg-chart-3",
-  "bg-chart-4",
-  "bg-chart-5",
-  "bg-chart-6",
-  "bg-chart-7",
-  "bg-chart-8",
-  "bg-chart-9",
-  "bg-chart-10",
-  "bg-chart-11",
-  "bg-chart-12",
-  "bg-chart-13",
-  "bg-chart-14",
-  "bg-chart-15",
-  "bg-chart-16",
-  "bg-chart-17",
-  "bg-chart-18",
-  "bg-chart-19",
-  "bg-chart-20",
-];
 
 const VIEW_OPTIONS: { view: ResultView; label: string; Icon: typeof ChartPie }[] = [
   { view: "pie", label: "Koło", Icon: ChartPie },

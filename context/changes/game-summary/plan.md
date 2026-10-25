@@ -371,13 +371,13 @@ ekrany pokoju (pięć miejsc z „Critical Implementation Details”).
 
 #### Automated
 
-- [ ] 2.1 `npm test` przechodzi, w tym nowy `tests/unit/summary.test.ts`
-- [ ] 2.2 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm run build` przechodzą
-- [ ] 2.3 `npx prettier --check` dla zmienionych plików `.md`
+- [x] 2.1 `npm test` przechodzi, w tym nowy `tests/unit/summary.test.ts`
+- [x] 2.2 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm run build` przechodzą
+- [x] 2.3 `npx prettier --check` dla zmienionych plików `.md`
 
 #### Manual
 
-- [ ] 2.4 Karol ocenia zrzuty nowych stanów z `/dev/room-states` i `end-host` z `/dev/room-window` (laptop jako całe okno 1:1, telefon w prawdziwej wielkości), w tym brzmienie napisów
+- [x] 2.4 Karol ocenia zrzuty nowych stanów z `/dev/room-states` i `end-host` z `/dev/room-window` (laptop jako całe okno 1:1, telefon w prawdziwej wielkości), w tym brzmienie napisów
 
 ### Phase 3: Test E2E i wdrożenie
 
