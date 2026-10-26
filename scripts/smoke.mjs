@@ -264,7 +264,8 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
 // A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts, admit.ts,
-// reject.ts, question-*.ts), as JSON, the way the room screen sends it; in the main room unless roomId is given.
+// reject.ts, question-*.ts, emote.ts), as JSON, the way the room screen sends it; in the main room unless roomId is
+// given.
 function act(action, body, cookies, roomId = room.id) {
   return request(`/api/rooms/${roomId}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
@@ -310,7 +311,9 @@ const LATECOMER_ROUND = new RegExp(
 // the link, whose page shows the waiting screen, and sets the room's cookie with the request's token. The host lets
 // Kuba in: he is a player from then on, but may not vote in question 1, so the three votes still reveal it and its
 // results leave him out. The host turns Ula away; her request stays rejected until the room closes (closingSteps).
-// Skipped with SMOKE_ROUND=0.
+// Then the emotes (S-16, context/changes/room-emotes/plan.md, Faza 1 #6), which need no screen: Ola, a player, sends
+// one; an id off the list is refused before the database is asked; and Ula, turned away, is no player, so the route
+// answers her as for no room at all. Nothing of an emote comes back in the answer. Skipped with SMOKE_ROUND=0.
 function roundSteps() {
   const round = [
     ["host starts the game", () => act("start", {}, hostJar), { status: 200, body: ACCEPTED }],
@@ -349,6 +352,17 @@ function roundSteps() {
     ],
     ["host turns Ula away", () => act("reject", { nick: "Ula" }, hostJar), { status: 200, body: ACCEPTED }],
     ["Ula's request is rejected", () => requestState(ulaJar), { status: 200, body: requestAnswer("rejected", "Ula") }],
+    ["Ola sends an emote", () => act("emote", { emote: "heart" }, olaJar), { status: 200, body: ACCEPTED }],
+    [
+      "an emote not on the list is refused",
+      () => act("emote", { emote: "eggplant" }, olaJar),
+      { status: 400, body: /^\{"error":"invalid_body"\}$/ },
+    ],
+    [
+      "Ula, rejected, cannot send an emote",
+      () => act("emote", { emote: "heart" }, ulaJar),
+      { status: 404, body: /^\{"error":"not_found"\}$/ },
+    ],
     ["Ola votes", () => act("vote", { target: "Ola", round: 1 }, olaJar), { status: 200, body: ACCEPTED }],
     [
       "the second guest votes",

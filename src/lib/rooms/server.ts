@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ringRoom } from "@/lib/live-sync/server";
+import { ringRoom, sendEmote } from "@/lib/live-sync/server";
 import { logEvent } from "@/lib/log";
+import type { EmoteMessage } from "@/lib/rooms/emotes";
 import { questionPool, questionsLeft, questionText, type QuestionSelection } from "@/lib/rounds/draw";
 import {
   parseJoinRequestState,
@@ -530,8 +531,8 @@ export async function hostRoomCategories(supabase: SupabaseClient, roomId: strin
   }
 }
 
-// The part of locals.cfContext (the Worker's ExecutionContext from the Cloudflare adapter) the bell needs. Typed here
-// because the project has no Workers types, so the adapter's own type resolves to any.
+// The part of locals.cfContext (the Worker's ExecutionContext from the Cloudflare adapter) the bell and an emote need.
+// Typed here because the project has no Workers types, so the adapter's own type resolves to any.
 interface BellLocals {
   cfContext?: { waitUntil(promise: Promise<unknown>): void };
 }
@@ -552,4 +553,27 @@ export async function ringLobby(locals: BellLocals, supabase: SupabaseClient, ro
     return;
   }
   await ring;
+}
+
+// A player's emote to everyone on the room's channel (S-16), the player too, sent as the bell is: through waitUntil, or
+// awaited without an execution context. A failed send is only logged (sendEmote logs it, never the emote or the nick):
+// that emote is lost, and nothing else in the room depends on it.
+export async function broadcastEmote(
+  locals: BellLocals,
+  supabase: SupabaseClient,
+  roomId: string,
+  message: EmoteMessage,
+): Promise<void> {
+  const send = sendEmote(supabase, roomId, message).then(
+    () => undefined,
+    // Only removeChannel's failure gets here; sendEmote catches its own.
+    (error: unknown) => {
+      logEvent("error", { op: "emote_send", step: "remove_channel", roomId, errName: errorName(error) });
+    },
+  );
+  if (locals.cfContext) {
+    locals.cfContext.waitUntil(send);
+    return;
+  }
+  await send;
 }

@@ -12,7 +12,8 @@ import { roomErrorMessage } from "@/lib/rooms/errors";
 // (question-edit) with {position, text} and "Dodaj własne" (question-add) with {text}. A vote's target and a thumb go
 // only in the body: never in the URL, a log line or storage on the device (AGENTS.md, Hard Rules; S-04 shows a vote
 // after a reload). Browser lines go through src/lib/log.ts too, so the target cannot slip into one, nor can a
-// question's text.
+// question's text. A player's emote to the whole room, from every screen of the room (emote,
+// src/pages/api/rooms/[id]/emote.ts), carries only the emote's id ({emote}, src/lib/rooms/emotes.ts).
 
 export type RoomAction =
   | "start"
@@ -28,7 +29,8 @@ export type RoomAction =
   | "question-draw"
   | "question-remove"
   | "question-edit"
-  | "question-add";
+  | "question-add"
+  | "emote";
 
 // The screen shows a refusal by its code's text (src/lib/rooms/errors.ts), never text from the answer.
 export type ActionOutcome = { ok: true } | { ok: false; message: string };

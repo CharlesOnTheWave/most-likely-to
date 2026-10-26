@@ -27,7 +27,7 @@ Kamień milowy to zestaw elementów, który zamyka się, gdy wszystkie są zrobi
 - **Intent:** Pierwsza wersja gry obsługuje prawdziwe wieczory: host zakłada grę, ekipa gra rundy na żywo z anonimowymi głosami, a pytania dobierają się coraz lepiej. Pierwszy punkt kontrolny to S-02 (w PRD: „pokój + runda działają z 3 osobami”).
 - **Source materials:** `context/foundation/prd.md` (v1); pomocniczo `context/foundation/tech-stack.md`, `context/foundation/infrastructure.md` i `context/deployment/deploy-plan.md`.
 - **Done when:** każdy element F-NN i S-NN niżej ma status `done`.
-- **Scope anchors:** US-01 oraz wszystkie konieczne wymagania: FR-001–FR-009 i FR-011–FR-020. Dodatki zdjęte z Parked: FR-024 (S-14) i FR-022 (S-15); FR-021 i FR-023 zostają w Parked.
+- **Scope anchors:** US-01 oraz wszystkie konieczne wymagania: FR-001–FR-009 i FR-011–FR-020. Dodatki zdjęte z Parked: FR-024 (S-14), FR-022 (S-15) i FR-023 w wersji z samymi emotkami (S-16, decyzja hosta 2026-10-26); FR-021 oraz gify i czat w pokoju zostają w Parked.
 
 ## Vision recap
 
@@ -58,6 +58,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | proposed    |
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
+| S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | in-progress |
 
 ## Streams
 
@@ -69,7 +70,7 @@ Pomoc w nawigacji: grupuje elementy o wspólnym łańcuchu zależności. Kanonic
 | B      | Pytania i dane gier | `F-02` → `S-06` → `S-11` → `S-12` → `S-13` | F-02 dołącza do A przy S-01; S-06 rusza po S-02, a S-11 czeka też na S-03.                     |
 | C      | Prowadzący i goście | `S-07` → `S-08` → `S-09` → `S-10`          | Rusza po S-03 ze ścieżki A; S-08 idzie przed S-07 z samym hostem; S-09 i S-10 czekają na S-07. |
 | D      | Logowanie hosta     | `S-05`                                     | Niezależne od reszty; czeka tylko na wybór dostawców logowania.                                |
-| E      | Dodatki             | `S-14` → `S-15`                            | Dodatki „miło mieć” zdjęte z Parked (decyzje hosta 2026-10-25); S-15 czeka tylko na S-03 z A.  |
+| E      | Dodatki             | `S-14` → `S-15` → `S-16`                   | Dodatki „miło mieć” zdjęte z Parked (hosta 2026-10-25/26); S-15 czeka na S-03, S-16 na S-02.   |
 
 ## Baseline
 
@@ -304,6 +305,20 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** Podsumowanie łatwo zamienić w tabelę wyników, a punkty i ranking są poza zakresem (PRD §Non-Goals); liczy się wyłącznie z wyników odsłon, które ekipa już widziała (pominięte pytania i wstrzymania się nie dają nikomu głosów), nigdy z par „kto na kogo”.
 - **Status:** done
 
+### S-16: Emotki do pokoju
+
+- **Outcome:** Każdy gracz w pokoju (host i goście) może w trakcie gry jednym dotknięciem wysłać emotkę z krótkiej, stałej listy, a cały pokój widzi ją na chwilę na swoim ekranie; bez gifów, bez wpisywania tekstu i bez historii wiadomości. Emotka jest nieobowiązkowa i niczego nie blokuje.
+- **Change ID:** room-emotes
+- **PRD refs:** FR-023
+- **Prerequisites:** S-02
+- **Parallel with:** każdy element (nic od niego nie zależy)
+- **Blockers:** —
+- **Unknowns:**
+  - Czy przy emotce widać nick nadawcy, czy leci anonimowo? — Owner: Karol. Block: no (rozstrzygnąć w planie).
+  - Jakie emotki, ile i gdzie pojawiają się na ekranie (każdy ekran pokoju czy tylko głosowanie i odsłona)? — Owner: Karol, wybór na zrzutach. Block: no.
+- **Risk:** To pierwsza treść od graczy, która idzie do całego pokoju na żywo, a kanał na żywo dziś niesie tylko dzwonek, który może nadać każdy znający jego nazwę; emotka nie może dać się podszyć pod gracza ani zalać pokoju, nie może zdradzić głosu (np. emotka „na kogoś” w trakcie głosowania) i nie zostawia śladu w bazie ani logach poza tym, czego gra potrzebuje. Gify i tekst zostają w Parked (PRD §Non-Goals: czat poza aplikacją).
+- **Status:** in-progress
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
@@ -325,6 +340,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-13       | host-game-history            | Lista gier hosta i kasowanie                                           | no                    | Czeka na S-11                                                              |
 | S-14       | remembered-nick              | Zapamiętany nick w przeglądarce                                        | yes                   | Run `/10x-plan remembered-nick`; S-01 gotowe                               |
 | S-15       | game-summary                 | Podsumowanie wieczoru na ekranie końca gry                             | yes                   | Run `/10x-plan game-summary`; S-03 gotowe                                  |
+| S-16       | room-emotes                  | Emotki do pokoju (bez gifów i tekstu)                                  | yes                   | Run `/10x-plan room-emotes`; S-02 gotowe                                   |
 
 ## Open Roadmap Questions
 
@@ -347,12 +363,12 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Generowanie pytań przez AI** — Why parked: PRD §Non-Goals; najpierw research z Open Roadmap Question 7.
 - **Wielu kuratorów bazy i narzędzia moderacji** — Why parked: PRD §Non-Goals; bazę weryfikuje jedna osoba.
 - **Czat głosowy w aplikacji** — Why parked: PRD §Non-Goals; rozmowa głosowa zostaje na Discordzie.
-- **Drobny czat w pokoju: emotki, gify i krótkie wiadomości** — Why parked: potencjalny rozwój gry (Karol 2026-10-15 zmienił zdanie: wcześniej „bez czatu tekstowego”); łączy się z FR-023. Przy podjęciu najpierw zmiana PRD §Non-Goals („Bez czatu głosowego i tekstowego w aplikacji”) i reguły anonimowości dla treści od graczy (logi, moderacja przy jednej osobie).
+- **Drobny czat w pokoju: gify i krótkie wiadomości** (same emotki: S-16) — Why parked: potencjalny rozwój gry (Karol 2026-10-15 zmienił zdanie: wcześniej „bez czatu tekstowego”); łączy się z FR-023. Przy podjęciu najpierw zmiana PRD §Non-Goals („Bez czatu głosowego i tekstowego w aplikacji”) i reguły anonimowości dla treści od graczy (logi, moderacja przy jednej osobie).
 - **Wersja angielska** — Why parked: PRD §Non-Goals (decyzja hosta 2026-09-26); v1 po polsku, angielski ewentualnie po dopracowaniu gry.
 - **Aplikacja ze sklepu i tryb offline** — Why parked: PRD §Non-Goals; tylko przeglądarka, tylko z siecią.
 - **Skala powyżej około stu użytkowników** — Why parked: PRD §Non-Goals; przed taką skalą host chce przemyśleć grę od nowa.
 - **FR-021: panel weryfikacji nowych pytań w aplikacji** — Why parked: PRD przesuwa panel do v2; w v1 twórca gry przegląda nowe pytania poza aplikacją.
-- **FR-023: emotki i gify do pokoju** — Why parked: dodatek; rozmowa i tak toczy się na Discordzie.
+- **FR-023: gify do pokoju** — Why parked: dodatek; rozmowa i tak toczy się na Discordzie. Same emotki zdjęte do S-16 (decyzja hosta 2026-10-26).
 - **Pełna historia wieczorów w panelu hosta** — Why parked: PRD przesuwa ją do v2; v1 ma minimalną listę gier (S-13).
 - **Rejestracja e-mailem i hasłem dla nowych hostów** — Why parked: decyzja Karola 2026-10-06 przy S-05; bez własnej skrzynki nadawczej nie da się potwierdzić adresu, a bez potwierdzenia obcy może zarejestrować się na cudzy e-mail. Wrócić jako osobna zmiana z własnym SMTP (kandydat: Gmail gry z hasłem aplikacji, do sprawdzenia).
 - **Śledzenie błędów i metryki** — Why parked: stan bazowy ma logi Workers i test dymny; przy celu „nauka” i skali do stu osób to wystarcza; wrócić, jeśli wieczory testowe pokażą błędy.
