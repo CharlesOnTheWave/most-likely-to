@@ -415,9 +415,9 @@ revert PR; dopiski w bazie mogą zostać (liczą dalej). Liczniki startują od z
 #### Automated
 
 - [x] 1.1 `npm run lint`, `npx astro check`, `npm test` (z oracle RPC), `npm run build` przechodzą lokalnie — 66b429a
-- [ ] 1.2 CI na gałęzi: job `db` zielony (pgTAP i `tests/db`)
+- [x] 1.2 CI na gałęzi: job `db` zielony (pgTAP i `tests/db`) — 1bb1506
 - [x] 1.4 Diff ciał pięciu zmienionych funkcji względem ich poprzednich definicji pokazuje tylko dopisane linie — 66b429a
-- [ ] 1.5 Próba złamania: `db` czerwony na zsypie bez kasowania kciuków, potem zielony po revercie
+- [x] 1.5 Próba złamania: `db` czerwony na zsypie bez kasowania kciuków, potem zielony po revercie — 0a06624, 1bb1506
 
 #### Manual
 
@@ -429,7 +429,7 @@ revert PR; dopiski w bazie mogą zostać (liczą dalej). Liczniki startują od z
 
 - [x] 2.1 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build` przechodzą — 55e96f8
 - [x] 2.2 `npx playwright test --list` pokazuje test wieczoru — 55e96f8
-- [ ] 2.3 CI na gałęzi: `e2e` zielony
+- [x] 2.3 CI na gałęzi: `e2e` zielony — 1bb1506
 
 #### Manual
 
@@ -440,8 +440,8 @@ revert PR; dopiski w bazie mogą zostać (liczą dalej). Liczniki startują od z
 
 #### Automated
 
-- [ ] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
-- [ ] 3.2 `npx supabase migration list` pokazuje nową migrację na produkcji przed scaleniem
+- [x] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` — 1bb1506
+- [x] 3.2 `npx supabase migration list` pokazuje nową migrację na produkcji przed scaleniem — 1bb1506
 
 #### Manual
 
