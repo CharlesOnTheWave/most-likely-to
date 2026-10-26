@@ -296,9 +296,6 @@ export function useRoomState({
         .on("broadcast", { event: BELL_EVENT }, () => {
           limiter.bell();
         })
-        .on("broadcast", { event: EMOTE_EVENT }, (message) => {
-          if (active) onEmoteRef.current?.(message.payload);
-        })
         .subscribe((state) => {
           if (!active || channel !== current) return;
           if (state === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
