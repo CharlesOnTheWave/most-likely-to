@@ -421,7 +421,7 @@ revert PR; dopiski w bazie mogą zostać (liczą dalej). Liczniki startują od z
 
 #### Manual
 
-- [ ] 1.3 Karol podaje UUID konta smoke z panelu Supabase i jest ono w migracji przed pushem gałęzi
+- [x] 1.3 Karol podaje UUID konta smoke z panelu Supabase i jest ono w migracji przed pushem gałęzi — 8db6c2e
 
 ### Phase 2: Kciuki na ekranie odsłony
 
