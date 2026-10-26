@@ -355,11 +355,12 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
         graczy stoją w miejscu, a ekran czekania na hosta sam nigdzie nie przechodzi. Hover i focus-visible sprawdzasz
-        na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72 i 74: najedź myszą na pola i przyciski albo przejdź Tabem.
-        Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w nagłówku
-        naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”, „Zakończ grę”,
-        „Następne pytanie”, „Wpuść”, „Odrzuć”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”,
-        „Dodaj”) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, pytania „Na pewno…?” i „Anuluj” działają
+        na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74 i 86: najedź myszą na pola i przyciski albo przejdź
+        Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w
+        nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”,
+        „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj
+        pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”) niczego nie wysyłają: głos od razu pokazuje „Głos
+        oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go zdejmuje, pytania „Na pewno…?” i „Anuluj” działają
         naprawdę, a wysłana akcja hosta zostaje w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz” zmieniają listę od
         razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i dodane pytanie się nie
         pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik „Koło” / „Paski” w
@@ -1198,6 +1199,66 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
               realtime={null}
               preview={{ idPrefix: "reveal-toggle-focus" }}
+              client:load
+            />
+          </section>
+
+          <section id="reaction-none" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              86. Kciuki: gość bez kciuka · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reaction-none" }}
+              client:load
+            />
+          </section>
+
+          <section id="reaction-up" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">87. Kciuki: gość, „Dobre pytanie” zaznaczone</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reaction-up", reaction: { chosen: "up" } }}
+              client:load
+            />
+          </section>
+
+          <section id="reaction-host-down" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">88. Kciuki: host, „Słabe pytanie” zaznaczone</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("host", "Ola", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reaction-host-down", reaction: { chosen: "down" } }}
+              client:load
+            />
+          </section>
+
+          <section id="reaction-sending" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">89. Kciuki: gość, kciuk w drodze</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "reaction-sending", reaction: { sending: "up" } }}
+              client:load
+            />
+          </section>
+
+          <section id="reaction-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">90. Kciuki: gość, kciuk nie doszedł</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("guest", "Bartek", roundPlayers, fiveResults, 1)}
+              realtime={null}
+              preview={{
+                idPrefix: "reaction-error",
+                reaction: { error: roomErrorMessage("service_unavailable") },
+              }}
               client:load
             />
           </section>

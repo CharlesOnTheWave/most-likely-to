@@ -17,6 +17,7 @@ import {
   expectFreshVote,
   expectGameSummary,
   nextQuestion,
+  questionThumb,
   resultTable,
   ROUND_UPDATE_MS,
   roundQuestion,
@@ -86,6 +87,14 @@ test.describe("risks #2 and #3 (evening) — three players go on to the next que
     for (const [, screen] of screens) {
       await expect(resultTable(screen)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     }
+
+    // Action and assertion (S-11, PRD FR-018): guest A gives the question a thumb up and takes it back. The screen
+    // presses it only once the database has it, and nothing waits for it: the host moves on below as before.
+    await questionThumb(pageA, "up").click();
+    await expect(questionThumb(pageA, "up")).toHaveAttribute("aria-pressed", "true");
+    await expect(questionThumb(pageA, "down")).toHaveAttribute("aria-pressed", "false");
+    await questionThumb(pageA, "up").click();
+    await expect(questionThumb(pageA, "up")).toHaveAttribute("aria-pressed", "false");
 
     // From lg the host's buttons are a bar stuck to the window's bottom (HostActions, placement "bar"): in a window
     // too short for the reveal, "Następne pytanie" is in view at the top of the page. Without the bar it would be

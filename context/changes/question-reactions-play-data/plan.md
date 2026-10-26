@@ -414,9 +414,9 @@ revert PR; dopiski w bazie mogą zostać (liczą dalej). Liczniki startują od z
 
 #### Automated
 
-- [x] 1.1 `npm run lint`, `npx astro check`, `npm test` (z oracle RPC), `npm run build` przechodzą lokalnie
+- [x] 1.1 `npm run lint`, `npx astro check`, `npm test` (z oracle RPC), `npm run build` przechodzą lokalnie — 66b429a
 - [ ] 1.2 CI na gałęzi: job `db` zielony (pgTAP i `tests/db`)
-- [x] 1.4 Diff ciał pięciu zmienionych funkcji względem ich poprzednich definicji pokazuje tylko dopisane linie
+- [x] 1.4 Diff ciał pięciu zmienionych funkcji względem ich poprzednich definicji pokazuje tylko dopisane linie — 66b429a
 - [ ] 1.5 Próba złamania: `db` czerwony na zsypie bez kasowania kciuków, potem zielony po revercie
 
 #### Manual
@@ -427,13 +427,13 @@ revert PR; dopiski w bazie mogą zostać (liczą dalej). Liczniki startują od z
 
 #### Automated
 
-- [ ] 2.1 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build` przechodzą
-- [ ] 2.2 `npx playwright test --list` pokazuje test wieczoru
+- [x] 2.1 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build` przechodzą
+- [x] 2.2 `npx playwright test --list` pokazuje test wieczoru
 - [ ] 2.3 CI na gałęzi: `e2e` zielony
 
 #### Manual
 
-- [ ] 2.4 Karol wybiera wariant kciuków ze zrzutów (telefon i laptop)
+- [x] 2.4 Karol wybiera wariant kciuków ze zrzutów (telefon i laptop)
 - [ ] 2.5 Podgląd `/dev/room-states` i `/dev/room-window` przeklikany lokalnie po wyborze wariantu
 
 ### Phase 3: Wdrożenie
