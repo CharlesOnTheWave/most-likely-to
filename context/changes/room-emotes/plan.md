@@ -371,12 +371,12 @@ ekran i Worker wdrażają się razem.
 
 #### Automated
 
-- [ ] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 1.2 Testy jednostkowe `tests/unit/emotes.test.ts` przechodzą, a próba złamania (odbiorca przyjmuje dowolny nick) daje je czerwone i zostaje wycofana
+- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 1.2 Testy jednostkowe `tests/unit/emotes.test.ts` przechodzą, a próba złamania (odbiorca przyjmuje dowolny nick) daje je czerwone i zostaje wycofana
 
 #### Manual
 
-- [ ] 1.3 Przegląd diffu: dzwonek (`ringRoom`, `ringLobby`, nasłuch `bell`) zachowuje się jak przed zmianą, a w logu emotki nie ma nicku ani emotki
+- [x] 1.3 Przegląd diffu: dzwonek (`ringRoom`, `ringLobby`, nasłuch `bell`) zachowuje się jak przed zmianą, a w logu emotki nie ma nicku ani emotki
 
 ### Phase 2: Pasek i dymki na ekranie
 
