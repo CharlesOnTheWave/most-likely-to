@@ -145,10 +145,6 @@ begin
     on conflict (question_id) do update
     set thumbs_up = s.thumbs_up + excluded.thumbs_up, thumbs_down = s.thumbs_down + excluded.thumbs_down;
   end if;
-
-  delete from private.round_reactions t
-  using private.rounds r
-  where r.id = t.round_id and r.room_id = p_room_id;
 end;
 $$;
 
