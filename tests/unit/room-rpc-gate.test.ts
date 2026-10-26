@@ -12,6 +12,7 @@ import {
   joinRoom,
   nextRound,
   openQuestionList,
+  reactRound,
   rejectLatecomer,
   removeListQuestion,
   requestJoin,
@@ -63,7 +64,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261024094002_question_list_review.sql:400
+  // supabase/migrations/20261026074427_question_play_data.sql:270
   start_game: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_question_id", hasDefault: false },
@@ -80,13 +81,20 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: true },
   ],
-  // supabase/migrations/20261015122252_full_game_evening.sql:79
+  // supabase/migrations/20261026074427_question_play_data.sql:506-511
+  react_round: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_round", hasDefault: false },
+    { name: "p_reaction", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
+  // supabase/migrations/20261026074427_question_play_data.sql:358
   next_round: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: false },
     { name: "p_candidates", hasDefault: false },
   ],
-  // supabase/migrations/20261015122252_full_game_evening.sql:140
+  // supabase/migrations/20261026074427_question_play_data.sql:424
   skip_round: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: false },
@@ -173,6 +181,8 @@ const CANDIDATES = ["candidate-sentinel"];
 const QUESTION_TEXT = "question-text-sentinel";
 const ROUND = 7;
 const POSITION = 3;
+// One of the three values the screen sends; "down", so neither the first one nor the one that takes a thumb back.
+const REACTION = "down";
 
 const CASES: {
   action: string;
@@ -252,6 +262,18 @@ const CASES: {
     fn: "reveal_round",
     call: (supabase) => revealRound(supabase, ROOM_ID, ROUND),
     expected: { p_room_id: ROOM_ID, p_round: ROUND },
+  },
+  {
+    action: "Kciuk",
+    fn: "react_round",
+    call: (supabase) => reactRound(supabase, ROOM_ID, ROUND, REACTION, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_reaction: REACTION, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Kciuk hosta (bez tokenu gościa)",
+    fn: "react_round",
+    call: (supabase) => reactRound(supabase, ROOM_ID, ROUND, REACTION),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_reaction: REACTION, p_player_token: null },
   },
   {
     action: "Następne pytanie",
