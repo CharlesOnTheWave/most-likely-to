@@ -106,8 +106,7 @@ revoke all on table private.question_stats, private.round_reactions, private.sta
   from public, anon, authenticated;
 
 -- The smoke account (scripts/smoke.mjs) reveals and skips real questions of the base at every deployment.
--- TODO(smoke-uuid): Karol podaje UUID konta smoke przed pushem
-insert into private.stats_excluded_hosts (user_id) values ('00000000-0000-0000-0000-00000000000f'::uuid);
+insert into private.stats_excluded_hosts (user_id) values ('d894161a-7308-48d9-984b-17937b1a3013'::uuid);
 
 -- Counter helpers: no grants, called only from the round functions ---------------------------------------------------
 
