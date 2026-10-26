@@ -427,14 +427,14 @@ revert PR; dopiski w bazie mogą zostać (liczą dalej). Liczniki startują od z
 
 #### Automated
 
-- [x] 2.1 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build` przechodzą
-- [x] 2.2 `npx playwright test --list` pokazuje test wieczoru
+- [x] 2.1 `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build` przechodzą — 55e96f8
+- [x] 2.2 `npx playwright test --list` pokazuje test wieczoru — 55e96f8
 - [ ] 2.3 CI na gałęzi: `e2e` zielony
 
 #### Manual
 
-- [x] 2.4 Karol wybiera wariant kciuków ze zrzutów (telefon i laptop)
-- [ ] 2.5 Podgląd `/dev/room-states` i `/dev/room-window` przeklikany lokalnie po wyborze wariantu
+- [x] 2.4 Karol wybiera wariant kciuków ze zrzutów (telefon i laptop) — 55e96f8
+- [x] 2.5 Podgląd `/dev/room-states` i `/dev/room-window` przeklikany lokalnie po wyborze wariantu — 55e96f8
 
 ### Phase 3: Wdrożenie
 
