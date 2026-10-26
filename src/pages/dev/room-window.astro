@@ -4,7 +4,9 @@ import AppHeader from "@/components/room/AppHeader.astro";
 import type { HostActionsPreview } from "@/components/room/HostActions";
 import type { QuestionListPreview } from "@/components/room/QuestionList";
 import { ROOM_FRAME } from "@/components/room/room-frame";
-import RoomScreen from "@/components/room/RoomScreen";
+import RoomScreen, { type EmotesPreview } from "@/components/room/RoomScreen";
+import type { EmoteMessage } from "@/lib/rooms/emotes";
+import { roomErrorMessage } from "@/lib/rooms/errors";
 import type { ListQuestion, LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
 
@@ -166,7 +168,21 @@ interface Sample {
   host?: HostActionsPreview;
   // The host's "Przejrzyj pytania" in the lobby, e.g. the list unfolded.
   questionList?: QuestionListPreview;
+  // The emotes' bar resting or refused, and bubbles on the screen (S-16).
+  emotes?: EmotesPreview;
 }
+
+// Three emotes on everyone's screen (S-16), a nick with an emoji among them; and the most at once (EMOTE_MAX_SHOWN).
+const threeEmotes: EmoteMessage[] = [
+  { nick: "Zosia", emote: "heart" },
+  { nick: "Kasia 🎉", emote: "cry" },
+  { nick: "Ola", emote: "skull" },
+];
+const fiveEmotes: EmoteMessage[] = [
+  ...threeEmotes,
+  { nick: "Bartek", emote: "angry" },
+  { nick: "Kuba", emote: "like" },
+];
 
 const SAMPLES: Record<string, Sample> = {
   "lobby-host": {
@@ -301,6 +317,24 @@ const SAMPLES: Record<string, Sample> = {
       summary: null,
     },
   },
+  // S-16: the emotes' bar at the window's bottom on a phone, upright at the right edge from xl, with the bubbles next to
+  // it; under the host's bar from lg to xl.
+  "vote-guest-emotes": {
+    label: "Głosowanie: gość, emotki w przerwie i 3 dymki",
+    initial: voting("guest", "Bartek", roundPlayers, ["Ola", "Zosia"]),
+    emotes: { cooling: true, shown: threeEmotes },
+  },
+  "reveal-host-emotes": {
+    label: "Odsłona: host, 5 dymków emotek",
+    initial: revealed(roundPlayers, fiveResults, 1, QUESTION),
+    emotes: { shown: fiveEmotes },
+  },
+  "reveal-guest-emote-refused": {
+    label: "Odsłona: gość, emotka nie doszła",
+    initial: { ...revealed(roundPlayers, fiveResults, 1, QUESTION), role: "guest", me: "Bartek", questionsLeft: null },
+    // A tap whose answer never came (sendRoomAction): the generic text.
+    emotes: { error: roomErrorMessage("unexpected") },
+  },
   // S-15: the summary of a game of 4 reveals, as on /dev/room-states (81).
   "end-host": {
     label: "Koniec wieczoru: host, z podsumowaniem",
@@ -338,6 +372,8 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
               myVote: sample.myVote,
               host: sample.host,
               questionList: sample.questionList,
+              emotes: sample.emotes,
+              window: true,
             }}
             client:load
           />

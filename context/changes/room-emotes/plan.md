@@ -371,24 +371,24 @@ ekran i Worker wdrażają się razem.
 
 #### Automated
 
-- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 Testy jednostkowe `tests/unit/emotes.test.ts` przechodzą, a próba złamania (odbiorca przyjmuje dowolny nick) daje je czerwone i zostaje wycofana
+- [x] 1.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — e0c1c16
+- [x] 1.2 Testy jednostkowe `tests/unit/emotes.test.ts` przechodzą, a próba złamania (odbiorca przyjmuje dowolny nick) daje je czerwone i zostaje wycofana — e0c1c16
 
 #### Manual
 
-- [x] 1.3 Przegląd diffu: dzwonek (`ringRoom`, `ringLobby`, nasłuch `bell`) zachowuje się jak przed zmianą, a w logu emotki nie ma nicku ani emotki
+- [x] 1.3 Przegląd diffu: dzwonek (`ringRoom`, `ringLobby`, nasłuch `bell`) zachowuje się jak przed zmianą, a w logu emotki nie ma nicku ani emotki — e0c1c16
 
 ### Phase 2: Pasek i dymki na ekranie
 
 #### Automated
 
-- [ ] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 2.2 `npx playwright test --list` pokazuje nowy test emotek (sam test gra w CI, job `e2e`)
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 2.2 `npx playwright test --list` pokazuje nowy test emotek (sam test gra w CI, job `e2e`)
 
 #### Manual
 
-- [ ] 2.3 Karol wybrał wariant rozmieszczenia paska i dymków na zrzutach (zapisany tutaj)
-- [ ] 2.4 Zrzuty wybranego wariantu: pasek i dymki na telefonie i laptopie, przerwa 3 s, odmowa, pięć dymków; fokus po ruchu hosta nadal w tytule ekranu
+- [x] 2.3 Karol wybrał wariant rozmieszczenia paska i dymków na zrzutach (zapisany tutaj)
+- [x] 2.4 Zrzuty wybranego wariantu: pasek i dymki na telefonie i laptopie, przerwa 3 s, odmowa, pięć dymków; fokus po ruchu hosta nadal w tytule ekranu
 
 ### Phase 3: Wdrożenie
 

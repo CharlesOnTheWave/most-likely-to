@@ -3,7 +3,7 @@ import { createClient, REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@
 // Types only: the validator itself runs on the server (POST /api/client-events).
 import type { ClientEvent, ClientState } from "@/lib/client-events";
 import { createFetchLimiter, type FetchLimiter } from "@/lib/live-sync/limiter";
-import { BELL_EVENT, LOBBY_POLL_MS, topicFor } from "@/lib/live-sync/shared";
+import { BELL_EVENT, EMOTE_EVENT, LOBBY_POLL_MS, topicFor } from "@/lib/live-sync/shared";
 import { logEvent } from "@/lib/log";
 import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 
@@ -12,7 +12,7 @@ import { parseRoomView, type RoomView } from "@/lib/rooms/shared";
 // (room_lobby through GET /api/rooms/<id>/lobby) is the only source of truth; a bell on the room's channel only says
 // "check", and so does every (re)subscription, because bells sent while the connection was down are lost. Every fetch
 // goes through the limiter (src/lib/live-sync/limiter.ts) and the parser (parseRoomView). A closed room never opens
-// again, so its screen stops listening.
+// again, so its screen stops fetching; it keeps hearing the players' emotes (S-16), which change no state.
 
 // The URL and the publishable key, only for the room's Realtime channel (AGENTS.md). Without them (CI without Realtime,
 // a key that is not publishable) the screen only polls.
@@ -119,21 +119,37 @@ function channelState(state: REALTIME_SUBSCRIBE_STATES): ClientState {
   return "CHANNEL_ERROR";
 }
 
+// Realtime only: this client never signs in, the host's session lives in server-side cookies.
+function realtimeClient(supabaseUrl: string, supabaseKey: string) {
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
+
 export function useRoomState({
   roomId,
   initial,
   realtime,
   preview,
+  onEmote,
 }: {
   roomId: string;
   initial: RoomView;
   realtime?: LiveConfig | null;
   preview?: LivePreview;
+  // A player's emote from the room's channel (EMOTE_EVENT), its payload as it came: untrusted, the screen checks it
+  // (parseEmoteMessage). It never calls the limiter: an emote changes nothing in the room's state.
+  onEmote?: (payload: unknown) => void;
 }): RoomLive {
   const [view, setView] = useState(initial);
   const [refreshFailed, setRefreshFailed] = useState(preview?.refreshFailed ?? false);
   const [liveBroken, setLiveBroken] = useState(preview?.liveBroken ?? false);
   const limiterRef = useRef<FetchLimiter | null>(null);
+  // The latest onEmote, so a new one from a render never subscribes the channel again.
+  const onEmoteRef = useRef(onEmote);
+  useEffect(() => {
+    onEmoteRef.current = onEmote;
+  }, [onEmote]);
   // The state the previous fetch found, as JSON: room_lobby has no version, so "changed" means "different JSON".
   const shownRef = useRef(JSON.stringify(initial));
   const isPreview = Boolean(preview);
@@ -269,13 +285,7 @@ export function useRoomState({
       }
     }
 
-    // Realtime only: this client never signs in, the host's session lives in server-side cookies.
-    const supabase =
-      supabaseUrl && supabaseKey
-        ? createClient(supabaseUrl, supabaseKey, {
-            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-          })
-        : null;
+    const supabase = supabaseUrl && supabaseKey ? realtimeClient(supabaseUrl, supabaseKey) : null;
     let channel: RealtimeChannel | null = null;
 
     function subscribe() {
@@ -285,6 +295,9 @@ export function useRoomState({
       current
         .on("broadcast", { event: BELL_EVENT }, () => {
           limiter.bell();
+        })
+        .on("broadcast", { event: EMOTE_EVENT }, (message) => {
+          if (active) onEmoteRef.current?.(message.payload);
         })
         .subscribe((state) => {
           if (!active || channel !== current) return;
@@ -336,6 +349,26 @@ export function useRoomState({
           logEvent("warn", { op: "room_channel", roomId, step: "remove", errName: errorName(error) });
         });
       }
+    };
+  }, [isPreview, isLive, roomId, supabaseUrl, supabaseKey]);
+
+  // The end of the evening: no fetch, no poll, no bell, only the players' emotes on the room's channel. Nothing on it is
+  // shown when the channel breaks: an emote that does not arrive is lost, and the screen has nothing else to wait for.
+  useEffect(() => {
+    if (isPreview || isLive || !supabaseUrl || !supabaseKey) return;
+    let active = true;
+    const supabase = realtimeClient(supabaseUrl, supabaseKey);
+    const channel = supabase
+      .channel(topicFor(roomId))
+      .on("broadcast", { event: EMOTE_EVENT }, (message) => {
+        if (active) onEmoteRef.current?.(message.payload);
+      })
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(channel).catch((error: unknown) => {
+        logEvent("warn", { op: "room_channel", roomId, step: "remove", errName: errorName(error) });
+      });
     };
   }, [isPreview, isLive, roomId, supabaseUrl, supabaseKey]);
 

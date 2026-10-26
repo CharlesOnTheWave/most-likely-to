@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PartyPopper, Plus, SkipForward } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
+import EmoteBar, { type EmoteBarPreview } from "@/components/room/EmoteBar";
+import EmoteBubbles, { type ShownEmote } from "@/components/room/EmoteBubbles";
 import GameSummary from "@/components/room/GameSummary";
 import type { HostActionsPreview } from "@/components/room/HostActions";
 import JoinRequests from "@/components/room/JoinRequests";
@@ -18,6 +20,7 @@ import RoundVoting, { type VotingPreview } from "@/components/room/RoundVoting";
 import { useRoomState, type LiveConfig, type LivePreview } from "@/components/room/useRoomState";
 import { announcement, announcementKey, skipNotice } from "@/lib/rooms/announce";
 import type { ResultView } from "@/lib/rooms/chart";
+import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
 import { browserNickStorage, rememberNick } from "@/lib/rooms/remembered-nick";
 import type { RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
@@ -36,6 +39,16 @@ export interface ScreenPreview extends LivePreview, LobbyPreview, VotingPreview 
   reaction?: QuestionReactionPreview;
   // The screen throws once it is in the browser, to show RoomErrorBoundary's screen.
   crash?: boolean;
+  // The emotes' bar and bubbles: the bar resting or refused, bubbles on the screen (they stay; only a channel's emote
+  // goes away after EMOTE_SHOW_MS).
+  emotes?: EmotesPreview;
+  // The screen fills the window as on /r/… (/dev/room-window): the emotes' bar and bubbles stand where they do there.
+  // Without it (/dev/room-states, several screens on one page) both stay inside the screen's frame.
+  window?: boolean;
+}
+
+export interface EmotesPreview extends EmoteBarPreview {
+  shown?: EmoteMessage[];
 }
 
 interface Props {
@@ -102,8 +115,39 @@ const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip",
 // sees the latecomers waiting to be let in (S-08) above it. useRoomState keeps the state live; the actions go to the
 // game's endpoints and then look again at once, without waiting for the bell.
 function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
-  const { view, refreshFailed, liveBroken, refresh } = useRoomState({ roomId, initial, realtime, preview });
+  // The players' emotes on this screen (S-16): only an emote of the list from a player on this screen's own list of
+  // players (parseEmoteMessage; the channel is public), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN.
+  // A preview's bubbles stay.
+  const [emotes, setEmotes] = useState<ShownEmote[]>(() =>
+    (preview?.emotes?.shown ?? []).map((message, index) => ({ ...message, key: index })),
+  );
+  const emoteKey = useRef(emotes.length);
+  const emoteTimers = useRef(new Set<number>());
+  const nicksRef = useRef<ReadonlySet<string>>(new Set(initial.players.map((player) => player.nick)));
+  const onEmote = useCallback((payload: unknown) => {
+    const message = parseEmoteMessage(payload, nicksRef.current);
+    if (!message) return;
+    const key = emoteKey.current;
+    emoteKey.current += 1;
+    setEmotes((shown) => [...shown, { ...message, key }].slice(-EMOTE_MAX_SHOWN));
+    const timer = window.setTimeout(() => {
+      emoteTimers.current.delete(timer);
+      setEmotes((shown) => shown.filter((emote) => emote.key !== key));
+    }, EMOTE_SHOW_MS);
+    emoteTimers.current.add(timer);
+  }, []);
+  useEffect(() => {
+    const timers = emoteTimers.current;
+    return () => {
+      for (const timer of timers) window.clearTimeout(timer);
+    };
+  }, []);
+  const { view, refreshFailed, liveBroken, refresh } = useRoomState({ roomId, initial, realtime, preview, onEmote });
+  useEffect(() => {
+    nicksRef.current = new Set(view.players.map((player) => player.nick));
+  }, [view.players]);
   const isPreview = Boolean(preview);
+  const inFrame = isPreview && !preview?.window;
   const idPrefix = preview ? `${preview.idPrefix}-` : "";
   // The states page has its own h1, so there the screen's title is an h2 (as titleAs in SignInCard.astro).
   const titleAs = isPreview ? "h2" : "h1";
@@ -241,9 +285,9 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   }
 
   // The state's column in the page's frame (src/components/room/room-frame.ts), so the banner, the host's list of
-  // requests and the note after a skip are as wide as the view under them.
+  // requests, the note after a skip and the emotes' bar are as wide as the view under them.
   return (
-    <div className={cn("flex flex-col gap-6", roomColumn(view))}>
+    <div className={cn("flex flex-col gap-6", roomColumn(view), inFrame && "relative")}>
       <p aria-live="polite" className="sr-only">
         {announced}
       </p>
@@ -264,6 +308,9 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
       <div ref={contentRef} className="contents">
         {content}
       </div>
+      {/* Outside contentRef, with no heading: an emote is not a move that takes the focus to the view's heading. */}
+      <EmoteBar roomId={roomId} idPrefix={idPrefix} inFrame={inFrame} preview={preview?.emotes} />
+      <EmoteBubbles shown={emotes} players={view.players} inFrame={inFrame} />
     </div>
   );
 }
