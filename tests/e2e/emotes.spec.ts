@@ -80,10 +80,11 @@ test.describe("S-16 (emotes) — a guest's emote reaches every screen of the roo
     // Action: guest A taps "Serce" in the lobby.
     await emoteButton(pageA, "Serce").click();
 
-    // Assert: every button of A's bar rests, still focusable (aria-disabled, not disabled).
+    // Assert: every button of A's bar rests, still focusable: aria-disabled, never the disabled attribute. (Not
+    // toBeEnabled: Playwright counts aria-disabled as disabled, so it would wait out the rest.)
     for (const name of EMOTE_NAMES) {
       await expect(emoteButton(pageA, name), `A's ${name} rests`).toHaveAttribute("aria-disabled", "true");
-      await expect(emoteButton(pageA, name)).toBeEnabled();
+      await expect(emoteButton(pageA, name), `A's ${name} stays focusable`).not.toHaveAttribute("disabled");
     }
     // Assert: every screen, A's own too, hears "A: Serce".
     for (const [who, screen] of screens) {
