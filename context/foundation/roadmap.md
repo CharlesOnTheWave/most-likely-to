@@ -58,7 +58,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | proposed    |
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
-| S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | ready       |
+| S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | in-progress |
 
 ## Streams
 
@@ -317,7 +317,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Czy przy emotce widać nick nadawcy, czy leci anonimowo? — Owner: Karol. Block: no (rozstrzygnąć w planie).
   - Jakie emotki, ile i gdzie pojawiają się na ekranie (każdy ekran pokoju czy tylko głosowanie i odsłona)? — Owner: Karol, wybór na zrzutach. Block: no.
 - **Risk:** To pierwsza treść od graczy, która idzie do całego pokoju na żywo, a kanał na żywo dziś niesie tylko dzwonek, który może nadać każdy znający jego nazwę; emotka nie może dać się podszyć pod gracza ani zalać pokoju, nie może zdradzić głosu (np. emotka „na kogoś” w trakcie głosowania) i nie zostawia śladu w bazie ani logach poza tym, czego gra potrzebuje. Gify i tekst zostają w Parked (PRD §Non-Goals: czat poza aplikacją).
-- **Status:** ready
+- **Status:** in-progress
 
 ## Backlog Handoff
 
