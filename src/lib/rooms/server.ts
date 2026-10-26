@@ -15,8 +15,8 @@ import { gameSummary } from "@/lib/rooms/summary";
 
 // Every database call of the room screens, in one place. The functions come from supabase/migrations/*_room_lobby.sql,
 // *_first_live_round.sql, *_full_game_evening.sql, *_round_number_required.sql, *_latecomer_admission.sql,
-// *_question_list_review.sql and *_game_summary.sql; failures come back as codes for the URL or the JSON answer
-// (src/lib/rooms/errors.ts).
+// *_question_list_review.sql, *_game_summary.sql and *_question_play_data.sql; failures come back as codes for the URL
+// or the JSON answer (src/lib/rooms/errors.ts).
 // Logs go only through src/lib/log.ts, never with an RPC's arguments: they hold nicks, player tokens, link codes,
 // a vote's target and the text of a question the host typed.
 
@@ -25,7 +25,7 @@ export interface RoomFailure {
   reason: string;
 }
 
-// A game's action (start, vote, reveal, next, skip, end), a latecomer's request to join, the host's answer to it
+// A game's action (start, vote, reveal, thumb, next, skip, end), a latecomer's request to join, the host's answer to it
 // ("Wpuść", "Odrzuć") and the host's moves on the game's question list ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń",
 // "Popraw", "Dodaj własne"): the database answers { ok: true } and nothing else, or its refusal.
 export type ActionResult = { ok: true } | RoomFailure;
@@ -343,6 +343,25 @@ export async function castVote(
 export async function revealRound(supabase: SupabaseClient, roomId: string, round: number): Promise<ActionResult> {
   const result = await callRpc(supabase, "reveal_round", { p_room_id: roomId, p_round: round }, roomId);
   return result.ok ? actionResult("reveal_round", result.data, roomId) : result;
+}
+
+// A thumb on the question just revealed (S-11): any player of the room, the host by the session (no token), a guest by
+// the room's cookie. round is the number of the round on the player's screen, which must be the latest one and
+// revealed; "none" takes the thumb back. Nobody else sees it, and the answer never carries it back.
+export async function reactRound(
+  supabase: SupabaseClient,
+  roomId: string,
+  round: number,
+  reaction: "up" | "down" | "none",
+  playerToken?: string | null,
+): Promise<ActionResult> {
+  const result = await callRpc(
+    supabase,
+    "react_round",
+    { p_room_id: roomId, p_round: round, p_reaction: reaction, p_player_token: playerToken ?? null },
+    roomId,
+  );
+  return result.ok ? actionResult("react_round", result.data, roomId) : result;
 }
 
 // "Następne pytanie": the host's session. round is the number of the round on the host's screen, revealed or skipped;

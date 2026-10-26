@@ -2,11 +2,11 @@ import type { APIContext } from "astro";
 import { logEvent } from "@/lib/log";
 import type { ActionResult, RoomFailure } from "@/lib/rooms/server";
 
-// What the JSON routes of the room screen share: the game's actions (start, vote, reveal, next, skip, end, the host's
-// "Wpuść" and "Odrzuć": admit, reject, and the host's moves on the game's question list: question-list, question-draw,
-// question-remove, question-edit, question-add; src/pages/api/rooms/[id]/*.ts), the room's state, a latecomer's request
-// state and the screens' reports (src/pages/api/client-events.ts). Every answer is JSON and never cached; an error is a
-// code from src/lib/rooms/errors.ts, never free text.
+// What the JSON routes of the room screen share: the game's actions (start, vote, reveal, react, next, skip, end, the
+// host's "Wpuść" and "Odrzuć": admit, reject, and the host's moves on the game's question list: question-list,
+// question-draw, question-remove, question-edit, question-add; src/pages/api/rooms/[id]/*.ts), the room's state, a
+// latecomer's request state and the screens' reports (src/pages/api/client-events.ts). Every answer is JSON and never
+// cached; an error is a code from src/lib/rooms/errors.ts, never free text.
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
@@ -117,7 +117,7 @@ export function readJsonBody(context: APIContext, op: string): Promise<JsonBody>
 
 // The number of the question on the player's screen, from a game action's body: a whole number from 1 to MAX_ROUND.
 // undefined when the body has no round, is not an object, or holds something else than a number of a round. Every move
-// of a round (vote, reveal, next, skip) needs one, so a move never lands in a question its screen has not shown.
+// of a round (vote, reveal, thumb, next, skip) needs one, so a move never lands in a question its screen has not shown.
 export function bodyRound(body: unknown): number | undefined {
   if (typeof body !== "object" || body === null || Array.isArray(body) || !Object.hasOwn(body, "round")) {
     return undefined;

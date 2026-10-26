@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SLICE_DOTS, SLICE_FILLS } from "@/components/room/chart-colors";
 import { afterRoundActions, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
+import QuestionReaction, { type QuestionReactionPreview, type Reaction } from "@/components/room/QuestionReaction";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
 import {
@@ -33,7 +34,10 @@ interface Props {
   // The round's number goes with "Następne pytanie", so a second press never moves past the question it opened.
   onNext: (round: number) => Promise<ActionOutcome>;
   onEnd: () => Promise<ActionOutcome>;
+  // A thumb on this question (QuestionReaction): every player's, never waited for by anyone.
+  onReact: (reaction: Reaction, round: number) => Promise<ActionOutcome>;
   hostPreview?: HostActionsPreview;
+  reactionPreview?: QuestionReactionPreview;
 }
 
 const VIEW_OPTIONS: { view: ResultView; label: string; Icon: typeof ChartPie }[] = [
@@ -66,8 +70,9 @@ function ResultPie({ slices, colors }: { slices: PieSlice[]; colors: ReadonlyMap
 // voted for whom. "Koło" or "Paski" changes only this player's screen. Each player keeps one colour from the place at
 // the table (seatColors) in every round: the slice of the pie and the dot in the row, in both views. The result stays
 // until the host opens the next question or ends the game; when the game's pool ran out, only "Zakończ grę"
-// (questionsLeft false). From lg the pie stands next to the table and the host's buttons are a bar at the window's
-// bottom, so the next move stays in view however long the table is.
+// (questionsLeft false). Under the result every player may rate the question with a thumb (QuestionReaction), seen by
+// nobody else. From lg the pie stands next to the table and the host's buttons are a bar at the window's bottom, so the
+// next move stays in view however long the table is.
 export default function RoundReveal({
   view,
   round,
@@ -78,7 +83,9 @@ export default function RoundReveal({
   onChooseView,
   onNext,
   onEnd,
+  onReact,
   hostPreview,
+  reactionPreview,
 }: Props) {
   const rows = resultBars(round.results);
   const top = rows[0]?.votes ?? 0;
@@ -186,6 +193,8 @@ export default function RoundReveal({
           </p>
         </div>
       </section>
+
+      <QuestionReaction round={round.number} idPrefix={idPrefix} onReact={onReact} preview={reactionPreview} />
 
       {isHost && (
         <HostActions

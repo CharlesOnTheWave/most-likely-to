@@ -91,6 +91,16 @@ import { isRecord } from "./rooms";
 // with one, { revealed, totals }: the number of its revealed rounds, and every player with a result in at least one of
 // them as { nick, votes } with the sum of those results, in seat order, zeros included. A skipped round and a round
 // ended without a reveal add nothing and are not counted; a latecomer with no result in a revealed round is not there.
+//
+// The thumb on the reveal (S-11, context/changes/question-reactions-play-data/plan.md, Faza 1), from
+// supabase/migrations/*_question_play_data.sql:
+// react_round(p_room_id uuid, p_round integer, p_reaction text, p_player_token text default null): anon and
+//   authenticated. Any player of the room, the host by auth.uid() or a guest by token, a latecomer let in mid-round
+//   included, on the latest round once it is revealed: p_reaction up, down, or none to take the thumb back.
+//   { ok: true } and nothing else, or { ok: false, reason } with reason in room_unknown, room_closed, no_round (the
+//   lobby, or the round still voting), round_over (p_round missing or not the latest round's number, or the round was
+//   skipped). A malformed token or a reaction other than up, down and none raises 22023. Nobody sees a thumb: room_lobby
+//   keeps exactly the keys below.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -215,6 +225,23 @@ export function skipRound(
   candidates: (string | null)[],
 ): Promise<Answer> {
   return call(client, "skip_round", { p_room_id: roomId, p_round: round, p_candidates: candidates });
+}
+
+// A thumb: the host by its session (no token), a guest with its player token. round: the number of the round on the
+// player's screen. reaction: "up", "down" or "none"; anything else only in the probe of that refusal.
+export function reactRound(
+  client: TestClient,
+  roomId: string,
+  round: number,
+  reaction: string,
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "react_round", {
+    p_room_id: roomId,
+    p_round: round,
+    p_reaction: reaction,
+    ...(playerToken === undefined ? {} : { p_player_token: playerToken }),
+  });
 }
 
 export function endGame(client: TestClient, roomId: string): Promise<Answer> {

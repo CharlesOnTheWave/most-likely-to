@@ -58,7 +58,17 @@ beforeAll(async () => {
   host = await newHost();
 });
 
-const ROUND_TABLES = ["rounds", "round_results", "ballot_boxes", "round_voters"];
+// S-11 adds the thumbs on a reveal (round_reactions), the question counters (question_stats) and the hosts whose games
+// count nothing (stats_excluded_hosts), from *_question_play_data.sql: schema private too, out of every role's reach.
+const ROUND_TABLES = [
+  "rounds",
+  "round_results",
+  "ballot_boxes",
+  "round_voters",
+  "round_reactions",
+  "question_stats",
+  "stats_excluded_hosts",
+];
 
 // The round's tables live in schema private, which the API does not expose (supabase/config.toml: public and
 // graphql_public). This guard keeps it that way: a migration that exposed private, or put one of these tables or a

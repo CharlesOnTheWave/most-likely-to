@@ -7,6 +7,7 @@ import type { HostActionsPreview } from "@/components/room/HostActions";
 import JoinRequests from "@/components/room/JoinRequests";
 import { LiveBanner } from "@/components/room/LiveBanner";
 import type { QuestionListActions } from "@/components/room/QuestionList";
+import type { QuestionReactionPreview, Reaction } from "@/components/room/QuestionReaction";
 import RoomLobby, { type LobbyPreview } from "@/components/room/RoomLobby";
 import { RoomErrorBoundary } from "@/components/room/RoomErrorBoundary";
 import { endInHalves, roomColumn } from "@/components/room/room-frame";
@@ -23,14 +24,16 @@ import { cn } from "@/lib/utils";
 
 // Starting state for the dev previews (/dev/room-states with several screens on one page, /dev/room-window with one);
 // the real page never sets it. With a preview the screen makes no network call at all: no fetch, no channel, no
-// report, and its actions only answer "ok" (a vote shows "Głos oddany"; the host's actions stay busy, as they do until
-// the new state arrives).
+// report, and its actions only answer "ok" (a vote shows "Głos oddany", a thumb is pressed at once; the host's actions
+// stay busy, as they do until the new state arrives).
 export interface ScreenPreview extends LivePreview, LobbyPreview, VotingPreview {
   idPrefix: string;
   // The reveal as if the player had picked this view with the toggle.
   resultView?: ResultView;
   // The host's buttons of the voting, the reveal or the skipped last question.
   host?: HostActionsPreview;
+  // The thumbs of the reveal: one given, a tap on its way or refused.
+  reaction?: QuestionReactionPreview;
   // The screen throws once it is in the browser, to show RoomErrorBoundary's screen.
   crash?: boolean;
 }
@@ -89,8 +92,9 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
 }
 
 // The host's moves that replace the whole view; after them the focus goes to the new view's heading. The host's answer
-// to a latecomer ("Wpuść", "Odrzuć") and the moves on the game's question list in the lobby ("Przejrzyj pytania",
-// "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj") keep the view, so they keep the focus too (QuestionList moves it).
+// to a latecomer ("Wpuść", "Odrzuć"), the moves on the game's question list in the lobby ("Przejrzyj pytania",
+// "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself) and a player's thumb on the
+// reveal keep the view, so they keep the focus too.
 const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
@@ -150,6 +154,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const start = useCallback(() => act("start", {}), [act]);
   const vote = useCallback((target: string | null, round: number) => act("vote", { target, round }), [act]);
   const reveal = useCallback((round: number) => act("reveal", { round }), [act]);
+  const react = useCallback((reaction: Reaction, round: number) => act("react", { reaction, round }), [act]);
   const next = useCallback((round: number) => act("next", { round }), [act]);
   const skip = useCallback((round: number) => act("skip", { round }), [act]);
   const end = useCallback(() => act("end", {}), [act]);
@@ -228,7 +233,9 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         onChooseView={setResultView}
         onNext={next}
         onEnd={end}
+        onReact={react}
         hostPreview={preview?.host}
+        reactionPreview={preview?.reaction}
       />
     );
   }
