@@ -205,9 +205,9 @@ Brak.
 
 #### Automated
 
-- [ ] 2.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
+- [x] 2.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` — PR #28, `9e4a209`
 
 #### Manual
 
-- [ ] 2.2 Smoke na produkcji zielony po scaleniu (za zgodą)
+- [x] 2.2 Smoke na produkcji zielony po scaleniu (za zgodą) — Workers Builds success, smoke raz, wszystkie kroki zielone
 - [ ] 2.3 Karol w najbliższej grze: dymki dobrze widać na telefonie i laptopie, pasek wygodny, nic nie przeszkadza hostowi
