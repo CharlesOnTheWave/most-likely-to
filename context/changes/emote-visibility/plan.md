@@ -193,13 +193,13 @@ Brak.
 
 #### Automated
 
-- [x] 1.1 Bramka zielona: `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build`
-- [x] 1.2 `npx playwright test --list` nadal pokazuje test emotek
+- [x] 1.1 Bramka zielona: `npm run lint` (z `scripts/ui-literals.mjs`), `npx astro check`, `npm test`, `npm run build` — d1f0b80
+- [x] 1.2 `npx playwright test --list` nadal pokazuje test emotek — d1f0b80
 
 #### Manual
 
-- [x] 1.3 Karol wybrał wariant dymków na zrzutach (zapisany tutaj)
-- [x] 1.4 Zrzuty wybranego wariantu: telefon 390 i 360 px (sześć przycisków w jednym rzędzie, koniec widoku nad paskiem), laptop 1536×750 i 1280 px; 3 i 5 dymków, przerwa, odmowa; dymki nie zasłaniają przycisków hosta
+- [x] 1.3 Karol wybrał wariant dymków na zrzutach (zapisany tutaj) — d1f0b80
+- [x] 1.4 Zrzuty wybranego wariantu: telefon 390 i 360 px (sześć przycisków w jednym rzędzie, koniec widoku nad paskiem), laptop 1536×750 i 1280 px; 3 i 5 dymków, przerwa, odmowa; dymki nie zasłaniają przycisków hosta — d1f0b80
 
 ### Phase 2: Wdrożenie
 
