@@ -22,7 +22,7 @@ const LABEL = "Emotki";
 // margin) upright at the window's right edge, always in view. slot: the bar's place in the column; bar: the bar itself;
 // line: the label with the buttons, and the buttons.
 const IN_WINDOW = {
-  slot: "h-16 lg:h-auto lg:border-t lg:pt-4 xl:h-0 xl:border-t-0 xl:pt-0",
+  slot: "h-18 lg:h-auto lg:border-t lg:pt-4 xl:h-0 xl:border-t-0 xl:pt-0",
   bar: cn(
     "bg-background fixed inset-x-0 bottom-0 z-10 border-t px-4 py-3",
     "lg:static lg:border-t-0 lg:bg-transparent lg:p-0",
@@ -82,10 +82,11 @@ export default function EmoteBar({ roomId, idPrefix, inFrame, preview }: Props) 
         {/* As wide as a phone's column while the bar spans the window's width. */}
         <div className="mx-auto flex max-w-lg flex-col gap-2 lg:max-w-none">
           <div role="group" aria-labelledby={labelId} className={cn("flex items-center gap-3", line)}>
-            <p id={labelId} className="text-sm font-medium">
+            {/* Below lg only for a screen reader: six 44 px buttons and the label do not fit a 360 px phone's row. */}
+            <p id={labelId} className="sr-only text-sm font-medium lg:not-sr-only">
               {LABEL}
             </p>
-            <div className={cn("flex flex-wrap gap-2", line)}>
+            <div className={cn("flex flex-1 flex-wrap justify-between gap-2 lg:flex-none lg:justify-start", line)}>
               {EMOTES.map(({ id, char, label }) => (
                 <Button
                   key={id}
@@ -95,7 +96,7 @@ export default function EmoteBar({ roomId, idPrefix, inFrame, preview }: Props) 
                   aria-label={label}
                   aria-disabled={cooling || undefined}
                   aria-describedby={error ? errorId : undefined}
-                  className="text-lg aria-disabled:cursor-default aria-disabled:opacity-50"
+                  className="size-11 text-2xl aria-disabled:cursor-default aria-disabled:opacity-50"
                   onClick={() => {
                     void tap(id);
                   }}
