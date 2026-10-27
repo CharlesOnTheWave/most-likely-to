@@ -399,4 +399,4 @@ ekran i Worker wdrażają się razem.
 #### Manual
 
 - [x] 3.2 Smoke na produkcji zielony po scaleniu (za zgodą), w tym trzy kroki emotki
-- [ ] 3.3 Karol w zbiorczej grze: emotka z nickiem widoczna u wszystkich na telefonie i laptopie, przyciski gasną na 3 s, host prowadzi grę bez przeszkód, dymki nie zasłaniają przycisków
+- [x] 3.3 Karol w zbiorczej grze: emotka z nickiem widoczna u wszystkich na telefonie i laptopie, przyciski gasną na 3 s, host prowadzi grę bez przeszkód, dymki nie zasłaniają przycisków
