@@ -310,7 +310,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
       </div>
       {/* Outside contentRef, with no heading: an emote is not a move that takes the focus to the view's heading. */}
       <EmoteBar roomId={roomId} idPrefix={idPrefix} inFrame={inFrame} preview={preview?.emotes} />
-      <EmoteBubbles shown={emotes} players={view.players} inFrame={inFrame} />
+      <EmoteBubbles shown={emotes} players={view.players} inFrame={inFrame} still={isPreview} />
     </div>
   );
 }

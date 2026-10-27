@@ -2,7 +2,8 @@
 // colours are --chart-1 … --chart-20 in src/styles/global.css), never from the place in a result: the player's slice
 // on the reveal's pie (RoundReveal) and on the end of the evening's (GameSummary), and the dot next to the nick on the
 // lists of players ("Gracze"), in the reveal's table and in the summary's legend. FILLS colour the slices, DOTS the
-// dots. Full class names: Tailwind generates only the classes it finds written out.
+// dots, BORDERS the outline of an emote's bubble. Full class names: Tailwind generates only the classes it finds
+// written out.
 export const SLICE_FILLS = [
   "fill-chart-1",
   "fill-chart-2",
@@ -46,4 +47,27 @@ export const SLICE_DOTS = [
   "bg-chart-18",
   "bg-chart-19",
   "bg-chart-20",
+];
+
+export const SLICE_BORDERS = [
+  "border-chart-1",
+  "border-chart-2",
+  "border-chart-3",
+  "border-chart-4",
+  "border-chart-5",
+  "border-chart-6",
+  "border-chart-7",
+  "border-chart-8",
+  "border-chart-9",
+  "border-chart-10",
+  "border-chart-11",
+  "border-chart-12",
+  "border-chart-13",
+  "border-chart-14",
+  "border-chart-15",
+  "border-chart-16",
+  "border-chart-17",
+  "border-chart-18",
+  "border-chart-19",
+  "border-chart-20",
 ];

@@ -161,6 +161,29 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* An emote's bubble rising from the bar and fading out (EmoteBubbles): as long as EMOTE_SHOW_MS in
+   src/lib/rooms/emotes.ts, only under motion-safe. */
+@theme {
+  --animate-emote-rise: emote-rise 3s ease-out both;
+
+  @keyframes emote-rise {
+    0% {
+      opacity: 0;
+      transform: translateY(0);
+    }
+    10% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-40vh);
+    }
+  }
+}
+
 @utility bg-cosmic {
   background-image: linear-gradient(to bottom, #0a0e1a, #0f1529, #0a0e1a);
 }

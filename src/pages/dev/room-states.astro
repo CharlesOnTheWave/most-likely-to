@@ -378,9 +378,10 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
         pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej
         stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie
         losowania. Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu
-        pod każdym ekranem, a dymki w rogu ramki (94, 95) nie znikają; na prawdziwej stronie pasek jest przypięty do
-        dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna. Od 1024 px stany pokoju mają szerokość strony,
-        jak na laptopie; pokój w prawdziwym oknie, z szerokim nagłówkiem, pokazuje /dev/room-window.
+        pod każdym ekranem, a dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej
+        stronie pasek jest przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w
+        górę i gaśnie po 3 s. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie,
+        z szerokim nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
