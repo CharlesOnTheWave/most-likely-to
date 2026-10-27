@@ -101,6 +101,22 @@ import { isRecord } from "./rooms";
 //   lobby, or the round still voting), round_over (p_round missing or not the latest round's number, or the round was
 //   skipped). A malformed token or a reaction other than up, down and none raises 22023. Nobody sees a thumb: room_lobby
 //   keeps exactly the keys below.
+//
+// The co-host (S-07, context/changes/co-host-role/plan.md, Faza 1), from supabase/migrations/*_co_host_role.sql. The
+// leader is the room's host or a co-host. Since S-07 the leader's seven moves above (start_game, reveal_round,
+// next_round, skip_round, end_game, admit_latecomer, reject_latecomer) take p_player_token text default null as their
+// last argument and are granted to anon and authenticated, in one version each: the host moves by its session (no
+// token), a co-host, who has no session, by its player token. Before any other check, a player of the room without the
+// role gets { ok: false, reason: not_leader }, anyone else (no token, another room's token, another host) room_unknown,
+// and a malformed token raises 22023. The "authenticated only" above is the state before S-07.
+// set_cohost(p_room_id uuid, p_nick text, p_cohost boolean): authenticated only, the room's host's, in the lobby and
+//   while the game is in play. Gives (true) or takes (false) the role of the guest with that nick (as compared).
+//   { ok: true }, also when the guest has that value already, or { ok: false, reason } with reason in room_unknown
+//   (another host's room), room_closed, player_unknown (a nick of no guest of the room, the host's own included).
+// room_lobby: each player is { nick, host, cohost }; requests go to every leader; leader_draw, for a leader only and
+//   null for anyone else: { categories, adult_categories, list_entries, list_base_count } (the room's picked categories
+//   and their 18+ ones, the game's question list's entries not removed and its base_count, both 0 with no list).
+//   question_list stays the host's, and role stays host or guest.
 
 // Real question ids from the base, in the first of the seed categories (SEED_CATEGORIES in rooms.ts) and not 18+:
 // `satisfies` makes the build fail if an id ever leaves the base. The database checks only the id's format.
@@ -120,9 +136,21 @@ export const EVENING_QUESTION_IDS = [
 // requests: the nicks of the latecomers waiting, the host's only (S-08). question_list: the game's question list, the
 // host's only, null for a guest and with no list (S-06). game_totals: the sums of the reveals, only in a closed room and
 // null otherwise (S-15); they are counts per nick that the reveals already showed the whole room, so they hold no
-// voter, and the room's every player sees the same ones.
-export const LOBBY_KEYS = ["game_totals", "me", "players", "question_list", "requests", "role", "round", "status"];
-export const PLAYER_KEYS = ["host", "nick"];
+// voter, and the room's every player sees the same ones. leader_draw: what the leader's moves need (the room's
+// categories and two numbers of the list), a leader's only and null otherwise (S-07). A player's cohost: the role
+// everyone sees by the nick, like host (S-07).
+export const LOBBY_KEYS = [
+  "game_totals",
+  "leader_draw",
+  "me",
+  "players",
+  "question_list",
+  "requests",
+  "role",
+  "round",
+  "status",
+];
+export const PLAYER_KEYS = ["cohost", "host", "nick"];
 // voted: nicks in seat order, never in the order of voting. after_skip: whether the round before this one was skipped,
 // public to everyone and tied to no one's vote. eligible: who may vote in this round, nicks in seat order, tied to no
 // one's vote either (S-08). question_text: the text of an own or reworded question of the list, which has no
@@ -176,8 +204,19 @@ async function call(client: TestClient, fn: string, args: Record<string, unknown
   return { data, error };
 }
 
-export function startGame(client: TestClient, roomId: string, questionId: string): Promise<Answer> {
-  return call(client, "start_game", { p_room_id: roomId, p_question_id: questionId });
+// The player token of a leader's move (S-07): undefined for the host, who moves by its session, so the call carries no
+// p_player_token at all; a guest's token for a co-host, or for a probe of who may move.
+function tokenArg(playerToken: string | undefined): Record<string, string> {
+  return playerToken === undefined ? {} : { p_player_token: playerToken };
+}
+
+export function startGame(
+  client: TestClient,
+  roomId: string,
+  questionId: string,
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "start_game", { p_room_id: roomId, p_question_id: questionId, ...tokenArg(playerToken) });
 }
 
 // The host votes by its session (no token); a guest sends its player token. null target: an abstention. round: the
@@ -198,24 +237,31 @@ export function castVote(
   });
 }
 
-// round: the number of the round on the host's screen; without it the call carries no p_round at all, only in the
+// round: the number of the round on the leader's screen; without it the call carries no p_round at all, only in the
 // probes of that refusal.
-export function revealRound(client: TestClient, roomId: string, round?: number): Promise<Answer> {
+export function revealRound(client: TestClient, roomId: string, round?: number, playerToken?: string): Promise<Answer> {
   return call(client, "reveal_round", {
     p_room_id: roomId,
     ...(round === undefined ? {} : { p_round: round }),
+    ...tokenArg(playerToken),
   });
 }
 
-// round: the number of the round on the host's screen. candidates: the game's pool in the Worker's order; null and
+// round: the number of the round on the leader's screen. candidates: the game's pool in the Worker's order; null and
 // malformed ids only in the probes of the candidates' filter.
 export function nextRound(
   client: TestClient,
   roomId: string,
   round: number,
   candidates: (string | null)[],
+  playerToken?: string,
 ): Promise<Answer> {
-  return call(client, "next_round", { p_room_id: roomId, p_round: round, p_candidates: candidates });
+  return call(client, "next_round", {
+    p_room_id: roomId,
+    p_round: round,
+    p_candidates: candidates,
+    ...tokenArg(playerToken),
+  });
 }
 
 export function skipRound(
@@ -223,8 +269,14 @@ export function skipRound(
   roomId: string,
   round: number,
   candidates: (string | null)[],
+  playerToken?: string,
 ): Promise<Answer> {
-  return call(client, "skip_round", { p_room_id: roomId, p_round: round, p_candidates: candidates });
+  return call(client, "skip_round", {
+    p_room_id: roomId,
+    p_round: round,
+    p_candidates: candidates,
+    ...tokenArg(playerToken),
+  });
 }
 
 // A thumb: the host by its session (no token), a guest with its player token. round: the number of the round on the
@@ -244,8 +296,8 @@ export function reactRound(
   });
 }
 
-export function endGame(client: TestClient, roomId: string): Promise<Answer> {
-  return call(client, "end_game", { p_room_id: roomId });
+export function endGame(client: TestClient, roomId: string, playerToken?: string): Promise<Answer> {
+  return call(client, "end_game", { p_room_id: roomId, ...tokenArg(playerToken) });
 }
 
 export function roomLobby(client: TestClient, roomId: string, playerToken?: string): Promise<Answer> {
@@ -275,14 +327,29 @@ export function joinRequestState(roomId: string, playerToken: string): Promise<A
   return call(anonClient(), "join_request_state", { p_room_id: roomId, p_player_token: playerToken });
 }
 
-// "Wpuść" as the host: nick is the nick on the host's list.
-export function admitLatecomer(client: TestClient, roomId: string, nick: string): Promise<Answer> {
-  return call(client, "admit_latecomer", { p_room_id: roomId, p_nick: nick });
+// "Wpuść" as a leader: nick is the nick on the leader's list.
+export function admitLatecomer(
+  client: TestClient,
+  roomId: string,
+  nick: string,
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "admit_latecomer", { p_room_id: roomId, p_nick: nick, ...tokenArg(playerToken) });
 }
 
-// "Odrzuć" as the host: nick is the nick on the host's list.
-export function rejectLatecomer(client: TestClient, roomId: string, nick: string): Promise<Answer> {
-  return call(client, "reject_latecomer", { p_room_id: roomId, p_nick: nick });
+// "Odrzuć" as a leader: nick is the nick on the leader's list.
+export function rejectLatecomer(
+  client: TestClient,
+  roomId: string,
+  nick: string,
+  playerToken?: string,
+): Promise<Answer> {
+  return call(client, "reject_latecomer", { p_room_id: roomId, p_nick: nick, ...tokenArg(playerToken) });
+}
+
+// The role button as the host (S-07): cohost true gives the co-host role to the guest with that nick, false takes it.
+export function setCohost(client: TestClient, roomId: string, nick: string, cohost: boolean): Promise<Answer> {
+  return call(client, "set_cohost", { p_room_id: roomId, p_nick: nick, p_cohost: cohost });
 }
 
 // "Przejrzyj pytania" as the host. candidates: the pool of the picked categories in the Worker's order; null and

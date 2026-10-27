@@ -34,15 +34,18 @@ Hipoteza hosta (niezweryfikowana wobec istniejących aplikacji, patrz Open Quest
 ## Success Criteria
 
 ### Primary
+
 - Host zakłada grę (logowanie → kategorie → link) w mniej niż 5 minut.
 - Ekipa rozgrywa co najmniej 10 pytań w jednym wieczorze bez awarii i bez sięgania po Google Forms.
 
 ### Secondary
+
 - Goście sami dodali własne pytania w trakcie wieczoru.
 - Po 3 wieczorach pytania są zauważalnie lepsze (ekipa to czuje).
 - Ktoś spoza ekipy autora zagrał i dał feedback, że to fajne.
 
 ### Guardrails
+
 - Runda przeżywa odświeżenie strony i wypadnięcie gracza; gracz wraca na swój nick, gra idzie dalej.
 - Gość dołącza w mniej niż 30 sekund bez instrukcji.
 - O gościu nie zostaje nic poza nickiem i głosami; host może skasować historię.
@@ -71,6 +74,7 @@ Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy
 - **Then** wszyscy widzą to samo pytanie; gdy wszyscy zagłosują (albo host przewinie), wszyscy widzą odsłonę z liczbą głosów na osobę, bez informacji kto na kogo
 
 #### Acceptance Criteria
+
 - Pytanie pochodzi tylko z wybranych kategorii (pytania 18+ tylko z tych, w których host je dołączył) i nie powtórzyło się w tej sesji
 - Gość, który odświeży stronę w trakcie rundy, wraca na swój nick, widzi bieżące pytanie i swój oddany głos
 - Przy 3 graczach odsłona następuje natychmiast po trzecim głosie; nie ma timera
@@ -79,6 +83,7 @@ Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy
 ## Functional Requirements
 
 ### Dostęp i role
+
 - FR-001: Host can sign in with one click via an external provider, without registration or password; host identity is tied to the e-mail, so the same host can sign in through an alternative method (another provider or e-mail) when one is unavailable. Priority: must-have
   > Socratic: Counter-argument considered: "provider outage on game night or a host without an account at that provider locks the host out of their own pool." Resolution: amended; identity keyed by e-mail, at least one alternative sign-in path (second provider or e-mail).
 - FR-002: Guest can join a room via its link by entering a nick, without an account; the room rejects a duplicate nick. Priority: must-have
@@ -91,6 +96,7 @@ Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy
   > Socratic: Counter-argument considered: "21:30, the host is mid-round looking at the question, not at notifications; a latecomer spends five minutes on Discord asking to be let in." Resolution: amended — knock visible to both leaders everywhere; entry from the next round.
 
 ### Pokój i rozgrywka
+
 - FR-005: Host can create a room, choose question categories for the game (and, for each chosen category, whether to include its 18+ questions), and get a shareable room link. Priority: must-have
   > Socratic: Counter-argument considered: "host picks two thin categories and the game ends after six questions; no count shown at selection." Resolution: kept as written; the question base will grow over a long time, showing counts is not needed.
   > Amendment 2026-09-27 (F-02 planning, game creator's decision): every question carries an 18+ flag, and the host decides per chosen category whether its 18+ questions are included.
@@ -105,7 +111,7 @@ Zakres v1: logowanie hosta, pokój, runda, kategorie, opcjonalny przegląd listy
 - FR-011: Player who refreshes the page or reconnects returns to their nick and the current round state, including a vote already cast; reclaiming a nick requires verification that it is the same person. Priority: must-have
   > Socratic: Counter-arguments considered: "someone else takes my nick while I am disconnected"; "reconnect without restoring the vote lets a player vote twice." Resolution: both accepted — amended as above; verification mechanism is a downstream choice.
 
-*FR-010 (punktacja) usunięte w sesji kształtowania: w tej grze nie ma punktów; zabawą jest odsłona i rozmowa, nie ranking.*
+_FR-010 (punktacja) usunięte w sesji kształtowania: w tej grze nie ma punktów; zabawą jest odsłona i rozmowa, nie ranking._
 
 ### Pula pytań
 
@@ -131,6 +137,7 @@ Model puli: wspólna baza pytań z kategoriami, kuratorowana przez twórcę gry;
   > Socratic: Counter-argument considered: "in v1 there is one creator, and a review panel is another screen inside an 8-week budget when a list to review outside the app would do." Resolution: downgraded to nice-to-have — in v1 the app sets new questions aside for review and the creator adds them to the base the same way the starting base is built (outside the UI); the in-app panel is v2.
 
 ### Dodatki
+
 - FR-022: Players can see an end-of-evening summary with highlights such as "most voted tonight" and "nobody voted for X tonight"; no points and no ranking across evenings. Priority: nice-to-have
 - FR-023: Player can send an emoji or gif reaction visible to the room during the evening; voice and text conversation stays on Discord. Priority: nice-to-have
 - FR-024: The same browser suggests the nick its player used last time when they join a room or create a game; the player can change it before joining. Priority: nice-to-have
@@ -158,26 +165,29 @@ Aplikacja prowadzi rundę na żywo: pokazuje wszystkim to samo pytanie w tej sam
 
 - **Twórca gry** (operator) — buduje i kuratoruje wspólną bazę pytań z kategoriami, z której losują wszyscy hości; po każdym wieczorze weryfikuje nowe pytania (zatwierdzone propozycje gości i własne pytania hosta) i dołącza je do bazy albo odrzuca. Jedna osoba w MVP (autor).
 - **Host** — loguje się bez rejestracji i hasła; do wyboru kilka sposobów logowania jednym kliknięciem, zależnie od preferencji osoby (konkretna lista dostawców to decyzja późniejsza, poza PRD). Host jest właścicielem swoich gier: wybiera kategorie, przegląda i poprawia listę pytań na dany wieczór przed startem, ma minimalną listę swoich gier (pełna historia w v2) i prawo skasowania swoich danych. Nie ma trwałej puli własnej — pytania dopisane przez hosta żyją w tej grze, a potem trafiają do weryfikacji twórcy.
-- **Współhost** — gość, któremu host w pokoju nadaje uprawnienia prowadzenia: start i pominięcie rundy, zatwierdzanie propozycji (trafiają tylko do listy tej gry, więc nic trwałego nie psuje), wpuszczanie spóźnionych, usunięcie gracza z pokoju. Nie ma dostępu do panelu hosta. Cel: wieczór nie umiera, gdy host wyjdzie.
+- **Współhost** — gość, któremu host w pokoju nadaje uprawnienia prowadzenia: start gry, odsłona wyniku, następne pytanie, pominięcie rundy i zakończenie gry (z tym samym potwierdzeniem co u hosta), zatwierdzanie propozycji (trafiają tylko do listy tej gry, więc nic trwałego nie psuje), wpuszczanie spóźnionych, usunięcie gracza z pokoju. Nie ma dostępu do panelu hosta ani do listy pytań gry. Cel: wieczór nie umiera, gdy host wyjdzie.
+  > Uzupełnienie 2026-10-27 (S-07, decyzje twórcy gry): współhostów może być wielu; współhostem może zostać każdy gość w pokoju, także wpuszczony spóźniony, nigdy host; rolę nadaje i odbiera tylko host; współhost kończy grę jak host; link dla graczy widzi tylko host.
 - **Gość** — wchodzi linkiem do pokoju, wpisuje nick, bez konta. Może głosować, pomijać, proponować pytania. Tożsamość żyje w tej sesji.
 - **Niezalogowany na trasie hosta** (panel, tworzenie pokoju) → przekierowanie do logowania. Link do pokoju działa bez logowania.
 - Dodatek v1 (FR-024, decyzja hosta 2026-10-25): nick „przypięty" w przeglądarce, żeby ten sam telefon proponował ten sam nick następnym razem.
 
-| możliwość | twórca gry | host | współhost | gość |
-|---|---|---|---|---|
-| tworzenie pokoju, wybór kategorii | – | ✓ | – | – |
-| przegląd i edycja listy pytań gry przed startem | – | ✓ | – | – |
-| start / pominięcie rundy, zakończenie gry | – | ✓ | ✓ | – |
-| głosowanie, pomijanie, propozycja pytania | – | ✓ | ✓ | ✓ |
-| zatwierdzanie propozycji (do listy tej gry) | – | ✓ | ✓ | – |
-| wpuszczanie spóźnionych, usunięcie gracza z pokoju | – | ✓ | ✓ | – |
-| nadanie / odebranie roli współhosta | – | ✓ | – | – |
-| panel hosta: lista własnych gier i kasowanie pojedynczych | – | ✓ | – | – |
-| wspólna baza pytań i kategorie; weryfikacja nowych pytań po grze | ✓ | – | – | – |
+| możliwość                                                               | twórca gry | host | współhost | gość |
+| ----------------------------------------------------------------------- | ---------- | ---- | --------- | ---- |
+| tworzenie pokoju, wybór kategorii                                       | –          | ✓    | –         | –    |
+| przegląd i edycja listy pytań gry przed startem                         | –          | ✓    | –         | –    |
+| start gry, odsłona, następne pytanie, pominięcie rundy, zakończenie gry | –          | ✓    | ✓         | –    |
+| link dla graczy w poczekalni                                            | –          | ✓    | –         | –    |
+| głosowanie, pomijanie, propozycja pytania                               | –          | ✓    | ✓         | ✓    |
+| zatwierdzanie propozycji (do listy tej gry)                             | –          | ✓    | ✓         | –    |
+| wpuszczanie spóźnionych, usunięcie gracza z pokoju                      | –          | ✓    | ✓         | –    |
+| nadanie / odebranie roli współhosta                                     | –          | ✓    | –         | –    |
+| panel hosta: lista własnych gier i kasowanie pojedynczych               | –          | ✓    | –         | –    |
+| wspólna baza pytań i kategorie; weryfikacja nowych pytań po grze        | ✓          | –    | –         | –    |
 
 ## Non-Goals
 
 Funkcjonalne:
+
 - **Żadnej odsłony ani zapisu „kto na kogo głosował", w jakiejkolwiek formie** — trwała zasada gry, nie „na później"; aplikacja nie ma zbierać, że gość X głosował na gościa Y, ani razu, ani 200 razy.
 - **Bez punktów i rankingu między wieczorami** — zabawą jest odsłona i rozmowa; jednorazowe „podsumowanie wieczoru" (FR-022) to dodatek, nie tabela wyników.
 - **Bez kont gości w v1** — gość wchodzi linkiem i wpisuje nick; nick pamiętany w przeglądarce to dodatek v1 (FR-024), a nie konto. Konto gościa nie jest zakazane na przyszłość: jeśli ktoś chce je mieć, nie będziemy tego zabraniać, ale najpierw trzeba ustalić, po co gość w ogóle chce mieć konto (Open Questions).
@@ -188,6 +198,7 @@ Funkcjonalne:
 - **Bez wersji angielskiej w v1** — gra i baza pytań są po polsku; angielski ewentualnie po dopracowaniu gry (decyzja hosta 2026-09-26).
 
 Niefunkcjonalne:
+
 - **Bez aplikacji mobilnej ze sklepu i bez trybu offline** — tylko przeglądarka, tylko z siecią.
 - **Bez założeń o skali powyżej około stu użytkowników** — przed wyjściem poza tę skalę host chce przemyśleć sens gry od nowa.
 

@@ -49,7 +49,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-04 | rejoin-after-refresh         | Gracz po odświeżeniu wraca na swój nick w bieżącej rundzie, z oddanym głosem                                        | S-02             | US-01, FR-011                                             | proposed    |
 | S-05 | one-click-host-login         | Host loguje się jednym kliknięciem, bez hasła, z zapasową drogą logowania                                           | —                | FR-001                                                    | done        |
 | S-06 | question-list-review         | Host może przed startem przejrzeć i poprawić wylosowaną listę pytań                                                 | S-02             | FR-012                                                    | done        |
-| S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | proposed    |
+| S-07 | co-host-role                 | Host nadaje i odbiera współhosta, który może prowadzić rundy                                                        | S-03             | FR-003, FR-006, FR-020                                    | in-progress |
 | S-08 | latecomer-admission          | Spóźniony prosi o wejście, prowadzący go wpuszcza, a on głosuje od następnej rundy                                  | S-03             | FR-020                                                    | done        |
 | S-09 | remove-player-new-link       | Prowadzący usuwa gracza, a pokój dostaje nowy link                                                                  | S-07             | FR-004                                                    | proposed    |
 | S-10 | guest-question-proposals     | Gość proponuje pytania do limitu, a prowadzący zatwierdza je do listy tej gry                                       | S-07             | FR-013, FR-014                                            | proposed    |
@@ -200,7 +200,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Wprowadza drugą rolę prowadzącego, na której opierają się S-09 i S-10; S-08 idzie wcześniej z samym hostem (decyzja 2026-10-22), a S-07 dopisze współhosta do wpuszczania spóźnionych.
-- **Status:** proposed
+- **Status:** in-progress
 
 ### S-08: Wpuszczanie spóźnionych
 

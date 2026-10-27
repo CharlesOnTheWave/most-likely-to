@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { anonClient, newHost, newPlayerToken, type Host } from "./support/clients";
-import { seedGuest, seedRoom, type OwnRoom, type SeededGuest } from "./support/rooms";
+import { isRecord, seedGuest, seedRoom, type OwnRoom, type SeededGuest } from "./support/rooms";
 import {
   EVENING_QUESTION_IDS,
   admitLatecomer,
@@ -32,7 +32,9 @@ import {
 // such function), and every test here is red on its own probe or on the state those calls should have made. Another
 // host letting someone into this host's game is round-rules.test.ts's to check, where the second host lives.
 //
-// One sign-up per run, in beforeAll; the file plays one room.
+// One sign-up per run, in beforeAll. The file plays one room, then a second one for the requests sent at once (F1 of
+// context/archive/2026-10-22-latecomer-admission/follow-ups/review-fixes.md): one open room per host, so it opens once
+// the first is closed (confirm_close closes it should the end have failed); Vitest runs the suites in order.
 
 const anon = anonClient();
 const [Q1, Q2] = EVENING_QUESTION_IDS;
@@ -101,6 +103,8 @@ describe("a game with latecomers: Host, Ola and Bartek play, Kuba and five more 
   let admitKubaAgain: Answer;
   let guestAdmits: Answer;
   let guestRejects: Answer;
+  let olaAdmits: Answer;
+  let olaRejects: Answer;
   // The waiting screen's state for nobody.
   let neverAskedState: Answer;
   let malformedTokenState: Answer;
@@ -184,9 +188,12 @@ describe("a game with latecomers: Host, Ola and Bartek play, Kuba and five more 
     admitWithNoRequest = await admitLatecomer(host.client, room.id, "Ula");
     rejectWithNoRequest = await rejectLatecomer(host.client, room.id, "Ula");
     admitKubaAgain = await admitLatecomer(host.client, room.id, "Kuba");
-    // A guest trying the host's moves while Wiktor waits, so a call that got through would have someone to act on.
+    // Someone with no token and Ola, a guest with no co-host role, trying the leader's moves while Wiktor waits, so a
+    // call that got through would have someone to act on.
     guestAdmits = await admitLatecomer(anon, room.id, "Wiktor");
     guestRejects = await rejectLatecomer(anon, room.id, "Wiktor");
+    olaAdmits = await admitLatecomer(anon, room.id, "Wiktor", ola.playerToken);
+    olaRejects = await rejectLatecomer(anon, room.id, "Wiktor", ola.playerToken);
 
     // While the game is in play: a token with nothing in this room, a malformed one, and a room that does not exist.
     neverAskedState = await joinRequestState(room.id, newPlayerToken());
@@ -223,7 +230,8 @@ describe("a game with latecomers: Host, Ola and Bartek play, Kuba and five more 
     expect(kubaLobbyWhileWaiting).toEqual({ data: null, error: null });
   });
 
-  // Only the host decides who comes in, so only the host sees who asks.
+  // Only a leader decides who comes in, so only a leader sees who asks: Ola has no co-host role (S-07,
+  // tests/db/cohost.test.ts).
   it("while round 1 is voting the host sees requests: [Kuba] and a guest sees requests: []", () => {
     expect(hostSeesKuba).toMatchObject({ error: null, data: { status: "playing", requests: ["Kuba"] } });
     expect(olaSeesKuba).toMatchObject({ error: null, data: { status: "playing", requests: [] } });
@@ -393,13 +401,21 @@ describe("a game with latecomers: Host, Ola and Bartek play, Kuba and five more 
     expect(answer()).toMatchObject({ error: null, data: { ok: false, reason: "request_unknown" } });
   });
 
-  // Only the host lets in and turns away: no grant to anon, so the function's name is checked, not only 42501 (G2).
+  // Only a leader lets in and turns away: the host, or a co-host by its token (S-07, tests/db/cohost.test.ts). Granted to
+  // anon since S-07, so the refusal is the function's own answer: no token learns nothing about the room, and a guest
+  // of the room without the role gets not_leader.
   it.each([
     { fn: "admit_latecomer", answer: () => guestAdmits },
     { fn: "reject_latecomer", answer: () => guestRejects },
-  ])("a guest calling $fn is refused permission on the function", ({ fn, answer }) => {
-    expect(answer().error?.code).toBe("42501");
-    expect(answer().error?.message).toContain(`function ${fn}`);
+  ])("a guest with no token calling $fn gets room_unknown", ({ answer }) => {
+    expect(answer()).toMatchObject({ error: null, data: { ok: false, reason: "room_unknown" } });
+  });
+
+  it.each([
+    { fn: "admit_latecomer", answer: () => olaAdmits },
+    { fn: "reject_latecomer", answer: () => olaRejects },
+  ])("Ola, a guest with no co-host role, calling $fn gets not_leader", ({ answer }) => {
+    expect(answer()).toMatchObject({ error: null, data: { ok: false, reason: "not_leader" } });
   });
 
   // The waiting screen gets no state to tell, and no error.
@@ -427,5 +443,57 @@ describe("a game with latecomers: Host, Ola and Bartek play, Kuba and five more 
 
   it("Wpuść after the end gets request_unknown", () => {
     expect(admitAfterEnd).toMatchObject({ error: null, data: { ok: false, reason: "request_unknown" } });
+  });
+});
+
+// F1 of context/archive/2026-10-22-latecomer-admission/follow-ups/review-fixes.md: request_join's first refusal, and
+// its limit when the requests come at once. The limit above is checked one request after another; here six
+// latecomers ask at the same moment, so only the lock on the room's row keeps the sixth out (at most 5 wait, decision
+// of context/archive/2026-10-22-latecomer-admission/plan.md).
+describe("a second game: a malformed token, and six latecomers asking at once", () => {
+  const SIX = ["Ala", "Bea", "Cyla", "Dora", "Ewka", "Fela"];
+  let room: OwnRoom;
+  let malformedToken: Answer;
+  let sixAtOnce: Answer[];
+  let hostSeesWaiting: Answer;
+
+  beforeAll(async () => {
+    room = await seedRoom(host, { confirmClose: true });
+    await seedGuest(room.linkToken, "Ola");
+    await seedGuest(room.linkToken, "Bartek");
+    await seedStartGame(host, room.id, Q1);
+
+    // Not our client: the Worker sends the cookie's 32-byte token or a fresh one.
+    malformedToken = await requestJoin(room.linkToken, "Igor", "not-a-player-token");
+
+    // Each with a token and a nick of its own, so the limit is the only thing the sixth can be refused for.
+    sixAtOnce = await Promise.all(SIX.map((nick) => requestJoin(room.linkToken, nick, newPlayerToken())));
+    hostSeesWaiting = await roomLobby(host.client, room.id);
+  });
+
+  it("a request with a malformed player token is refused with 22023", () => {
+    expect(malformedToken).toMatchObject({ data: null, error: { code: "22023", details: null } });
+  });
+
+  // Which of the six comes last is the race's; how many get in is not.
+  it("six requests at once get exactly 5 × ok and 1 × requests_full", () => {
+    const outcomes = sixAtOnce.map((answer) => {
+      if (answer.error) return `error ${answer.error.code}`;
+      const data = answer.data;
+      if (isRecord(data) && data.ok === true) return "ok";
+      return isRecord(data) && typeof data.reason === "string" ? data.reason : "an unexpected shape";
+    });
+
+    expect(outcomes.sort()).toEqual(["ok", "ok", "ok", "ok", "ok", "requests_full"]);
+  });
+
+  it("after them the host sees exactly 5 of the six waiting", () => {
+    const data = hostSeesWaiting.data;
+    const requests: unknown = isRecord(data) ? data.requests : null;
+    const waiting = Array.isArray(requests) ? (requests as unknown[]) : [];
+
+    expect(hostSeesWaiting.error).toBeNull();
+    expect(waiting).toHaveLength(5);
+    expect(waiting.every((nick) => typeof nick === "string" && SIX.includes(nick))).toBe(true);
   });
 });
