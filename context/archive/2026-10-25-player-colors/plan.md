@@ -237,9 +237,9 @@ Nie dotyczy: bez zmian w bazie i bez nowych danych. Wycofanie to zwykły revert 
 
 #### Automated
 
-- [ ] 2.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` (testy E2E bez zmian, kropka bez tekstu ich nie dotyka)
+- [x] 2.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e` (testy E2E bez zmian, kropka bez tekstu ich nie dotyka)
 
 #### Manual
 
-- [ ] 2.2 Smoke na produkcji zielony po scaleniu (za zgodą)
-- [ ] 2.3 Karol: krótka gra na telefonie i laptopie z co najmniej dwiema odsłonami o różnych zwycięzcach, potem „Zakończ grę”. Każdy gracz ma ten sam kolor na liście „Gracze”, w każdej odsłonie i w podsumowaniu.
+- [x] 2.2 Smoke na produkcji zielony po scaleniu (za zgodą)
+- [x] 2.3 Karol: krótka gra na telefonie i laptopie z co najmniej dwiema odsłonami o różnych zwycięzcach, potem „Zakończ grę”. Każdy gracz ma ten sam kolor na liście „Gracze”, w każdej odsłonie i w podsumowaniu.

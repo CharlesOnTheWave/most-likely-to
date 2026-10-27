@@ -382,21 +382,21 @@ ekran i Worker wdrażają się razem.
 
 #### Automated
 
-- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [x] 2.2 `npx playwright test --list` pokazuje nowy test emotek (sam test gra w CI, job `e2e`)
+- [x] 2.1 Bramka zielona: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 5d80891
+- [x] 2.2 `npx playwright test --list` pokazuje nowy test emotek (sam test gra w CI, job `e2e`) — 5d80891
 
 #### Manual
 
-- [x] 2.3 Karol wybrał wariant rozmieszczenia paska i dymków na zrzutach (zapisany tutaj)
-- [x] 2.4 Zrzuty wybranego wariantu: pasek i dymki na telefonie i laptopie, przerwa 3 s, odmowa, pięć dymków; fokus po ruchu hosta nadal w tytule ekranu
+- [x] 2.3 Karol wybrał wariant rozmieszczenia paska i dymków na zrzutach (zapisany tutaj) — 5d80891
+- [x] 2.4 Zrzuty wybranego wariantu: pasek i dymki na telefonie i laptopie, przerwa 3 s, odmowa, pięć dymków; fokus po ruchu hosta nadal w tytule ekranu — 5d80891
 
 ### Phase 3: Wdrożenie
 
 #### Automated
 
-- [ ] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
+- [x] 3.1 CI na PR zielone: `ci`, `smoke`, `db`, `e2e`
 
 #### Manual
 
-- [ ] 3.2 Smoke na produkcji zielony po scaleniu (za zgodą), w tym trzy kroki emotki
-- [ ] 3.3 Karol w zbiorczej grze: emotka z nickiem widoczna u wszystkich na telefonie i laptopie, przyciski gasną na 3 s, host prowadzi grę bez przeszkód, dymki nie zasłaniają przycisków
+- [x] 3.2 Smoke na produkcji zielony po scaleniu (za zgodą), w tym trzy kroki emotki
+- [x] 3.3 Karol w zbiorczej grze: emotka z nickiem widoczna u wszystkich na telefonie i laptopie, przyciski gasną na 3 s, host prowadzi grę bez przeszkód, dymki nie zasłaniają przycisków

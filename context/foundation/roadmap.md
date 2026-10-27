@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-26
+updated: 2026-10-27
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -58,7 +58,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-13 | host-game-history            | Host widzi listę swoich gier i kasuje wybraną; anonimowe dane o pytaniach zostają                                   | S-11             | FR-019                                                    | proposed    |
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
-| S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | in-progress |
+| S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
 
 ## Streams
 
@@ -317,7 +317,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Czy przy emotce widać nick nadawcy, czy leci anonimowo? — Owner: Karol. Block: no (rozstrzygnąć w planie).
   - Jakie emotki, ile i gdzie pojawiają się na ekranie (każdy ekran pokoju czy tylko głosowanie i odsłona)? — Owner: Karol, wybór na zrzutach. Block: no.
 - **Risk:** To pierwsza treść od graczy, która idzie do całego pokoju na żywo, a kanał na żywo dziś niesie tylko dzwonek, który może nadać każdy znający jego nazwę; emotka nie może dać się podszyć pod gracza ani zalać pokoju, nie może zdradzić głosu (np. emotka „na kogoś” w trakcie głosowania) i nie zostawia śladu w bazie ani logach poza tym, czego gra potrzebuje. Gify i tekst zostają w Parked (PRD §Non-Goals: czat poza aplikacją).
-- **Status:** in-progress
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -390,3 +390,4 @@ _Brak: to pierwszy kamień milowy._
 - **S-08: Spóźniony gracz prosi o wejście do trwającej gry z wybranym nickiem; prośba jest widoczna dla hosta na każdym ekranie (współhosta dopisze S-07), także w trakcie głosowania; wpuszczony widzi bieżącą rundę i głosuje od następnej.** — Archived 2026-10-24 → `context/archive/2026-10-22-latecomer-admission/`. Lesson: —.
 - **S-14: Gość, który wchodzi do pokoju z tego samego telefonu co ostatnio, ma już wpisany swój poprzedni nick i tylko klika „Dołącz”; host ma swój nick wpisany w formularzu „Nowa gra”. Nick da się zmienić przed wejściem.** — Archived 2026-10-25 → `context/archive/2026-10-25-remembered-nick/`. Lesson: —.
 - **S-15: Gdy gra się kończy (po ostatnim pytaniu albo gdy prowadzący zakończy ją wcześniej), wszyscy gracze na ekranie „Koniec wieczoru” widzą kilka wyróżnień z tej gry, np. „najwięcej głosów dziś” i „nikt dziś nie głosował na X”; bez punktów, miejsc i porównań z innymi wieczorami.** — Archived 2026-10-25 → `context/archive/2026-10-25-game-summary/`. Lesson: —.
+- **S-16: Każdy gracz w pokoju (host i goście) może w trakcie gry jednym dotknięciem wysłać emotkę z krótkiej, stałej listy, a cały pokój widzi ją na chwilę na swoim ekranie; bez gifów, bez wpisywania tekstu i bez historii wiadomości. Emotka jest nieobowiązkowa i niczego nie blokuje.** — Archived 2026-10-27 → `context/archive/2026-10-26-room-emotes/`. Lesson: —.
