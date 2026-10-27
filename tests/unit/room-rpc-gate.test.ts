@@ -64,7 +64,7 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261026074427_question_play_data.sql:270
+  // supabase/migrations/20261026074427_question_play_data.sql:269
   start_game: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_question_id", hasDefault: false },
@@ -81,20 +81,20 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: true },
   ],
-  // supabase/migrations/20261026074427_question_play_data.sql:506-511
+  // supabase/migrations/20261026074427_question_play_data.sql:505-510
   react_round: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: false },
     { name: "p_reaction", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261026074427_question_play_data.sql:358
+  // supabase/migrations/20261026074427_question_play_data.sql:357
   next_round: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: false },
     { name: "p_candidates", hasDefault: false },
   ],
-  // supabase/migrations/20261026074427_question_play_data.sql:424
+  // supabase/migrations/20261026074427_question_play_data.sql:423
   skip_round: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: false },

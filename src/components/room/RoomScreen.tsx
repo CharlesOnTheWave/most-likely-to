@@ -188,7 +188,9 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
       if (isPreview) return { ok: true };
       if (VIEW_CHANGING.includes(action)) movedFrom.current = key;
       const outcome = await sendRoomAction(roomId, action, body);
-      if (!outcome.ok) movedFrom.current = null;
+      // Only a refused move of the host's own drops its focus target: a thumb refused while "Następne pytanie" is on
+      // its way (round_over) must not.
+      if (!outcome.ok && VIEW_CHANGING.includes(action)) movedFrom.current = null;
       // Accepted or refused, the room's state may have moved on (a refused vote: already cast, already revealed).
       refresh();
       return outcome;

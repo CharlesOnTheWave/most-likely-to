@@ -1,9 +1,9 @@
 ---
 change_id: room-emotes
 title: Emotki do pokoju
-status: implementing
+status: impl_reviewed
 created: 2026-10-26
-updated: 2026-10-26
+updated: 2026-10-27
 archived_at: null
 ---
 
