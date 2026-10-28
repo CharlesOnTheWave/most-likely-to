@@ -436,7 +436,7 @@ Start, następne i pominięcie wołają `room_lobby` zamiast jednego odczytu `ro
 #### Automated
 
 - [x] 2.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 8c34573
-- [ ] 2.2 CI na PR zielone we wszystkich jobach, w tym nowe kroki smoke współhosta
+- [x] 2.2 CI na PR zielone we wszystkich jobach, w tym nowe kroki smoke współhosta — PR #30, d33d94d
 
 #### Manual
 
