@@ -90,7 +90,7 @@ begin
   end if;
 
   if not v_cohost then
-    return null; -- PRÓBNY ALARM (a)
+    return 'not_leader';
   end if;
 
   return null;
@@ -761,7 +761,7 @@ begin
   -- and their 18+ ones, to draw the next question, and two numbers of the game's question list, to count the questions
   -- left: its entries not removed (list_entries) and its rows with a question id of the base (list_base_count, removed
   -- and reworded entries included), both 0 with no list. Never the list itself, which stays the host's.
-  if true then -- PRÓBNY ALARM (b)
+  if v_leader then
     v_leader_draw := jsonb_build_object(
       'categories', to_jsonb(v_categories),
       'adult_categories', to_jsonb(v_adult_categories),
