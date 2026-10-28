@@ -429,7 +429,7 @@ Start, następne i pominięcie wołają `room_lobby` zamiast jednego odczytu `ro
 
 #### Manual
 
-- [ ] 1.5 Karol czyta streszczenie migracji (kolumna, kontrola prowadzącego, 7 ruchów, nadawanie roli, co widzi współhost) i je akceptuje
+- [x] 1.5 Karol czyta streszczenie migracji (kolumna, kontrola prowadzącego, 7 ruchów, nadawanie roli, co widzi współhost) i je akceptuje — 2026-10-28
 
 ### Phase 2: Serwer gry
 
