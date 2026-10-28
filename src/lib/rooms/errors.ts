@@ -2,11 +2,12 @@
 // screen shows the Polish text from this map, so text typed into `?error=` never reaches the screen (same as
 // src/lib/auth-errors.ts).
 
-// The refusals of the game's actions (start, vote, reveal, next, skip, end), of the host's answer to a latecomer
-// ("Wpuść", "Odrzuć") and of the host's moves on the game's question list ("Przejrzyj pytania", "Dolosuj pytanie",
-// "Usuń", "Popraw", "Dodaj własne"; list_empty is the start's), each with its own text (audit G2).
-// tests/unit/room-errors.test.ts checks this list against the plans. game_started is also join_room's: a game in play
-// takes a latecomer only through a request to the host (S-08).
+// The refusals of the game's actions (start, vote, reveal, next, skip, end), of the leader's answer to a latecomer
+// ("Wpuść", "Odrzuć"), of the host's role button (player_unknown) and of the host's moves on the game's question list
+// ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj własne"; list_empty is the start's), each with its
+// own text (audit G2). not_leader: a leader's move by a guest of the room without the co-host role, e.g. once the host
+// took it (S-07). tests/unit/room-errors.test.ts checks this list against the plans. game_started is also join_room's:
+// a game in play takes a latecomer only through a request to the host (S-08).
 export const ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -26,6 +27,8 @@ export const ROUND_REFUSALS = [
   "list_full",
   "list_empty",
   "no_new_questions",
+  "not_leader",
+  "player_unknown",
 ] as const;
 
 export type RoundRefusal = (typeof ROUND_REFUSALS)[number];
@@ -70,6 +73,10 @@ const MESSAGES: Record<string, string> = {
   // "Dolosuj pytanie" once every question of the picked categories is on the list: draw_list_question's no_questions,
   // whose start text would send the host to a new game (src/pages/api/rooms/[id]/question-draw.ts).
   no_new_questions: "W wybranych kategoriach nie ma już nowych pytań. Dodaj własne.",
+  // A leader's move after the host took the co-host role (S-07): set_cohost and the move take turns on the room's row.
+  not_leader: "Nie jesteś już współhostem.",
+  // The host's role button for a nick no guest of the room has (gone from the room, or the host's own).
+  player_unknown: "Tego gracza nie ma w pokoju.",
 };
 
 const GENERIC_MESSAGE = "Coś poszło nie tak. Spróbuj ponownie.";

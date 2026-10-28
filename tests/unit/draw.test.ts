@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { CATEGORIES, QUESTIONS } from "@/data/questions";
-import type { GameQuestionList } from "@/lib/rooms/shared";
 import {
   drawFrom,
   drawQuestion,
@@ -205,28 +204,25 @@ describe("questionPool and shuffledQuestions", () => {
   });
 });
 
-// "Pozostałe pytania" for the host after a reveal or a skip (context/archive/2026-10-24-question-list-review/plan.md,
+// "Pozostałe pytania" for a leader after a reveal or a skip (context/archive/2026-10-24-question-list-review/plan.md,
 // Critical Implementation Details): every round, a skipped one too, plays one question and none comes twice. The game
 // plays the entries of its question list not removed first, then the pool of the picked categories without every
-// question id on any row of the list. The totals are counted by hand below.
+// question id on any row of the list. Since S-07 the count takes only the list's two numbers, as room_lobby's
+// leader_draw gives them (context/changes/co-host-role/plan.md, Faza 2 #2): its entries not removed (list_entries) and
+// its rows with a question id of the base (list_base_count). The numbers and the totals are counted by hand below.
 describe("questionsLeft", () => {
-  // A pool of 20 with no list: 20 questions in all.
+  // A pool of 20 with no list (both numbers 0): 20 questions in all.
   it("counts the pool alone with no list", () => {
-    expect(questionsLeft(20, null, 19)).toBe(true);
-    expect(questionsLeft(20, null, 20)).toBe(false);
+    const noList = { list_entries: 0, list_base_count: 0 };
+
+    expect(questionsLeft(20, noList, 19)).toBe(true);
+    expect(questionsLeft(20, noList, 20)).toBe(false);
   });
 
-  // "Przejrzyj pytania" drew 15 of the pool and the host changed nothing: 15 entries, then the 5 of the pool off the
-  // list, 20 in all, as with no list.
+  // "Przejrzyj pytania" drew 15 of the pool and the host changed nothing: 15 entries, 15 rows with an id of the base,
+  // then the 5 of the pool off the list, 20 in all, as with no list.
   it("counts a list left as drawn like the pool alone", () => {
-    const drawn: GameQuestionList = {
-      entries: Array.from({ length: 15 }, (_, index) => ({
-        position: index + 1,
-        question_id: `a-${String(index + 1).padStart(3, "0")}`,
-        text: null,
-      })),
-      base_count: 15,
-    };
+    const drawn = { list_entries: 15, list_base_count: 15 };
 
     expect(questionsLeft(20, drawn, 19)).toBe(true);
     expect(questionsLeft(20, drawn, 20)).toBe(false);
@@ -237,26 +233,7 @@ describe("questionsLeft", () => {
   // Entries not removed: 17 - 2 = 15 (1 reworded, 12 as drawn, the own one, the drawn one). Off the list: a-017 to
   // a-020, 4. So 15 + 4 = 19 questions in all: after round 18 one is left, after round 19 none.
   it("counts a list with removed, reworded and own questions", () => {
-    const reviewed: GameQuestionList = {
-      entries: [
-        { position: 1, question_id: "a-001", text: "wypiłby mleko prosto z kartonu" },
-        { position: 3, question_id: "a-003", text: null },
-        { position: 4, question_id: "a-004", text: null },
-        { position: 6, question_id: "a-006", text: null },
-        { position: 7, question_id: "a-007", text: null },
-        { position: 8, question_id: "a-008", text: null },
-        { position: 9, question_id: "a-009", text: null },
-        { position: 10, question_id: "a-010", text: null },
-        { position: 11, question_id: "a-011", text: null },
-        { position: 12, question_id: "a-012", text: null },
-        { position: 13, question_id: "a-013", text: null },
-        { position: 14, question_id: "a-014", text: null },
-        { position: 15, question_id: "a-015", text: null },
-        { position: 16, question_id: null, text: "zgubiłby klucze w drodze do domu" },
-        { position: 17, question_id: "a-016", text: null },
-      ],
-      base_count: 16,
-    };
+    const reviewed = { list_entries: 15, list_base_count: 16 };
 
     expect(questionsLeft(20, reviewed, 1)).toBe(true);
     expect(questionsLeft(20, reviewed, 18)).toBe(true);
@@ -264,22 +241,10 @@ describe("questionsLeft", () => {
     expect(questionsLeft(20, reviewed, 20)).toBe(false);
   });
 
-  // The pool is the list: 15 drawn of a pool of 15, 2 removed, 3 own questions added. 13 + 3 = 16 entries, nothing off
-  // the list, so 16 in all, one more than the pool.
+  // The pool is the list: 15 drawn of a pool of 15, 2 removed, 3 own questions added. 13 + 3 = 16 entries, 15 rows with
+  // an id of the base, nothing off the list, so 16 in all, one more than the pool.
   it("counts own questions beyond the pool", () => {
-    const ownOnTop: GameQuestionList = {
-      entries: [
-        ...Array.from({ length: 13 }, (_, index) => ({
-          position: index + 3,
-          question_id: `a-${String(index + 3).padStart(3, "0")}`,
-          text: null,
-        })),
-        { position: 16, question_id: null, text: "zgubiłby klucze w drodze do domu" },
-        { position: 17, question_id: null, text: "zasnąłby w kinie na własnym filmie" },
-        { position: 18, question_id: null, text: "zapomniałby, po co wszedł do kuchni" },
-      ],
-      base_count: 15,
-    };
+    const ownOnTop = { list_entries: 16, list_base_count: 15 };
 
     expect(questionsLeft(15, ownOnTop, 15)).toBe(true);
     expect(questionsLeft(15, ownOnTop, 16)).toBe(false);
@@ -287,8 +252,10 @@ describe("questionsLeft", () => {
 
   // Every entry removed: the start refuses (list_empty), but the count still holds: only the pool off the list.
   it("counts only the pool off the list when every entry is removed", () => {
-    expect(questionsLeft(20, { entries: [], base_count: 15 }, 4)).toBe(true);
-    expect(questionsLeft(20, { entries: [], base_count: 15 }, 5)).toBe(false);
+    const allRemoved = { list_entries: 0, list_base_count: 15 };
+
+    expect(questionsLeft(20, allRemoved, 4)).toBe(true);
+    expect(questionsLeft(20, allRemoved, 5)).toBe(false);
   });
 });
 

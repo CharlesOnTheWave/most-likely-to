@@ -207,10 +207,10 @@ const NICK_TAKEN = /^\/j\/[A-Za-z0-9_-]{22}\?error=nick_taken$/;
 // end, where the host reviews the game's question list (S-06).
 const room = { id: "", link: "" };
 const listRoom = { id: "", link: "" };
-// Ola's jar: she votes and checks the lobby again after the game is over. The second guest ("ola") keeps a jar too, to
-// vote, and to send the vote that comes late. So do the two latecomers of the round (S-08), whose requests the steps
-// follow: Kuba, let in, and Ula, turned away, and Ela, the guest of the list's room, whose view of it the steps check.
-// Every other guest gets a fresh jar.
+// Ola's jar: she votes, makes a leader's move as a co-host (S-07) and checks the lobby again after the game is over.
+// The second guest ("ola") keeps a jar too, to vote, and to send the vote that comes late. So do the two latecomers of
+// the round (S-08), whose requests the steps follow: Kuba, let in, and Ula, turned away, and Ela, the guest of the
+// list's room, whose view of it the steps check. Every other guest gets a fresh jar.
 const olaJar = new Map();
 const secondGuestJar = new Map();
 const kubaJar = new Map();
@@ -264,8 +264,8 @@ const ONLY_ONE_PLAYER = /"players":\[\{[^{}]*\}\]/;
 const thisRoom = () => ({ status: 302, location: new RegExp(`^/r/${room.id}$`) });
 
 // A game's action (src/pages/api/rooms/[id]/start.ts, vote.ts, reveal.ts, next.ts, skip.ts, end.ts, admit.ts,
-// reject.ts, question-*.ts, emote.ts), as JSON, the way the room screen sends it; in the main room unless roomId is
-// given.
+// reject.ts, cohost.ts, question-*.ts, emote.ts), as JSON, the way the room screen sends it; in the main room unless
+// roomId is given.
 function act(action, body, cookies, roomId = room.id) {
   return request(`/api/rooms/${roomId}/${action}`, { method: "POST", json: body, cookies, readBody: true });
 }
@@ -400,7 +400,11 @@ const GAME_OVER = new RegExp(['"status":"closed"', '"round":null'].map((part) =>
 // question 2, which it has not shown (round_over); nor may "Odsłoń wynik" from a host's screen still on question 1
 // (F2 of context/archive/2026-10-20-deferred-review-fixes/plan.md), and Ola's vote right after it shows question 2
 // still voting. The host reveals question 3 with its number before the end: a route that refused every reveal would
-// pass the refusals too. Skipped with SMOKE_GAME=0 and with SMOKE_ROUND=0.
+// pass the refusals too. Then the co-host role (S-07, context/changes/co-host-role/plan.md, Faza 2 #5): the host gives
+// it to Ola, who opens question 4 with her cookie alone, through the Worker's draw from the leader's data of the
+// room's state; the host takes it back, and her reveal of question 4 is refused as no leader's. Had it passed, it would
+// only have revealed question 4, so the host's end below holds either way. Skipped with SMOKE_GAME=0 and with
+// SMOKE_ROUND=0.
 function gameSteps() {
   const game = [
     ["host opens the next question", () => act("next", { round: 1 }, hostJar), { status: 200, body: ACCEPTED }],
@@ -429,6 +433,26 @@ function gameSteps() {
       "host reveals question 3 with its number",
       () => act("reveal", { round: 3 }, hostJar),
       { status: 200, body: ACCEPTED },
+    ],
+    [
+      "host gives Ola the co-host role",
+      () => act("cohost", { nick: "Ola", cohost: true }, hostJar),
+      { status: 200, body: ACCEPTED },
+    ],
+    [
+      "Ola, a co-host, opens the next question",
+      () => act("next", { round: 3 }, olaJar),
+      { status: 200, body: ACCEPTED },
+    ],
+    [
+      "host takes Ola's co-host role",
+      () => act("cohost", { nick: "Ola", cohost: false }, hostJar),
+      { status: 200, body: ACCEPTED },
+    ],
+    [
+      "Ola, no longer a co-host, cannot reveal question 4",
+      () => act("reveal", { round: 4 }, olaJar),
+      { status: 409, body: /^\{"error":"not_leader"\}$/ },
     ],
     ["host ends the game", () => act("end", {}, hostJar), { status: 200, body: ACCEPTED }],
     ["room state tells the host the game is over", () => lobby(room.id, hostJar), { status: 200, body: GAME_OVER }],

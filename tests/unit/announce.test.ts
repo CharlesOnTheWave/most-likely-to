@@ -9,9 +9,9 @@ import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 // the contract in src/lib/rooms/shared.ts.
 
 const PLAYERS: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
-  { nick: "Kuba", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Kuba", host: false, cohost: false },
 ];
 const QUESTION = "spóźniłby się na własne urodziny";
 const OTHER_QUESTION = "zjadłby pizzę z ananasem";
@@ -20,6 +20,7 @@ function lobby(): RoomView {
   return {
     status: "lobby",
     role: "host",
+    leader: true,
     me: "Ola",
     players: PLAYERS,
     round: null,
@@ -39,6 +40,7 @@ function voting(
   return {
     status: "playing",
     role: options.role ?? "guest",
+    leader: options.role === "host",
     me,
     players: PLAYERS,
     round: {
@@ -63,6 +65,7 @@ function revealed(number: number): RoomView {
   return {
     status: "playing",
     role: "guest",
+    leader: false,
     me: "Bartek",
     players: PLAYERS,
     round: {
@@ -90,6 +93,7 @@ function skipped(number: number, role: "host" | "guest" = "guest"): RoomView {
   return {
     status: "playing",
     role,
+    leader: role === "host",
     me: role === "host" ? "Ola" : "Bartek",
     players: PLAYERS,
     round: { number, phase: "skipped" },
@@ -104,6 +108,7 @@ function closed(role: "host" | "guest"): RoomView {
   return {
     status: "closed",
     role,
+    leader: role === "host",
     me: role === "host" ? "Ola" : "Bartek",
     players: PLAYERS,
     round: null,

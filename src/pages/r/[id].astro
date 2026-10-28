@@ -6,7 +6,7 @@ import RoomScreen from "@/components/room/RoomScreen";
 import RoomMessage from "@/components/room/RoomMessage.astro";
 import { logEvent } from "@/lib/log";
 import { roomErrorMessage } from "@/lib/rooms/errors";
-import { hostLinkToken, hostQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
+import { hostLinkToken, leaderQuestionsLeft, roomLobby, roomView } from "@/lib/rooms/server";
 import type { RoomView } from "@/lib/rooms/shared";
 import { playerCookieName, UUID_PATTERN } from "@/lib/rooms/tokens";
 import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
@@ -46,8 +46,7 @@ async function loadPage(roomId: string): Promise<Page> {
     const link = await hostLinkToken(supabase, roomId);
     if (link.ok && link.linkToken) linkUrl = `${Astro.url.origin}/j/${link.linkToken}`;
   }
-  const questionsLeft = await hostQuestionsLeft(supabase, result.lobby, roomId);
-  return { kind: "lobby", roomId, lobby: roomView(result.lobby, roomId, questionsLeft), linkUrl };
+  return { kind: "lobby", roomId, lobby: roomView(result.lobby, roomId, leaderQuestionsLeft(result.lobby)), linkUrl };
 }
 
 const page = await loadPage(Astro.params.id ?? "");

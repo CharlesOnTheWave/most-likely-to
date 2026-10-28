@@ -147,7 +147,7 @@ describe("resultBars", () => {
 describe("seatColors", () => {
   // The players in seat order, the first one the host.
   function players(...nicks: string[]): LobbyPlayer[] {
-    return nicks.map((nick, index) => ({ nick, host: index === 0 }));
+    return nicks.map((nick, index) => ({ nick, host: index === 0, cohost: false }));
   }
 
   function numbered(count: number): LobbyPlayer[] {

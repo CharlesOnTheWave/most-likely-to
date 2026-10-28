@@ -1,5 +1,5 @@
 import { CATEGORIES, QUESTIONS, type QuestionId } from "@/data/questions";
-import type { GameQuestionList } from "@/lib/rooms/shared";
+import type { LeaderDraw } from "@/lib/rooms/shared";
 
 // The round's question. Server only: this file imports the whole question base, 18+ included, which never goes to the
 // browser; a screen gets only the current round's text (context/foundation/lessons.md, "Pytania gry tylko po stronie
@@ -81,14 +81,17 @@ export function questionPool(selection: QuestionSelection): QuestionId[] {
 // Whether the game has a question not played yet after round roundNumber, for "Następne pytanie" (pozostałe pytania).
 // Every round of a game plays one question, skipped ones included, and none comes twice. With no list the game plays
 // the pool of poolSize questions, so N rounds have played N of them. With the game's question list it plays the list's
-// entries not removed first, then the pool without every question id on any row of the list (removed and reworded
-// entries included, base_count of them, all of the pool: the list is drawn from it). So the game has
-// poolSize - base_count + entries questions in all (context/archive/2026-10-24-question-list-review/plan.md, Critical
-// Implementation Details); with no list both are 0.
-export function questionsLeft(poolSize: number, list: GameQuestionList | null, roundNumber: number): boolean {
-  const onList = list?.base_count ?? 0;
-  const entries = list?.entries.length ?? 0;
-  return poolSize - onList + entries - roundNumber > 0;
+// entries not removed first (list_entries of them), then the pool without every question id on any row of the list
+// (removed and reworded entries included, list_base_count of them, all of the pool: the list is drawn from it). So the
+// game has poolSize - list_base_count + list_entries questions in all
+// (context/archive/2026-10-24-question-list-review/plan.md, Critical Implementation Details); with no list both are 0.
+// The two numbers come from room_lobby's leader_draw, so a co-host, who never sees the list, gets the count too (S-07).
+export function questionsLeft(
+  poolSize: number,
+  list: Pick<LeaderDraw, "list_entries" | "list_base_count">,
+  roundNumber: number,
+): boolean {
+  return poolSize - list.list_base_count + list.list_entries - roundNumber > 0;
 }
 
 // The text after "Kto z nas najprawdopodobniej" of a round's question, or null for an id the base does not have (the

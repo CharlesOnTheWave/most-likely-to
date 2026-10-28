@@ -46,41 +46,41 @@ const requestAgainCard = { title: "Host cię nie wpuścił.", description: "Moż
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
 const LINK_URL = `https://most-likely-to.charlesonthewave.workers.dev/j/${LINK_TOKEN}`;
-const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true }];
+const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true, cohost: false }];
 const twoPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
 ];
 const fewPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
-  { nick: "Kasia 🎉", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Kasia 🎉", host: false, cohost: false },
 ];
 // Eight players, with a nick of exactly 20 characters (nickLength) and one with an emoji.
 const eightPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
-  { nick: "Najdłuższy nick 20zn", host: false },
-  { nick: "Kasia 🎉", host: false },
-  { nick: "Zosia", host: false },
-  { nick: "Kuba", host: false },
-  { nick: "Marta", host: false },
-  { nick: "Igor", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Najdłuższy nick 20zn", host: false, cohost: false },
+  { nick: "Kasia 🎉", host: false, cohost: false },
+  { nick: "Zosia", host: false, cohost: false },
+  { nick: "Kuba", host: false, cohost: false },
+  { nick: "Marta", host: false, cohost: false },
+  { nick: "Igor", host: false, cohost: false },
 ];
 const guestView: LobbyPlayer[] = [
-  { nick: "Bartek", host: true },
-  { nick: "Ola", host: false },
-  { nick: "Kasia 🎉", host: false },
-  { nick: "Zosia", host: false },
+  { nick: "Bartek", host: true, cohost: false },
+  { nick: "Ola", host: false, cohost: false },
+  { nick: "Kasia 🎉", host: false, cohost: false },
+  { nick: "Zosia", host: false, cohost: false },
 ];
 
 // The round: five players in seat order, the host first (Ola); the guest's screens are Bartek's.
 const roundPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
-  { nick: "Kasia 🎉", host: false },
-  { nick: "Zosia", host: false },
-  { nick: "Kuba", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Kasia 🎉", host: false, cohost: false },
+  { nick: "Zosia", host: false, cohost: false },
+  { nick: "Kuba", host: false, cohost: false },
 ];
 // Twenty players (the most a room is planned for): five nicks of 20 characters, the widest letters, emoji.
 const twentyPlayers: LobbyPlayer[] = [
@@ -104,7 +104,7 @@ const twentyPlayers: LobbyPlayer[] = [
   "Łukasz 🎮",
   "Natalia",
   "Krzysztof",
-].map((nick, index) => ({ nick, host: index === 0 }));
+].map((nick, index) => ({ nick, host: index === 0, cohost: false }));
 
 // Sample questions: the ending after "Kto z nas najprawdopodobniej", as the Worker sends it; the long one is the
 // longest in the base.
@@ -159,6 +159,7 @@ function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): Room
   return {
     status: "lobby",
     role,
+    leader: role === "host",
     me,
     players,
     round: null,
@@ -188,6 +189,7 @@ function voting(
   return {
     status: "playing",
     role,
+    leader: role === "host",
     me,
     players,
     round: {
@@ -222,6 +224,7 @@ function revealed(
   return {
     status: "playing",
     role,
+    leader: role === "host",
     me,
     players,
     round: {
@@ -247,6 +250,7 @@ function skipped(role: "host" | "guest", me: string, players: LobbyPlayer[]): Ro
   return {
     status: "playing",
     role,
+    leader: role === "host",
     me,
     players,
     round: { number: 7, phase: "skipped" },
@@ -263,6 +267,7 @@ function closed(role: "host" | "guest", me: string, players: LobbyPlayer[]): Roo
   return {
     status: "closed",
     role,
+    leader: role === "host",
     me,
     players,
     round: null,
@@ -699,6 +704,7 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               initial={{
                 status: "closed",
                 role: "host",
+                leader: true,
                 me: "Ola",
                 players: fewPlayers,
                 round: null,
@@ -720,6 +726,7 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               initial={{
                 status: "closed",
                 role: "guest",
+                leader: false,
                 me: "Ola",
                 players: guestView,
                 round: null,
