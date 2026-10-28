@@ -424,7 +424,7 @@ Start, następne i pominięcie wołają `room_lobby` zamiast jednego odczytu `ro
 
 - [x] 1.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — 7f5c39a
 - [x] 1.2 `npx prettier --check` dla nowych i zmienionych plików `.md` przechodzi — 7f5c39a
-- [ ] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `cohost.test.ts` i nowe asercje pgTAP przechodzą
+- [x] 1.3 Draft PR do `main` (push za zgodą Karola): CI zielone we wszystkich jobach, w `db` nowe testy `cohost.test.ts` i nowe asercje pgTAP przechodzą — PR #30, b9f51a7
 - [ ] 1.4 Próbny alarm: tymczasowy commit zapala tylko przewidziane testy; po `git revert` CI zielone
 
 #### Manual
