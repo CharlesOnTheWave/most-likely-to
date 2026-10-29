@@ -3,7 +3,7 @@ change_id: co-host-role
 title: Współhost — host nadaje i odbiera rolę prowadzącego graczowi w pokoju
 status: implementing
 created: 2026-10-27
-updated: 2026-10-28
+updated: 2026-10-29
 archived_at: null
 ---
 
