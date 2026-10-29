@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
+import {
+  COHOST_HINT_LOBBY,
+  COHOST_ROW,
+  CohostBadge,
+  CohostButton,
+  type RoleSwitchPreview,
+} from "@/components/room/CohostButton";
 import QuestionList, { type QuestionListActions, type QuestionListPreview } from "@/components/room/QuestionList";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { seatColors } from "@/lib/rooms/chart";
@@ -20,6 +27,8 @@ export interface LobbyPreview {
   startError?: string | null;
   // The host's "Przejrzyj pytania" section (S-06).
   questionList?: QuestionListPreview;
+  // The host's co-host switch of one guest's row, on its way or refused (S-07).
+  roleSwitch?: RoleSwitchPreview;
 }
 
 interface Props {
@@ -30,17 +39,20 @@ interface Props {
   // Only the host gets the link to share.
   linkUrl?: string | null;
   refreshFailed: boolean;
-  // "Zacznij grę": the screen sends it and looks again (src/components/room/RoomScreen.tsx).
+  // A leader's "Zacznij grę": the screen sends it and looks again (src/components/room/RoomScreen.tsx).
   onStart: () => Promise<ActionOutcome>;
   // The host's moves on the game's question list ("Przejrzyj pytania" and the list's buttons), sent the same way.
   questionActions: QuestionListActions;
+  // The host gives a guest the co-host role or takes it back (CohostButton), sent the same way.
+  onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
   preview?: LobbyPreview;
 }
 
 const COPIED_MS = 2000;
 
-// The lobby: the host's link, "Zacznij grę" and the game's question list ("Przejrzyj pytania"), the list of players for
-// everyone. RoomScreen keeps the state live.
+// The lobby: the host's link and the game's question list ("Przejrzyj pytania"), a leader's (the host's or a co-host's,
+// S-07) "Zacznij grę", the list of players for everyone, with the host's co-host switch by each guest's nick.
+// RoomScreen keeps the state live.
 export default function RoomLobby({
   view,
   idPrefix,
@@ -49,6 +61,7 @@ export default function RoomLobby({
   refreshFailed,
   onStart,
   questionActions,
+  onCohost,
   preview,
 }: Props) {
   const [copied, setCopied] = useState(preview?.copied ?? false);
@@ -60,10 +73,15 @@ export default function RoomLobby({
   const linkRef = useRef<HTMLInputElement>(null);
   const isPreview = Boolean(preview);
   const isHost = view.role === "host";
+  // The host, or a guest with the co-host role (S-07): "Zacznij grę".
+  const leads = view.leader;
   const canStart = view.players.length >= MIN_PLAYERS;
   const colors = seatColors(view.players);
   const startHintId = `${idPrefix}start-hint`;
   const questionsShown = isHost && questionsOpen && view.questions !== null;
+  // The host's co-host switches and their hint, once a guest is in the room.
+  const hasGuests = view.players.some((player) => !player.host);
+  const cohostHintId = `${idPrefix}cohost-hint`;
 
   useEffect(() => {
     if (!copied || isPreview) return;
@@ -98,9 +116,14 @@ export default function RoomLobby({
     }
   }
 
+  // Under the title: the host shares the link; a co-host may start; everyone else waits for a leader.
+  let subtitle = "Czekamy, aż prowadzący zacznie.";
+  if (isHost) subtitle = "Wklej link na Discordzie. Kto go otworzy, wpisze nick i dołączy.";
+  else if (leads) subtitle = "Jesteś współhostem: możesz zacząć grę.";
+
   return (
     <div className="flex flex-col gap-8 lg:grid lg:grid-cols-3 lg:items-start lg:gap-x-12">
-      {/* From lg two columns: the game (title first in the DOM, where the focus goes after a host's move) and the
+      {/* From lg two columns: the game (title first in the DOM, where the focus goes after a leader's move) and the
           players. The game's group stays in view while a long list of players scrolls the page, so the host keeps the
           link and "Zacznij grę" on screen; a sticky grid item moves only within its row, so only the shorter column
           can stick. With the game's question list unfolded the group is taller than a window, so it scrolls with the
@@ -113,9 +136,7 @@ export default function RoomLobby({
           <Title className="text-2xl font-semibold break-words">
             {isHost ? "Twój pokój" : `Jesteś w grze jako ${view.me}`}
           </Title>
-          <p className="text-muted-foreground">
-            {isHost ? "Wklej link na Discordzie. Kto go otworzy, wpisze nick i dołączy." : "Czekamy, aż host zacznie."}
-          </p>
+          <p className="text-muted-foreground">{subtitle}</p>
         </div>
 
         {isHost &&
@@ -147,7 +168,7 @@ export default function RoomLobby({
             </p>
           ))}
 
-        {isHost && (
+        {leads && (
           <div className="flex flex-col gap-3">
             <Button
               type="button"
@@ -202,9 +223,14 @@ export default function RoomLobby({
         <ul className="divide-y rounded-md border">
           {view.players.map((player) => {
             const color = colors.get(player.nick);
+            // The host's switch on every guest's row, never on the host's own.
+            const switchShown = isHost && !player.host;
             return (
-              <li key={player.nick} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                <span className="flex min-w-0 items-center gap-x-2">
+              <li
+                key={player.nick}
+                className={cn("flex items-center gap-x-3 px-3", isHost ? COHOST_ROW : "justify-between py-2.5")}
+              >
+                <span className={cn("flex min-w-0 items-center gap-x-2", isHost && "mr-auto")}>
                   {/* The player's colour for the whole game, from the place at the table (seatColors), as on the
                       reveal's pie. Outside the nick's span, so a long nick wraps next to its dot. */}
                   <span
@@ -213,14 +239,29 @@ export default function RoomLobby({
                   />
                   <span className="min-w-0 break-words">{player.nick}</span>
                 </span>
-                <span className="flex shrink-0 gap-1.5">
+                <span className={cn("flex shrink-0 gap-1.5", isHost && "ml-auto")}>
                   {player.host && <Badge variant="secondary">host</Badge>}
+                  {/* In the host's view the switch stands in the badge's place; pressed, it looks the same. */}
+                  {player.cohost && !switchShown && <CohostBadge />}
                   {!isHost && player.nick === view.me && <Badge variant="outline">ty</Badge>}
                 </span>
+                {switchShown && (
+                  <CohostButton
+                    player={player}
+                    hintId={cohostHintId}
+                    onCohost={onCohost}
+                    preview={preview?.roleSwitch}
+                  />
+                )}
               </li>
             );
           })}
         </ul>
+        {isHost && hasGuests && (
+          <p id={cohostHintId} className="text-muted-foreground text-sm">
+            {COHOST_HINT_LOBBY}
+          </p>
+        )}
       </section>
     </div>
   );

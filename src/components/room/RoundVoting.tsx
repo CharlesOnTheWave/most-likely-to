@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { FieldError, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { SLICE_DOTS } from "@/components/room/chart-colors";
+import {
+  COHOST_HINT_GAME,
+  COHOST_ROW,
+  CohostBadge,
+  CohostButton,
+  type RoleSwitchPreview,
+} from "@/components/room/CohostButton";
 import { endGameAction, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
@@ -31,6 +38,8 @@ export interface VotingPreview {
   myVote?: MyVote;
   voting?: boolean;
   voteError?: string | null;
+  // The host's co-host switch of one guest's row, on its way or refused (S-07).
+  roleSwitch?: RoleSwitchPreview;
 }
 
 interface Props {
@@ -46,6 +55,8 @@ interface Props {
   onReveal: (round: number) => Promise<ActionOutcome>;
   onSkip: (round: number) => Promise<ActionOutcome>;
   onEnd: () => Promise<ActionOutcome>;
+  // The host gives a guest the co-host role or takes it back (CohostButton), sent as the other moves.
+  onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
   preview?: VotingPreview;
   hostPreview?: HostActionsPreview;
 }
@@ -59,10 +70,22 @@ const ROW = "flex items-center gap-3 px-3";
 const CHOICE_ROW = `${ROW} has-[:checked]:bg-accent has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50`;
 const RADIO = "accent-primary size-4 shrink-0 outline-none";
 
-function PlayerBadges({ player, isMe, hasVoted }: { player: LobbyPlayer; isMe: boolean; hasVoted: boolean }) {
+// cohost: the badge "współhost" next to a co-host's nick (S-07), false where the host's switch stands in its place.
+function PlayerBadges({
+  player,
+  cohost,
+  isMe,
+  hasVoted,
+}: {
+  player: LobbyPlayer;
+  cohost: boolean;
+  isMe: boolean;
+  hasVoted: boolean;
+}) {
   return (
     <>
       {player.host && <Badge variant="secondary">host</Badge>}
+      {cohost && <CohostBadge />}
       {isMe && <Badge variant="outline">ty</Badge>}
       {hasVoted && (
         <Badge variant="outline" className="text-muted-foreground">
@@ -76,12 +99,13 @@ function PlayerBadges({ player, isMe, hasVoted }: { player: LobbyPlayer; isMe: b
 
 // "Kto z nas najprawdopodobniej …?": one person from the list (oneself too) or "Wstrzymuję się", then "Zagłosuj". A
 // vote is final (decision D2), so the screen says so before and after. Everyone sees who has voted, never for whom;
-// the host can reveal the result at any time (decision D3), skip the question while it is voting (its votes are gone,
-// the next question opens at once) and end the game (decisions D2 and D4 of
-// context/archive/2026-10-15-full-game-evening/research.md); skipping and ending ask first. Only the round's eligible
-// players (the players when it opened, round.eligible) are counted in "Zagłosowało X z Y" and offered in the list: a
-// latecomer the host let in since then (S-08) sees the question with a note instead of the form, stands among the
-// players marked "od następnego pytania", and votes from the next question on.
+// a leader (the host or a co-host, S-07) can reveal the result at any time (decision D3), skip the question while it is
+// voting (its votes are gone, the next question opens at once) and end the game (decisions D2 and D4 of
+// context/archive/2026-10-15-full-game-evening/research.md); skipping and ending ask first. After their own vote the
+// host has the co-host switch by each guest's nick in the list of players. Only the round's eligible players (the
+// players when it opened, round.eligible) are counted in "Zagłosowało X z Y" and offered in the list: a latecomer a
+// leader let in since then (S-08) sees the question with a note instead of the form, stands among the players marked
+// "od następnego pytania", and votes from the next question on.
 export default function RoundVoting({
   view,
   round,
@@ -92,6 +116,7 @@ export default function RoundVoting({
   onReveal,
   onSkip,
   onEnd,
+  onCohost,
   preview,
   hostPreview,
 }: Props) {
@@ -102,6 +127,8 @@ export default function RoundVoting({
   const [voting, setVoting] = useState(preview?.voting ?? false);
   const [voteError, setVoteError] = useState<string | null>(preview?.voteError ?? null);
   const isHost = view.role === "host";
+  // The host, or a guest with the co-host role (S-07): the leader's buttons.
+  const leads = view.leader;
   // After a reload only the database knows: "Głos oddany", without the choice.
   const hasVoted = myVote !== null || round.me_voted;
   const voted = new Set(round.voted);
@@ -113,6 +140,7 @@ export default function RoundVoting({
   const colors = seatColors(view.players);
   const choiceErrorId = `${idPrefix}vote-choice-error`;
   const votedOf = `${String(round.voted.length)} z ${String(round.eligible.length)}`;
+  const cohostHintId = `${idPrefix}cohost-hint`;
 
   async function vote(target: string | null) {
     setVoting(true);
@@ -170,9 +198,12 @@ export default function RoundVoting({
         {view.players.map((player) => {
           const mayVote = eligible.has(player.nick);
           const color = colors.get(player.nick);
+          // The host's switch on every guest's row, never on the host's own; the host sees this list only after their
+          // own vote.
+          const switchShown = isHost && !player.host;
           return (
-            <li key={player.nick} className={`${ROW} justify-between py-2.5`}>
-              <span className="flex min-w-0 items-center gap-x-2">
+            <li key={player.nick} className={cn(ROW, isHost ? COHOST_ROW : "justify-between py-2.5")}>
+              <span className={cn("flex min-w-0 items-center gap-x-2", isHost && "mr-auto")}>
                 {/* Outside the nick's span, so a long nick wraps next to its dot. */}
                 <span
                   aria-hidden="true"
@@ -183,18 +214,28 @@ export default function RoundVoting({
                   {!mayVote && <span className="text-muted-foreground text-xs">od następnego pytania</span>}
                 </span>
               </span>
-              <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
+              <span className={cn("flex shrink-0 flex-wrap justify-end gap-1.5", isHost && "ml-auto")}>
                 <PlayerBadges
                   player={player}
+                  // In the host's view the switch stands in the badge's place; pressed, it looks the same.
+                  cohost={player.cohost && !switchShown}
                   isMe={player.nick === view.me}
                   hasVoted={mayVote && voted.has(player.nick)}
                 />
               </span>
+              {switchShown && (
+                <CohostButton player={player} hintId={cohostHintId} onCohost={onCohost} preview={preview?.roleSwitch} />
+              )}
             </li>
           );
         })}
       </ul>
       {status}
+      {isHost && view.players.some((player) => !player.host) && (
+        <p id={cohostHintId} className="text-muted-foreground text-sm">
+          {COHOST_HINT_GAME}
+        </p>
+      )}
     </section>
   );
 
@@ -203,9 +244,9 @@ export default function RoundVoting({
   if (!canVote) {
     hint = null;
   } else if (hasVoted) {
-    hint = isHost
+    hint = leads
       ? "Wynik pokaże się, gdy zagłosują wszyscy."
-      : "Wynik pokaże się, gdy zagłosują wszyscy albo gdy host go odsłoni.";
+      : "Wynik pokaże się, gdy zagłosują wszyscy albo gdy prowadzący go odsłoni.";
   }
 
   let body: React.ReactNode;
@@ -216,7 +257,9 @@ export default function RoundVoting({
         <Alert role="note">
           <Hourglass />
           <AlertTitle>Zagłosujesz od następnego pytania</AlertTitle>
-          <AlertDescription>Host wpuścił cię w trakcie tego pytania. Wynik zobaczysz razem z innymi.</AlertDescription>
+          <AlertDescription>
+            Prowadzący wpuścił cię w trakcie tego pytania. Wynik zobaczysz razem z innymi.
+          </AlertDescription>
         </Alert>
         {players}
       </>
@@ -245,7 +288,7 @@ export default function RoundVoting({
               const id = `${idPrefix}vote-${index}`;
               const badgesId = `${id}-badges`;
               const isMe = player.nick === view.me;
-              const hasBadges = player.host || isMe || voted.has(player.nick);
+              const hasBadges = player.host || player.cohost || isMe || voted.has(player.nick);
               return (
                 <li key={player.nick} className={CHOICE_ROW}>
                   <input
@@ -266,7 +309,12 @@ export default function RoundVoting({
                   </label>
                   {hasBadges && (
                     <span id={badgesId} className="flex shrink-0 flex-wrap justify-end gap-1.5">
-                      <PlayerBadges player={player} isMe={isMe} hasVoted={voted.has(player.nick)} />
+                      <PlayerBadges
+                        player={player}
+                        cohost={player.cohost}
+                        isMe={isMe}
+                        hasVoted={voted.has(player.nick)}
+                      />
                     </span>
                   )}
                 </li>
@@ -326,7 +374,7 @@ export default function RoundVoting({
 
       {body}
 
-      {isHost && (
+      {leads && (
         <HostActions
           actions={[
             // Two steps (decision D3, option b): the round reveals itself after the last vote, so this button exists
@@ -352,8 +400,8 @@ export default function RoundVoting({
             endGameAction(onEnd),
           ]}
           note="Możesz odsłonić wynik w każdej chwili, także zanim zagłosują wszyscy."
-          // From lg one line under the form, stuck to the window's bottom only once the host has voted: before, a bar
-          // would cover "Zagłosuj".
+          // From lg one line under the form, stuck to the window's bottom only once the leader has voted: before, a
+          // bar would cover "Zagłosuj".
           placement={hasVoted ? "bar" : "row"}
           preview={hostPreview}
         />

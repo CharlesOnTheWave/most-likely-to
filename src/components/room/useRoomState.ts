@@ -35,6 +35,10 @@ export interface RoomLive {
   liveBroken: boolean;
   // Look again through the limiter, e.g. right after the player's own action, without waiting for the bell.
   refresh: () => void;
+  // How many fetches have brought the room's state so far, changed or not (0 before the first): a part of the screen
+  // waiting for the state after its own action (a row of JoinRequests) learns from it that one came, also when nothing
+  // in the state changed and the view stayed the same.
+  refreshes: number;
 }
 
 // While the channel is down, in place of LOBBY_POLL_MS.
@@ -144,6 +148,7 @@ export function useRoomState({
   const [view, setView] = useState(initial);
   const [refreshFailed, setRefreshFailed] = useState(preview?.refreshFailed ?? false);
   const [liveBroken, setLiveBroken] = useState(preview?.liveBroken ?? false);
+  const [refreshes, setRefreshes] = useState(0);
   const limiterRef = useRef<FetchLimiter | null>(null);
   // The latest onEmote, so a new one from a render never subscribes the channel again.
   const onEmoteRef = useRef(onEmote);
@@ -232,6 +237,7 @@ export function useRoomState({
         releaseReload(roomId);
       }
       setRefreshFailed(false);
+      setRefreshes((count) => count + 1);
       const json = JSON.stringify(parsed.value);
       if (json === shownRef.current) return false;
       shownRef.current = json;
@@ -376,5 +382,5 @@ export function useRoomState({
     limiterRef.current?.refresh();
   }, []);
 
-  return { view, refreshFailed, liveBroken, refresh };
+  return { view, refreshFailed, liveBroken, refresh, refreshes };
 }

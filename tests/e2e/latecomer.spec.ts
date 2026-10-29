@@ -3,10 +3,22 @@
 // screen without a reload and lets them in; the latecomer then sees the round in progress with a note instead of the
 // vote, the counter stays at the players the round opened with, and the round reveals itself after their votes; from
 // the next question on the latecomer votes like everyone. A second latecomer turned away sees so, asks again and is on
-// the host's list again. Laptop window only (project chromium). The 2 s budget is the probe's (test-plan §6.4).
+// the host's list again; turned away once more while the host's screen cannot refresh, they ask again before it sees
+// the answer, and their row works again once a refreshed list still has them (F4 of S-08). Laptop window only (project
+// chromium). The 2 s budget is the probe's (test-plan §6.4).
 // seed: tests/e2e/seed.spec.ts
-import { test, expect, type Locator, type Page, type Response } from "@playwright/test";
-import { joinRoom, newGuestContext, openRoom, playerRow, uniqueNick } from "./support/room";
+import { test, expect, type Locator, type Page } from "@playwright/test";
+import {
+  askToJoin,
+  joinRoom,
+  newGuestContext,
+  nextRequestFetch,
+  openRoom,
+  playerRow,
+  requestRow,
+  requests,
+  uniqueNick,
+} from "./support/room";
 import {
   castVote,
   expectFreshVote,
@@ -19,39 +31,9 @@ import {
   type ExpectedReveal,
 } from "./support/round";
 
-// The waiting screen's title on /j/<code> (JoinWaiting), once the request is sent.
-function waitingTitle(page: Page): Locator {
-  return page.getByRole("heading", { level: 1, name: "Czekasz, aż host cię wpuści", exact: true });
-}
-
-// The waiting screen's next successful look at its own request. Its first one comes when its channel subscribes, so
-// awaiting it means the screen will hear the host's answer by the bell. Start waiting before the page loads.
-function nextRequestFetch(page: Page, roomId: string): Promise<Response> {
-  return page.waitForResponse((res) => new URL(res.url()).pathname === `/api/rooms/${roomId}/request` && res.ok());
-}
-
-// The latecomer's form on /j/<code> during a game: the nick, then "Poproś o wejście" ("Poproś jeszcze raz" after a
-// refusal), until the waiting screen shows. The form is a React island, so fill and submit are retried, as in joinRoom;
-// once the request is sent the page is the waiting screen.
-async function askToJoin(page: Page, nick: string, button: "Poproś o wejście" | "Poproś jeszcze raz"): Promise<void> {
-  await expect(async () => {
-    if (await waitingTitle(page).isVisible()) return;
-    const field = page.getByRole("textbox", { name: "Twój nick" });
-    await field.fill("");
-    await field.fill(nick);
-    await page.getByRole("button", { name: button, exact: true }).click();
-    await expect(waitingTitle(page)).toBeVisible({ timeout: 5_000 });
-  }).toPass();
-}
-
-// The host's list of latecomers waiting, above the round's view.
-function requests(page: Page): Locator {
-  return page.getByRole("region", { name: "Proszą o wejście" });
-}
-
-// One latecomer's row in the host's list, with "Wpuść" and "Odrzuć".
-function requestRow(page: Page, nick: string): Locator {
-  return requests(page).getByRole("listitem").filter({ hasText: nick });
+// The title of the link's page once a leader turned the latecomer away: the form to ask again is under it.
+function turnedAwayTitle(page: Page): Locator {
+  return page.getByRole("heading", { level: 1, name: "Prowadzący cię nie wpuścił.", exact: true });
 }
 
 // The note a latecomer gets in place of the vote while the question they came in during is voting.
@@ -187,9 +169,7 @@ test.describe("risks #2, #3 and #4 (latecomer) — the host lets a latecomer in 
     await requestRow(page, nickD).getByRole("button", { name: "Odrzuć", exact: true }).click();
 
     // Assertion: D's waiting screen says so by itself, with the form to ask again; the host's list is gone.
-    await expect(pageD.getByRole("heading", { level: 1, name: "Host cię nie wpuścił.", exact: true })).toBeVisible({
-      timeout: ROUND_UPDATE_MS,
-    });
+    await expect(turnedAwayTitle(pageD)).toBeVisible({ timeout: ROUND_UPDATE_MS });
     await expect(requests(page)).toHaveCount(0, { timeout: ROUND_UPDATE_MS });
 
     // Action: D asks again.
@@ -197,6 +177,27 @@ test.describe("risks #2, #3 and #4 (latecomer) — the host lets a latecomer in 
 
     // Assertion: the request is on the host's list again, without a reload.
     await expect(requestRow(page, nickD)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+
+    // Action (F4 of S-08, context/archive/2026-10-22-latecomer-admission/follow-ups/review-fixes.md): the host's screen
+    // cannot fetch the room's state from now on, and the host turns D away again. The answer is accepted, so D's row
+    // waits for a refreshed list, which does not come.
+    const stateFetch = (url: URL) => url.pathname === `/api/rooms/${room.id}/lobby`;
+    await page.route(stateFetch, (route) => route.abort());
+    const answerD = requestRow(page, nickD).getByRole("button", { name: "Wpuść", exact: true });
+    await requestRow(page, nickD).getByRole("button", { name: "Odrzuć", exact: true }).click();
+    await expect(turnedAwayTitle(pageD)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    await expect(answerD).toHaveAttribute("aria-disabled", "true");
+
+    // Action: D asks again under the same nick before the host's screen has seen the answer; then the host's screen
+    // can fetch again, and B's vote rings the bell, so it gets a refreshed list.
+    await askToJoin(pageD, nickD, "Poproś jeszcze raz");
+    await page.unroute(stateFetch);
+    await castVote(pageB, nickA);
+
+    // Assertion: the refreshed list still has D, so D's row is a new request, and its buttons work again: the attribute
+    // is gone, not only greyed (aria-disabled leaves a button focusable, so toBeEnabled() would not tell).
+    await expect(votedCounter(page, 2, 4)).toBeVisible({ timeout: ROUND_UPDATE_MS });
+    await expect(answerD).not.toHaveAttribute("aria-disabled", { timeout: ROUND_UPDATE_MS });
 
     // Cleanup: the guests' and latecomers' browsers close. The room, its players, question 1's counts and D's request
     // stay in the database until the next test's room closes this one (openRoom with confirm_close=1 drops its requests);

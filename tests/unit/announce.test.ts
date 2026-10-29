@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { announcement, announcementKey, skipNotice } from "@/lib/rooms/announce";
+import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 
 // What the room screen's live region says when the game moves on, and when the screen shows the note after a skip
 // (context/archive/2026-10-15-full-game-evening/plan.md, Faza 4 #1; Desired End State 2 and 7). Behaviour only: a new
 // question's number is heard, a skip and the end of the evening have their own words, the note belongs to the round
-// after a skip alone. The Polish sentences are not copied here (test-plan §6.1); the states are written by hand from
-// the contract in src/lib/rooms/shared.ts.
+// after a skip alone; a guest hears when the host gives them the co-host role and when the host takes it back
+// (context/changes/co-host-role/plan.md, Faza 3 #3), apart from the key. The Polish sentences are not copied here
+// (test-plan §6.1); the states are written by hand from the contract in src/lib/rooms/shared.ts.
 
 const PLAYERS: LobbyPlayer[] = [
   { nick: "Ola", host: true, cohost: false },
@@ -119,6 +120,20 @@ function closed(role: "host" | "guest"): RoomView {
   };
 }
 
+// The guest's lobby (Bartek), with no role.
+function guestLobby(): RoomView {
+  return { ...lobby(), role: "guest", leader: false, me: "Bartek" };
+}
+
+// The same state for a guest the host made a co-host (S-07): the role on their row of the list, and they lead.
+function asCohost(view: RoomView): RoomView {
+  return {
+    ...view,
+    leader: true,
+    players: view.players.map((player) => (player.nick === view.me ? { ...player, cohost: true } : player)),
+  };
+}
+
 // A number as a word of its own: "12" is not "2" followed by something.
 function saysNumber(text: string, number: number): boolean {
   return new RegExp(`(^|\\D)${String(number)}(\\D|$)`).test(text);
@@ -209,5 +224,40 @@ describe("skipNotice", () => {
     { why: "the end of the evening", view: closed("guest") },
   ])("stays hidden on $why", ({ view }) => {
     expect(skipNotice(view)).toBe(false);
+  });
+});
+
+describe("roleAnnouncement", () => {
+  it("tells a guest who got the co-host role and one who lost it, each in words of its own", () => {
+    const given = roleAnnouncement(false, asCohost(voting(2)));
+    const taken = roleAnnouncement(true, voting(2));
+    expect(given).not.toBe("");
+    expect(taken).not.toBe("");
+    expect(given).not.toBe(taken);
+  });
+
+  it("says the same in the lobby, while voting and after a reveal", () => {
+    const given = [guestLobby(), voting(2), revealed(2)].map((view) => roleAnnouncement(false, asCohost(view)));
+    const taken = [guestLobby(), voting(2), revealed(2)].map((view) => roleAnnouncement(true, view));
+    expect(new Set(given).size).toBe(1);
+    expect(new Set(taken).size).toBe(1);
+  });
+
+  it("says nothing while the role stays", () => {
+    expect(roleAnnouncement(false, voting(2))).toBe("");
+    expect(roleAnnouncement(true, asCohost(voting(2)))).toBe("");
+  });
+
+  it("says nothing to the host, who always leads", () => {
+    expect(roleAnnouncement(false, voting(2, { role: "host" }))).toBe("");
+  });
+
+  it("says nothing once the room is closed", () => {
+    expect(roleAnnouncement(true, closed("guest"))).toBe("");
+  });
+
+  it("is apart from announcementKey, so a role is never announced as a new question", () => {
+    expect(announcementKey(asCohost(voting(2)))).toBe(announcementKey(voting(2)));
+    expect(announcementKey(asCohost(guestLobby()))).toBe(announcementKey(guestLobby()));
   });
 });

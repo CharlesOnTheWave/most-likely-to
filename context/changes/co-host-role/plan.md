@@ -446,14 +446,14 @@ Start, następne i pominięcie wołają `room_lobby` zamiast jednego odczytu `ro
 
 #### Automated
 
-- [ ] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
-- [ ] 3.2 `npx playwright test --list` pokazuje `cohost.spec.ts`
+- [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build`
+- [x] 3.2 `npx playwright test --list` pokazuje `cohost.spec.ts`
 - [ ] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `cohost.spec.ts` przechodzą
 
 #### Manual
 
-- [ ] 3.4 Karol wybiera wariant przycisku roli i znaczka na zrzutach
-- [ ] 3.5 Karol ocenia zrzuty gotowych stanów (współhost w poczekalni, w głosowaniu, po odsłonie; host z przyciskiem roli; ogłoszenie) na laptopie i telefonie
+- [x] 3.4 Karol wybiera wariant przycisku roli i znaczka na zrzutach — wariant 3 „Przełącznik” (pigułka „+ współhost” / „✓ współhost”), 2026-10-29
+- [x] 3.5 Karol ocenia zrzuty gotowych stanów (współhost w poczekalni, w głosowaniu, po odsłonie; host z przyciskiem roli; ogłoszenie) na laptopie i telefonie — 2026-10-29 (ekrany i ogłoszenia OK, podtytuł „Jesteś współhostem: możesz zacząć grę.” zostaje)
 
 ### Phase 4: Wdrożenie
 
