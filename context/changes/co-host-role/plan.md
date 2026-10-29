@@ -448,7 +448,7 @@ Start, następne i pominięcie wołają `room_lobby` zamiast jednego odczytu `ro
 
 - [x] 3.1 Bramka lokalna przechodzi: `npm run lint`, `npx astro check`, `npm test`, `npm run build` — eb86c2d
 - [x] 3.2 `npx playwright test --list` pokazuje `cohost.spec.ts` — eb86c2d
-- [ ] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `cohost.spec.ts` przechodzą
+- [x] 3.3 CI na PR zielone we wszystkich jobach, w `e2e` nowe scenariusze `cohost.spec.ts` przechodzą — PR #30, abea940
 
 #### Manual
 
