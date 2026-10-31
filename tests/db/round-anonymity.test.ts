@@ -153,10 +153,10 @@ describe("a round in progress shows who voted, never how", () => {
     expect(roundOf(lobby())).toMatchObject({ phase: "voting", voted: ["Host", "Kuba"], me_voted: meVoted });
   });
 
-  // room_lobby keeps the fields of S-01 and adds only round, requests, question_list and game_totals: no per-player flag
-  // or count beside a nick.
+  // room_lobby keeps the fields of S-01 and adds only round, requests, question_list, game_totals and leader_draw (S-07):
+  // no count beside a nick, and no per-player flag but the roles everyone sees (host, and cohost since S-07).
   it.each(viewers)(
-    "$viewer's lobby has only its old keys plus round, requests, question_list and game_totals, and players only nick and host",
+    "$viewer's lobby has only its old keys plus round, requests, question_list, game_totals and leader_draw, and players only nick, host and cohost",
     ({ lobby }) => {
       const data = lobby().data;
       const players: unknown = isRecord(data) ? data.players : null;

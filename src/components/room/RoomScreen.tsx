@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PartyPopper, Plus, SkipForward } from "lucide-react";
+import { PartyPopper, Plus, ShieldCheck, ShieldMinus, SkipForward } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import EmoteBar, { type EmoteBarPreview } from "@/components/room/EmoteBar";
@@ -18,7 +18,7 @@ import RoundReveal from "@/components/room/RoundReveal";
 import RoundSkipped from "@/components/room/RoundSkipped";
 import RoundVoting, { type VotingPreview } from "@/components/room/RoundVoting";
 import { useRoomState, type LiveConfig, type LivePreview } from "@/components/room/useRoomState";
-import { announcement, announcementKey, skipNotice } from "@/lib/rooms/announce";
+import { announcement, announcementKey, roleAnnouncement, skipNotice } from "@/lib/rooms/announce";
 import type { ResultView } from "@/lib/rooms/chart";
 import { EMOTE_MAX_SHOWN, EMOTE_SHOW_MS, parseEmoteMessage, type EmoteMessage } from "@/lib/rooms/emotes";
 import { browserNickStorage, rememberNick } from "@/lib/rooms/remembered-nick";
@@ -27,14 +27,16 @@ import { cn } from "@/lib/utils";
 
 // Starting state for the dev previews (/dev/room-states with several screens on one page, /dev/room-window with one);
 // the real page never sets it. With a preview the screen makes no network call at all: no fetch, no channel, no
-// report, and its actions only answer "ok" (a vote shows "Głos oddany", a thumb is pressed at once; the host's actions
-// stay busy, as they do until the new state arrives).
+// report, and its actions only answer "ok" (a vote shows "Głos oddany", a thumb is pressed at once; a leader's actions
+// and the host's co-host switch stay busy, as they do until the new state arrives).
 export interface ScreenPreview extends LivePreview, LobbyPreview, VotingPreview {
   idPrefix: string;
   // The reveal as if the player had picked this view with the toggle.
   resultView?: ResultView;
-  // The host's buttons of the voting, the reveal or the skipped last question.
+  // A leader's buttons of the voting, the reveal or the skipped last question.
   host?: HostActionsPreview;
+  // The notice of the co-host role (S-07) as if it had just changed to the view's leader: given (leader true) or taken.
+  roleNotice?: boolean;
   // The thumbs of the reveal: one given, a tap on its way or refused.
   reaction?: QuestionReactionPreview;
   // The screen throws once it is in the browser, to show RoomErrorBoundary's screen.
@@ -104,16 +106,18 @@ function EveningEnd({ view, idPrefix, titleAs: Title }: { view: RoomView; idPref
   );
 }
 
-// The host's moves that replace the whole view; after them the focus goes to the new view's heading. The host's answer
-// to a latecomer ("Wpuść", "Odrzuć"), the moves on the game's question list in the lobby ("Przejrzyj pytania",
-// "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList moves the focus itself) and a player's thumb on the
-// reveal keep the view, so they keep the focus too.
+// A leader's (the host's or a co-host's) moves that replace the whole view; after them the focus goes to the new view's
+// heading. A leader's answer to a latecomer ("Wpuść", "Odrzuć"), the host's co-host switch, the host's moves on the
+// game's question list in the lobby ("Przejrzyj pytania", "Dolosuj pytanie", "Usuń", "Popraw", "Dodaj"; QuestionList
+// moves the focus itself) and a player's thumb on the reveal keep the view, so they keep the focus too.
 const VIEW_CHANGING: readonly RoomAction[] = ["start", "reveal", "next", "skip", "end"];
 
 // The room's screen for its host or a player: the lobby, the round's voting, its reveal, a skipped last question or
-// the end of the evening, chosen by the room's status and the round's phase; while a game is in play the host also
-// sees the latecomers waiting to be let in (S-08) above it. useRoomState keeps the state live; the actions go to the
-// game's endpoints and then look again at once, without waiting for the bell.
+// the end of the evening, chosen by the room's status and the round's phase. A leader (the host or a co-host, S-07;
+// view.leader) gets the moves of the game and, while a game is in play, the latecomers waiting to be let in (S-08)
+// above the view; the host alone keeps the link, the game's question list, the co-host switch and "Nowa gra".
+// useRoomState keeps the state live; the actions go to the game's endpoints and then look again at once, without
+// waiting for the bell.
 function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   // The players' emotes on this screen (S-16): only an emote of the list from a player on this screen's own list of
   // players (parseEmoteMessage; the channel is public), each for EMOTE_SHOW_MS, the oldest dropped past EMOTE_MAX_SHOWN.
@@ -142,7 +146,13 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
       for (const timer of timers) window.clearTimeout(timer);
     };
   }, []);
-  const { view, refreshFailed, liveBroken, refresh } = useRoomState({ roomId, initial, realtime, preview, onEmote });
+  const { view, refreshFailed, liveBroken, refresh, refreshes } = useRoomState({
+    roomId,
+    initial,
+    realtime,
+    preview,
+    onEmote,
+  });
   useEffect(() => {
     nicksRef.current = new Set(view.players.map((player) => player.nick));
   }, [view.players]);
@@ -163,6 +173,19 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
     setShownKey(key);
     setAnnounced(announcement(view));
   }
+  // The co-host role given or taken by the host between two refreshes (S-07; roleAnnouncement), apart from the key: said
+  // in a live region of its own and shown above the view until the view moves on (another question, phase or status) or
+  // the role changes again. Never on the first render, but a preview may start with it (roleNotice).
+  const [shownLeader, setShownLeader] = useState(view.leader);
+  const [roleNews, setRoleNews] = useState<{ text: string; key: string } | null>(() =>
+    preview?.roleNotice ? { text: roleAnnouncement(!initial.leader, initial), key } : null,
+  );
+  if (view.leader !== shownLeader) {
+    setShownLeader(view.leader);
+    const text = roleAnnouncement(shownLeader, view);
+    setRoleNews(text === "" ? null : { text, key });
+  }
+  const roleNotice = roleNews !== null && roleNews.key === key ? roleNews.text : "";
   const contentRef = useRef<HTMLDivElement>(null);
   // The view the host's move started from, until another view replaces it: the pressed button goes away with its view,
   // so the focus goes to the new heading instead of the page's start. Other players' focus is never moved.
@@ -188,7 +211,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
       if (isPreview) return { ok: true };
       if (VIEW_CHANGING.includes(action)) movedFrom.current = key;
       const outcome = await sendRoomAction(roomId, action, body);
-      // Only a refused move of the host's own drops its focus target: a thumb refused while "Następne pytanie" is on
+      // Only a refused move of the leader's own drops its focus target: a thumb refused while "Następne pytanie" is on
       // its way (round_over) must not.
       if (!outcome.ok && VIEW_CHANGING.includes(action)) movedFrom.current = null;
       // Accepted or refused, the room's state may have moved on (a refused vote: already cast, already revealed).
@@ -206,6 +229,8 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
   const end = useCallback(() => act("end", {}), [act]);
   const admit = useCallback((nick: string) => act("admit", { nick }), [act]);
   const reject = useCallback((nick: string) => act("reject", { nick }), [act]);
+  // The host's switch by a guest's nick: true gives the co-host role, false takes it back.
+  const setCohost = useCallback((nick: string, cohost: boolean) => act("cohost", { nick, cohost }), [act]);
   // The game's question list carries the entry's position, the handle that never changes, and the host's text.
   const questionActions = useMemo<QuestionListActions>(
     () => ({
@@ -231,6 +256,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         refreshFailed={refreshFailed}
         onStart={start}
         questionActions={questionActions}
+        onCohost={setCohost}
         preview={preview}
       />
     );
@@ -262,6 +288,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         onReveal={reveal}
         onSkip={skip}
         onEnd={end}
+        onCohost={setCohost}
         preview={preview}
         hostPreview={preview?.host}
       />
@@ -286,23 +313,35 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
     );
   }
 
-  // The state's column in the page's frame (src/components/room/room-frame.ts), so the banner, the host's list of
-  // requests, the note after a skip and the emotes' bar are as wide as the view under them.
+  // The state's column in the page's frame (src/components/room/room-frame.ts), so the banner, the notice of the role, a
+  // leader's list of requests, the note after a skip and the emotes' bar are as wide as the view under them.
   return (
     <div className={cn("flex flex-col gap-6", roomColumn(view), inFrame && "relative")}>
       <p aria-live="polite" className="sr-only">
         {announced}
       </p>
+      {/* On the page from the start, so a screen reader hears the role's change (a live region added together with its
+          text is often not read). */}
+      <p aria-live="polite" className="sr-only">
+        {roleNotice}
+      </p>
       {view.status !== "closed" && <LiveBanner broken={liveBroken} />}
-      {view.role === "host" && view.status === "playing" && (
+      {roleNotice && (
+        // Not a live region: the one above says it. The same words, for the eye, until the view moves on.
+        <Alert role="note">
+          {view.leader ? <ShieldCheck /> : <ShieldMinus />}
+          <AlertTitle>{roleNotice}</AlertTitle>
+        </Alert>
+      )}
+      {view.leader && view.status === "playing" && (
         // Outside contentRef: answering a request is not a move that takes the focus to the view's heading.
-        <JoinRequests requests={view.requests} onAdmit={admit} onReject={reject} />
+        <JoinRequests requests={view.requests} onAdmit={admit} onReject={reject} refreshes={refreshes} />
       )}
       {skipNotice(view) && (
         // Not a live region: the announcement above already says the skip with the new question.
         <Alert role="note">
           <SkipForward />
-          <AlertTitle>Host pominął poprzednie pytanie.</AlertTitle>
+          <AlertTitle>Prowadzący pominął poprzednie pytanie.</AlertTitle>
           <AlertDescription>Głosy z niego przepadły.</AlertDescription>
         </Alert>
       )}

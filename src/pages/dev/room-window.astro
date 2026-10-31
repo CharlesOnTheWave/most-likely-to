@@ -11,8 +11,9 @@ import type { ListQuestion, LobbyPlayer, RoomView } from "@/lib/rooms/shared";
 import { gameSummary } from "@/lib/rooms/summary";
 
 // One room screen in the real page's frame (the wide header and <main> of /r/[id]), for screenshots of the whole
-// window and for checking the host's bar at the window's bottom edge: /dev/room-window?state=reveal-host; without a
-// query, the list of states. Sample data as on /dev/room-states: no database, no Realtime, no polling, and the game's
+// window and for checking the leader's bar at the window's bottom edge: /dev/room-window?state=reveal-host; without a
+// query, the list of states. The header is the host's (signed in, "Wyloguj") on the host's screens and a guest's on
+// everyone else's, a co-host's too (S-07: a guest has no account). Sample data as on /dev/room-states: no database, no Realtime, no polling, and the game's
 // buttons only answer "ok" (RoomScreen's preview). Local only; a production build answers an empty 404.
 const isDev = import.meta.env.DEV;
 if (!isDev) {
@@ -34,10 +35,11 @@ const eightPlayers: LobbyPlayer[] = [
   "Kuba",
   "Marta",
   "Igor",
-].map((nick, index) => ({ nick, host: index === 0 }));
+].map((nick, index) => ({ nick, host: index === 0, cohost: false }));
 const roundPlayers: LobbyPlayer[] = ["Ola", "Bartek", "Kasia 🎉", "Zosia", "Kuba"].map((nick, index) => ({
   nick,
   host: index === 0,
+  cohost: false,
 }));
 const twentyPlayers: LobbyPlayer[] = [
   "Ola",
@@ -60,7 +62,16 @@ const twentyPlayers: LobbyPlayer[] = [
   "Łukasz 🎮",
   "Natalia",
   "Krzysztof",
-].map((nick, index) => ({ nick, host: index === 0 }));
+].map((nick, index) => ({ nick, host: index === 0, cohost: false }));
+// S-07: a co-host among the guests. In the lobby the long nick has the role, the widest row of the host's list (the
+// switch pressed next to a nick of 20 characters); in the voting, and on the co-host's own screens, Bartek.
+const cohostLobbyPlayers: LobbyPlayer[] = ["Ola", "Bartek", "Najdłuższy nick 20zn", "Kasia 🎉", "Zosia"].map(
+  (nick, index) => ({ nick, host: index === 0, cohost: nick === "Najdłuższy nick 20zn" }),
+);
+const cohostRoundPlayers: LobbyPlayer[] = roundPlayers.map((player) => ({
+  ...player,
+  cohost: player.nick === "Bartek",
+}));
 const fiveResults: [string, number][] = [
   ["Ola", 2],
   ["Bartek", 0],
@@ -103,10 +114,18 @@ const questionList: ListQuestion[] = [
   },
 ];
 
+// Whose screen it is: the host, a guest with the co-host role (S-07: a leader, role "guest", leader true) or a guest.
+// The co-host's own row must carry the role too (cohostRoundPlayers), as room_lobby gives it.
+type Who = "host" | "cohost" | "guest";
+
+function seat(who: Who): Pick<RoomView, "role" | "leader"> {
+  return { role: who === "host" ? "host" : "guest", leader: who !== "guest" };
+}
+
 // By default every player was in the room when the round opened, so all of them may vote in it (eligible); no
 // latecomer is waiting (requests, set by the samples of S-08).
 function voting(
-  role: "host" | "guest",
+  who: Who,
   me: string,
   players: LobbyPlayer[],
   voted: string[],
@@ -114,7 +133,7 @@ function voting(
 ): RoomView {
   return {
     status: "playing",
-    role,
+    ...seat(who),
     me,
     players,
     round: {
@@ -135,12 +154,19 @@ function voting(
   };
 }
 
-function revealed(players: LobbyPlayer[], results: [string, number][], abstained: number, question: string): RoomView {
+// The host's reveal (Ola) unless another screen is asked for: the co-host's is Bartek's.
+function revealed(
+  players: LobbyPlayer[],
+  results: [string, number][],
+  abstained: number,
+  question: string,
+  who: Who = "host",
+): RoomView {
   const votes = results.reduce((sum, [, count]) => sum + count, 0);
   return {
     status: "playing",
-    role: "host",
-    me: "Ola",
+    ...seat(who),
+    me: who === "host" ? "Ola" : "Bartek",
     players,
     round: {
       number: 1,
@@ -153,7 +179,23 @@ function revealed(players: LobbyPlayer[], results: [string, number][], abstained
       question,
     },
     requests: [],
-    questionsLeft: true,
+    // Only a leader learns whether the game has a question left.
+    questionsLeft: who === "guest" ? null : true,
+    questions: null,
+    summary: null,
+  };
+}
+
+// The lobby of a game with a co-host (Bartek): his own screen.
+function cohostLobby(): RoomView {
+  return {
+    status: "lobby",
+    ...seat("cohost"),
+    me: "Bartek",
+    players: cohostRoundPlayers,
+    round: null,
+    requests: [],
+    questionsLeft: null,
     questions: null,
     summary: null,
   };
@@ -170,6 +212,8 @@ interface Sample {
   questionList?: QuestionListPreview;
   // The emotes' bar resting or refused, and bubbles on the screen (S-16).
   emotes?: EmotesPreview;
+  // The notice of the co-host role, as if the host had just given it (a leader) or taken it (S-07).
+  roleNotice?: boolean;
 }
 
 // Three emotes on everyone's screen (S-16), a nick with an emoji among them; and the most at once (EMOTE_MAX_SHOWN).
@@ -190,6 +234,7 @@ const SAMPLES: Record<string, Sample> = {
     initial: {
       status: "lobby",
       role: "host",
+      leader: true,
       me: "Ola",
       players: eightPlayers,
       round: null,
@@ -206,6 +251,7 @@ const SAMPLES: Record<string, Sample> = {
     initial: {
       status: "lobby",
       role: "host",
+      leader: true,
       me: "Ola",
       players: twentyPlayers,
       round: null,
@@ -222,6 +268,7 @@ const SAMPLES: Record<string, Sample> = {
     initial: {
       status: "lobby",
       role: "host",
+      leader: true,
       me: "Ola",
       players: eightPlayers,
       round: null,
@@ -238,6 +285,7 @@ const SAMPLES: Record<string, Sample> = {
     initial: {
       status: "lobby",
       role: "guest",
+      leader: false,
       me: "Bartek",
       players: eightPlayers,
       round: null,
@@ -246,6 +294,80 @@ const SAMPLES: Record<string, Sample> = {
       questions: null,
       summary: null,
     },
+  },
+  // S-07: the host's switch of the co-host role next to the guests' nicks, and the badge "współhost" for the others.
+  "lobby-host-cohost": {
+    label: "Poczekalnia: host, 5 graczy, 1 współhost (przełącznik roli)",
+    initial: {
+      status: "lobby",
+      role: "host",
+      leader: true,
+      me: "Ola",
+      players: cohostLobbyPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+      questions: null,
+      summary: null,
+    },
+    linkUrl: LINK_URL,
+  },
+  "lobby-guest-cohost": {
+    label: "Poczekalnia: gość, 5 graczy, 1 współhost",
+    initial: {
+      status: "lobby",
+      role: "guest",
+      leader: false,
+      me: "Kasia 🎉",
+      players: cohostLobbyPlayers,
+      round: null,
+      requests: [],
+      questionsLeft: null,
+      questions: null,
+      summary: null,
+    },
+  },
+  "vote-host-cohost": {
+    label: "Głosowanie: host po głosie, 1 współhost (przełącznik roli)",
+    initial: voting("host", "Ola", cohostRoundPlayers, ["Ola", "Bartek", "Zosia"]),
+    myVote: { target: "Kasia 🎉" },
+  },
+  // S-07: the co-host's own window: a guest's header, the leader's buttons (the bar from lg once he has voted).
+  "lobby-cohost": {
+    label: "Poczekalnia: współhost, 5 graczy",
+    initial: cohostLobby(),
+  },
+  "lobby-cohost-granted": {
+    label: "Poczekalnia: współhost, ogłoszenie „Jesteś współhostem”",
+    initial: cohostLobby(),
+    roleNotice: true,
+  },
+  "vote-cohost-before": {
+    label: "Głosowanie: współhost przed głosem",
+    initial: voting("cohost", "Bartek", cohostRoundPlayers, ["Ola", "Zosia"]),
+  },
+  "vote-cohost": {
+    label: "Głosowanie: współhost po głosie, pasek prowadzącego",
+    initial: voting("cohost", "Bartek", cohostRoundPlayers, ["Ola", "Bartek", "Zosia"]),
+    myVote: { target: "Kasia 🎉" },
+  },
+  "vote-cohost-requests": {
+    label: "Głosowanie: współhost po głosie, 2 prośby o wejście",
+    initial: {
+      ...voting("cohost", "Bartek", cohostRoundPlayers, ["Ola", "Bartek", "Zosia"]),
+      requests: ["Marta", "Najdłuższy nick 20zn"],
+    },
+    myVote: { target: "Kasia 🎉" },
+  },
+  "vote-cohost-revoked": {
+    label: "Głosowanie: rola odebrana, ogłoszenie „Nie jesteś już współhostem”",
+    initial: voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"]),
+    myVote: { target: "Kasia 🎉" },
+    roleNotice: true,
+  },
+  "reveal-cohost": {
+    label: "Odsłona: współhost, pasek prowadzącego",
+    initial: revealed(cohostRoundPlayers, fiveResults, 1, QUESTION, "cohost"),
   },
   "vote-guest": {
     label: "Głosowanie: gość przed głosem",
@@ -283,7 +405,13 @@ const SAMPLES: Record<string, Sample> = {
   },
   "reveal-guest": {
     label: "Odsłona: gość, 5 graczy",
-    initial: { ...revealed(roundPlayers, fiveResults, 1, QUESTION), role: "guest", me: "Bartek", questionsLeft: null },
+    initial: {
+      ...revealed(roundPlayers, fiveResults, 1, QUESTION),
+      role: "guest",
+      me: "Bartek",
+      leader: false,
+      questionsLeft: null,
+    },
   },
   // S-08: latecomers waiting above the host's view, in the order of asking.
   "vote-host-requests": {
@@ -308,6 +436,7 @@ const SAMPLES: Record<string, Sample> = {
     initial: {
       status: "playing",
       role: "host",
+      leader: true,
       me: "Ola",
       players: roundPlayers,
       round: { number: 7, phase: "skipped" },
@@ -331,7 +460,13 @@ const SAMPLES: Record<string, Sample> = {
   },
   "reveal-guest-emote-refused": {
     label: "Odsłona: gość, emotka nie doszła",
-    initial: { ...revealed(roundPlayers, fiveResults, 1, QUESTION), role: "guest", me: "Bartek", questionsLeft: null },
+    initial: {
+      ...revealed(roundPlayers, fiveResults, 1, QUESTION),
+      role: "guest",
+      me: "Bartek",
+      leader: false,
+      questionsLeft: null,
+    },
     // A tap whose answer never came (sendRoomAction): the generic text.
     emotes: { error: roomErrorMessage("unexpected") },
   },
@@ -341,6 +476,7 @@ const SAMPLES: Record<string, Sample> = {
     initial: {
       status: "closed",
       role: "host",
+      leader: true,
       me: "Ola",
       players: roundPlayers,
       round: null,
@@ -360,7 +496,7 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
   <Layout title="Okno pokoju (dev)">
     {sample ? (
       <>
-        <AppHeader signedIn wide />
+        <AppHeader signedIn={sample.initial.role === "host"} wide />
         <main class:list={["mx-auto flex w-full flex-col gap-6 px-4 py-8", ROOM_FRAME]}>
           <RoomScreen
             roomId={ROOM_ID}
@@ -374,6 +510,7 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
               questionList: sample.questionList,
               emotes: sample.emotes,
               window: true,
+              roleNotice: sample.roleNotice,
             }}
             client:load
           />
@@ -383,8 +520,9 @@ const sample = Object.hasOwn(SAMPLES, stateParam) ? SAMPLES[stateParam] : null;
       <main class="mx-auto flex max-w-3xl flex-col gap-4 p-6">
         <h1 class="text-2xl font-semibold">Okno pokoju (dev)</h1>
         <p class="text-muted-foreground text-sm">
-          Jeden stan pokoju w prawdziwej ramie strony /r/…, do zrzutów całego okna i do sprawdzania paska hosta przy
-          dolnej krawędzi. Wszystkie stany obok siebie: /dev/room-states.
+          Jeden stan pokoju w prawdziwej ramie strony /r/…, do zrzutów całego okna i do sprawdzania paska prowadzącego
+          przy dolnej krawędzi. Nagłówek hosta na ekranach hosta, gościa na pozostałych (także współhosta). Wszystkie
+          stany obok siebie: /dev/room-states.
         </p>
         <ul class="flex flex-col gap-2 text-sm">
           {Object.entries(SAMPLES).map(([state, { label }]) => (

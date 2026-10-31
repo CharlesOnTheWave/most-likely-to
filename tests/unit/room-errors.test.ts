@@ -26,7 +26,9 @@ const GUEST_REFUSALS = [
 // latecomer_nick_taken for the host's "Wpuść" and "Odrzuć"; and
 // context/archive/2026-10-24-question-list-review/plan.md, Faza 2 #5: question_unknown, invalid_question_text,
 // list_full and no_new_questions for the host's moves on the game's question list, list_empty for the start with every
-// entry removed), written out by hand: a code dropped from ROUND_REFUSALS would otherwise drop out of this test too.
+// entry removed; context/changes/co-host-role/plan.md, Faza 2 #4: not_leader for a leader's move once the co-host role
+// is taken, player_unknown for the host's role button on a nick no guest has), written out by hand: a code dropped
+// from ROUND_REFUSALS would otherwise drop out of this test too.
 const PLANNED_ROUND_REFUSALS = [
   "game_started",
   "not_enough_players",
@@ -46,6 +48,8 @@ const PLANNED_ROUND_REFUSALS = [
   "list_full",
   "list_empty",
   "no_new_questions",
+  "not_leader",
+  "player_unknown",
 ];
 
 const ALL_REFUSALS = [...new Set([...GUEST_REFUSALS, ...PLANNED_ROUND_REFUSALS])];

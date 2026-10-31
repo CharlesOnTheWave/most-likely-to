@@ -1,17 +1,17 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Hand, UserCheck, UserX } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { ActionOutcome } from "@/components/room/room-actions";
 
-// The host's list of latecomers waiting to be let in (S-08, PRD FR-020): each nick on its own row with "Wpuść" and
-// "Odrzuć", one tap each; "Odrzuć" asks nothing first, and the latecomer may ask again. RoomScreen shows it on every
-// screen of a game in play (the voting before and after the host's own vote, the reveal, a skipped last question),
-// above the view and outside the part that takes the focus after a host's move, so answering never moves the focus.
-// Before the view's title in the DOM on purpose, as the live banner and the note after a skip; a caption, not a
-// heading, so the title stays the view's first heading (AGENTS.md, "## UI"). Only the host gets requests: room_lobby
-// gives a guest [].
+// A leader's (the host's or a co-host's, S-07) list of latecomers waiting to be let in (S-08, PRD FR-020): each nick on
+// its own row with "Wpuść" and "Odrzuć", one tap each; "Odrzuć" asks nothing first, and the latecomer may ask again.
+// RoomScreen shows it on every screen of a game in play (the voting before and after the leader's own vote, the reveal,
+// a skipped last question), above the view and outside the part that takes the focus after a leader's move, so
+// answering never moves the focus. Before the view's title in the DOM on purpose, as the live banner and the note after
+// a skip; a caption, not a heading, so the title stays the view's first heading (AGENTS.md, "## UI"). Only a leader
+// gets requests: room_lobby gives anyone else [].
 
 type Answer = "admit" | "reject";
 
@@ -20,12 +20,15 @@ interface Props {
   requests: string[];
   onAdmit: (nick: string) => Promise<ActionOutcome>;
   onReject: (nick: string) => Promise<ActionOutcome>;
+  // How many refreshed states the screen has had (useRoomState), changed or not.
+  refreshes: number;
 }
 
 interface RowProps {
   nick: string;
   onAdmit: (nick: string) => Promise<ActionOutcome>;
   onReject: (nick: string) => Promise<ActionOutcome>;
+  refreshes: number;
 }
 
 // While one answer is on its way both buttons of the row wait, still focusable (aria-disabled, not disabled), so the
@@ -41,22 +44,41 @@ function newRequestsText(added: string[]): string {
   return `Proszą o wejście: ${added.join(", ")}.`;
 }
 
-function RequestRow({ nick, onAdmit, onReject }: RowProps) {
+function RequestRow({ nick, onAdmit, onReject, refreshes }: RowProps) {
   const [busy, setBusy] = useState<Answer | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The count of refreshed states when the answer was accepted; null while no accepted answer waits.
+  const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
+  // The latest count, for the answer's continuation, which runs with the count of the render it started in.
+  const refreshesRef = useRef(refreshes);
+  useEffect(() => {
+    refreshesRef.current = refreshes;
+  }, [refreshes]);
   // The buttons say only "Wpuść" and "Odrzuć"; the nick they act on comes with them as their description.
   const nickId = useId();
+
+  // F4 of S-08 (context/archive/2026-10-22-latecomer-admission/follow-ups/review-fixes.md): a state refreshed after the
+  // accepted answer still has this nick, so the latecomer asked again under it before this screen saw the answer (e.g.
+  // after a failed refresh), and the row is a new request: free again. Adjusting state while rendering (react.dev, "You
+  // Might Not Need an Effect"); a state without the nick drops the row instead. Known limit: a fetch already on its way
+  // before the answer landed may free the row for a moment, until the next refresh drops it.
+  if (acceptedAt !== null && refreshes > acceptedAt) {
+    setAcceptedAt(null);
+    setBusy(null);
+  }
 
   async function answer(kind: Answer) {
     if (busy !== null) return;
     setBusy(kind);
     setError(null);
     const outcome = await (kind === "admit" ? onAdmit(nick) : onReject(nick));
-    // Accepted: the row stays busy until the refreshed state drops it from the list.
-    if (!outcome.ok) {
-      setBusy(null);
-      setError(outcome.message);
+    // Accepted: the row stays busy until a refreshed state drops it from the list, or still has the nick (above).
+    if (outcome.ok) {
+      setAcceptedAt(refreshesRef.current);
+      return;
     }
+    setBusy(null);
+    setError(outcome.message);
   }
 
   return (
@@ -97,7 +119,7 @@ function RequestRow({ nick, onAdmit, onReject }: RowProps) {
   );
 }
 
-export default function JoinRequests({ requests, onAdmit, onReject }: Props) {
+export default function JoinRequests({ requests, onAdmit, onReject, refreshes }: Props) {
   // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"): a nick the list did not have before is
   // announced, never on the first render, and a list that shrank empties the region, so a latecomer who asks again
   // after "Odrzuć" is heard again.
@@ -124,7 +146,7 @@ export default function JoinRequests({ requests, onAdmit, onReject }: Props) {
           </p>
           <ul className="bg-card divide-y rounded-md border">
             {requests.map((nick) => (
-              <RequestRow key={nick} nick={nick} onAdmit={onAdmit} onReject={onReject} />
+              <RequestRow key={nick} nick={nick} onAdmit={onAdmit} onReject={onReject} refreshes={refreshes} />
             ))}
           </ul>
           <p className="text-muted-foreground text-xs">Wpuszczona osoba zagłosuje od następnego pytania.</p>

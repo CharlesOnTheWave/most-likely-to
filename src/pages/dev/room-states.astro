@@ -38,49 +38,52 @@ const joinCard = { title: "Dołącz do gry", description: "Wpisz nick i jesteś 
 // /j/… during a game (S-08): the latecomer's request form, and the same after "Odrzuć".
 const requestCard = {
   title: "Poproś o wejście",
-  description: "Gra już trwa, więc host musi cię wpuścić. Wpisz nick i poproś o wejście.",
+  description: "Gra już trwa, więc prowadzący musi cię wpuścić. Wpisz nick i poproś o wejście.",
 };
-const requestAgainCard = { title: "Host cię nie wpuścił.", description: "Możesz poprosić o wejście jeszcze raz." };
+const requestAgainCard = {
+  title: "Prowadzący cię nie wpuścił.",
+  description: "Możesz poprosić o wejście jeszcze raz.",
+};
 
 // Sample room, link and players; the link has the real length (22 base64url characters after /j/).
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
 const LINK_URL = `https://most-likely-to.charlesonthewave.workers.dev/j/${LINK_TOKEN}`;
-const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true }];
+const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true, cohost: false }];
 const twoPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
 ];
 const fewPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
-  { nick: "Kasia 🎉", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Kasia 🎉", host: false, cohost: false },
 ];
 // Eight players, with a nick of exactly 20 characters (nickLength) and one with an emoji.
 const eightPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
-  { nick: "Najdłuższy nick 20zn", host: false },
-  { nick: "Kasia 🎉", host: false },
-  { nick: "Zosia", host: false },
-  { nick: "Kuba", host: false },
-  { nick: "Marta", host: false },
-  { nick: "Igor", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Najdłuższy nick 20zn", host: false, cohost: false },
+  { nick: "Kasia 🎉", host: false, cohost: false },
+  { nick: "Zosia", host: false, cohost: false },
+  { nick: "Kuba", host: false, cohost: false },
+  { nick: "Marta", host: false, cohost: false },
+  { nick: "Igor", host: false, cohost: false },
 ];
 const guestView: LobbyPlayer[] = [
-  { nick: "Bartek", host: true },
-  { nick: "Ola", host: false },
-  { nick: "Kasia 🎉", host: false },
-  { nick: "Zosia", host: false },
+  { nick: "Bartek", host: true, cohost: false },
+  { nick: "Ola", host: false, cohost: false },
+  { nick: "Kasia 🎉", host: false, cohost: false },
+  { nick: "Zosia", host: false, cohost: false },
 ];
 
 // The round: five players in seat order, the host first (Ola); the guest's screens are Bartek's.
 const roundPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
-  { nick: "Kasia 🎉", host: false },
-  { nick: "Zosia", host: false },
-  { nick: "Kuba", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Kasia 🎉", host: false, cohost: false },
+  { nick: "Zosia", host: false, cohost: false },
+  { nick: "Kuba", host: false, cohost: false },
 ];
 // Twenty players (the most a room is planned for): five nicks of 20 characters, the widest letters, emoji.
 const twentyPlayers: LobbyPlayer[] = [
@@ -104,7 +107,17 @@ const twentyPlayers: LobbyPlayer[] = [
   "Łukasz 🎮",
   "Natalia",
   "Krzysztof",
-].map((nick, index) => ({ nick, host: index === 0 }));
+].map((nick, index) => ({ nick, host: index === 0, cohost: false }));
+
+// S-07: a guest the host made a co-host, on every screen's list.
+function withCohost(players: LobbyPlayer[], nick: string): LobbyPlayer[] {
+  return players.map((player) => ({ ...player, cohost: player.nick === nick }));
+}
+// Bartek has the co-host role: his own screens (a leader without the host's things) and the others' lists.
+const cohostFew = withCohost(fewPlayers, "Bartek");
+const cohostRound = withCohost(roundPlayers, "Bartek");
+// The host's list with the widest row: the switch pressed next to a nick of 20 characters.
+const cohostEight = withCohost(eightPlayers, "Najdłuższy nick 20zn");
 
 // Sample questions: the ending after "Kto z nas najprawdopodobniej", as the Worker sends it; the long one is the
 // longest in the base.
@@ -154,11 +167,19 @@ const fiveEmotes: EmoteMessage[] = [
 const TOO_LONG_QUESTION =
   "przyszedłby na wieczór gier z własną planszówką, przeczytał całą instrukcję na głos i przegrał w pierwszej rundzie";
 
+// Whose screen it is: the host, a guest with the co-host role (S-07: a leader, role "guest", leader true) or a guest.
+// The co-host's own row must carry the role too (withCohost), as room_lobby gives it.
+type Who = "host" | "cohost" | "guest";
+
+function seat(who: Who): Pick<RoomView, "role" | "leader"> {
+  return { role: who === "host" ? "host" : "guest", leader: who !== "guest" };
+}
+
 // questions: the host's game's question list in the lobby (S-06); null until "Przejrzyj pytania", and for a guest.
-function lobby(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
+function lobby(who: Who, me: string, players: LobbyPlayer[]): RoomView {
   return {
     status: "lobby",
-    role,
+    ...seat(who),
     me,
     players,
     round: null,
@@ -178,7 +199,7 @@ function withQuestions(view: RoomView, questions: ListQuestion[]): RoomView {
 // (eligible, S-08). By default every player was in the room when the round opened, so all of them may vote in it, and
 // no latecomer is waiting (requests; withRequests below).
 function voting(
-  role: "host" | "guest",
+  who: Who,
   me: string,
   players: LobbyPlayer[],
   voted: string[],
@@ -187,7 +208,7 @@ function voting(
 ): RoomView {
   return {
     status: "playing",
-    role,
+    ...seat(who),
     me,
     players,
     round: {
@@ -210,7 +231,7 @@ function voting(
 
 // results: [nick, votes] in seat order, every player of the round; ballots = votes + abstentions.
 function revealed(
-  role: "host" | "guest",
+  who: Who,
   me: string,
   players: LobbyPlayer[],
   results: [string, number][],
@@ -221,7 +242,7 @@ function revealed(
   const votes = results.reduce((sum, [, count]) => sum + count, 0);
   return {
     status: "playing",
-    role,
+    ...seat(who),
     me,
     players,
     round: {
@@ -235,23 +256,23 @@ function revealed(
       question,
     },
     requests: [],
-    // Only the host learns whether the game has a question left.
-    questionsLeft: role === "host" ? questionsLeft : null,
+    // Only a leader learns whether the game has a question left.
+    questionsLeft: who === "guest" ? null : questionsLeft,
     questions: null,
     summary: null,
   };
 }
 
-// The host skipped the last question of the game's pool: no round follows it, its votes are gone.
-function skipped(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
+// A leader skipped the last question of the game's pool: no round follows it, its votes are gone.
+function skipped(who: Who, me: string, players: LobbyPlayer[]): RoomView {
   return {
     status: "playing",
-    role,
+    ...seat(who),
     me,
     players,
     round: { number: 7, phase: "skipped" },
     requests: [],
-    questionsLeft: role === "host" ? false : null,
+    questionsLeft: who === "guest" ? null : false,
     questions: null,
     summary: null,
   };
@@ -259,10 +280,10 @@ function skipped(role: "host" | "guest", me: string, players: LobbyPlayer[]): Ro
 
 // The end of the evening: the room is closed, no round, no counts. With no revealed question (closed from the lobby,
 // every question skipped, or ended during the first one) there is no summary either.
-function closed(role: "host" | "guest", me: string, players: LobbyPlayer[]): RoomView {
+function closed(who: Who, me: string, players: LobbyPlayer[]): RoomView {
   return {
     status: "closed",
-    role,
+    ...seat(who),
     me,
     players,
     round: null,
@@ -275,18 +296,12 @@ function closed(role: "host" | "guest", me: string, players: LobbyPlayer[]): Roo
 
 // The end of a game with reveals (S-15): sums as room_lobby would give them (game_totals: [nick, votes] in seat order,
 // every player with a result in at least one reveal), the summary as the Worker makes it of them (gameSummary).
-function ended(
-  role: "host" | "guest",
-  me: string,
-  players: LobbyPlayer[],
-  revealed: number,
-  sums: [string, number][],
-): RoomView {
+function ended(who: Who, me: string, players: LobbyPlayer[], revealed: number, sums: [string, number][]): RoomView {
   const totals = sums.map(([nick, votes]) => ({ nick, votes }));
-  return { ...closed(role, me, players), summary: gameSummary({ revealed, totals }) };
+  return { ...closed(who, me, players), summary: gameSummary({ revealed, totals }) };
 }
 
-// The host's screen with latecomers waiting to be let in (S-08), in the order of asking; only the host gets them.
+// A leader's screen with latecomers waiting to be let in (S-08), in the order of asking; only a leader gets them.
 function withRequests(view: RoomView, requests: string[]): RoomView {
   return { ...view, requests };
 }
@@ -367,21 +382,22 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
       <h1 class="text-2xl font-semibold">Stany pokoju</h1>
       <p class="text-muted-foreground mt-2 max-w-3xl text-sm">
         Te same klocki co na /, /j/… i /r/…, z przykładowymi danymi: strona nie pyta bazy i nie słucha zmian, więc listy
-        graczy stoją w miejscu, a ekran czekania na hosta sam nigdzie nie przechodzi. Hover i focus-visible sprawdzasz
-        na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86 i 91: najedź myszą na pola i przyciski albo przejdź
-        Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy pokój), a „Wyloguj” w
-        nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”, „Pomiń pytanie”,
-        „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”, „Przejrzyj pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj
-        pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”, emotki) niczego nie wysyłają: głos od razu pokazuje
-        „Głos oddany”, kciuk od razu się zaznacza, a drugie dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku,
-        pytania „Na pewno…?” i „Anuluj” działają naprawdę, a wysłana akcja hosta zostaje w stanie wysyłania. Na liście
-        pytań „Usuń” i „Zapisz” zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej
-        stronie; dolosowane i dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie
-        losowania. Przełącznik „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu
-        pod każdym ekranem, a dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej
-        stronie pasek jest przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w
-        górę i gaśnie po 3 s. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie,
-        z szerokim nagłówkiem, pokazuje /dev/room-window.
+        graczy stoją w miejscu, a ekran czekania na prowadzącego sam nigdzie nie przechodzi. Hover i focus-visible
+        sprawdzasz na stanach 2, 9, 14, 25, 28, 36, 42, 45f, 64, 69, 72, 74, 86, 91, 96 i 102: najedź myszą na pola i
+        przyciski albo przejdź Tabem. Wysłanie formularza na tej stronie naprawdę idzie do API (zalogowany host założy
+        pokój), a „Wyloguj” w nagłówku naprawdę wylogowuje. Przyciski gry („Zacznij grę”, „Zagłosuj”, „Odsłoń wynik”,
+        „Pomiń pytanie”, „Zakończ grę”, „Następne pytanie”, „Wpuść”, „Odrzuć”, przełącznik „współhost”, „Przejrzyj
+        pytania”, „Popraw”, „Zapisz”, „Usuń”, „Dolosuj pytanie”, „Dodaj”, kciuki „Dobre pytanie” i „Słabe pytanie”,
+        emotki) niczego nie wysyłają: głos od razu pokazuje „Głos oddany”, kciuk od razu się zaznacza, a drugie
+        dotknięcie go zdejmuje, emotka gasi pasek na 3 s bez dymku, pytania „Na pewno…?” i „Anuluj” działają naprawdę, a
+        wysłana akcja prowadzącego i przełącznik roli zostają w stanie wysyłania. Na liście pytań „Usuń” i „Zapisz”
+        zmieniają listę od razu, tylko na swoim ekranie, a fokus idzie dalej jak na prawdziwej stronie; dolosowane i
+        dodane pytanie się nie pojawia, a „Przejrzyj pytania” bez listy (72) zostaje w stanie losowania. Przełącznik
+        „Koło” / „Paski” w odsłonie działa naprawdę, tylko na swoim ekranie. Pasek emotek stoi tu pod każdym ekranem, a
+        dymki (94, 95) stoją zatrzymane w locie z rogu ramki w górę i nie znikają; na prawdziwej stronie pasek jest
+        przypięty do dołu okna telefonu, a od 1280 px stoi przy prawej krawędzi okna, dymek płynie w górę i gaśnie po 3
+        s. Od 1024 px stany pokoju mają szerokość strony, jak na laptopie; pokój w prawdziwym oknie, z szerokim
+        nagłówkiem, pokazuje /dev/room-window.
       </p>
 
       <div class="mt-10 flex flex-col gap-6">
@@ -573,7 +589,7 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
           </section>
 
           <section id="join-request-waiting" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">65. Prośba wysłana: czekanie na hosta</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">65. Prośba wysłana: czekanie na prowadzącego</h2>
             <JoinWaiting roomId={ROOM_ID} linkToken={LINK_TOKEN} nick="Kuba" preview={{}} client:load />
           </section>
 
@@ -589,7 +605,7 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
           </section>
 
           <section id="join-request-rejected" class="flex w-full max-w-lg flex-col gap-3">
-            <h2 class="text-muted-foreground text-sm font-medium">67. Host nie wpuścił: „Poproś jeszcze raz”</h2>
+            <h2 class="text-muted-foreground text-sm font-medium">67. Prowadzący nie wpuścił: „Poproś jeszcze raz”</h2>
             {/* The nick asked with before, as the real page has it from the latecomer's own request. */}
             <RoomCard titleAs="h2" {...requestAgainCard}>
               <JoinForm
@@ -699,6 +715,7 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               initial={{
                 status: "closed",
                 role: "host",
+                leader: true,
                 me: "Ola",
                 players: fewPlayers,
                 round: null,
@@ -720,6 +737,7 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               initial={{
                 status: "closed",
                 role: "guest",
+                leader: false,
                 me: "Ola",
                 players: guestView,
                 round: null,
@@ -1652,6 +1670,195 @@ const bigRoomSums: [string, number][] = twentyPlayers.map(({ nick }, index) => [
               initial={voting("guest", "Kuba", roundPlayers, ["Ola", "Zosia"], QUESTION, { eligible: beforeKuba })}
               realtime={null}
               preview={{ idPrefix: "latecomer-guest-vote" }}
+              client:load
+            />
+          </section>
+        </div>
+      </div>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <h2 class="border-b pb-2 text-lg font-semibold">Gra: współhost (/r/…)</h2>
+        <div class="grid items-start justify-items-center gap-10 md:grid-cols-2 lg:grid-cols-1">
+          <section id="cohost-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              96. Współhost: poczekalnia, „Zacznij grę” i znaczek · hover · focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("cohost", "Bartek", cohostFew)}
+              realtime={null}
+              preview={{ idPrefix: "cohost-lobby" }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-vote-before" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              97. Współhost: głosowanie przed głosem, z przyciskami prowadzącego
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("cohost", "Bartek", cohostRound, ["Ola", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "cohost-vote-before" }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-vote-voted" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              98. Współhost: po głosie, z przyciskami prowadzącego
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("cohost", "Bartek", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "cohost-vote-voted", myVote: { target: "Kasia 🎉" } }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-reveal" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              99. Współhost: odsłona, z przyciskami prowadzącego
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={revealed("cohost", "Bartek", cohostRound, fiveResults, 1)}
+              realtime={null}
+              preview={{ idPrefix: "cohost-reveal" }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-skipped" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">100. Współhost: pominięte ostatnie pytanie</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={skipped("cohost", "Bartek", cohostRound)}
+              realtime={null}
+              preview={{ idPrefix: "cohost-skipped" }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-requests" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              101. Współhost: po głosie, 2 prośby o wejście (nick 20 znaków)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={withRequests(voting("cohost", "Bartek", cohostRound, ["Ola", "Bartek", "Zosia"]), [
+                "Marta",
+                "Najdłuższy nick 20zn",
+              ])}
+              realtime={null}
+              preview={{ idPrefix: "cohost-requests", myVote: { target: "Kasia 🎉" } }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-host-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              102. Host: poczekalnia, przełącznik roli przy gościach, współhost z nickiem 20 znaków · hover ·
+              focus-visible
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostEight)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "cohost-host-lobby" }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-host-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              103. Host: głosowanie po głosie, przełącznik roli, 1 współhost
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "cohost-host-vote", myVote: { target: "Kasia 🎉" } }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-host-sending" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">104. Host: przełącznik roli w drodze (Kasia)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("host", "Ola", cohostFew)}
+              linkUrl={LINK_URL}
+              realtime={null}
+              preview={{ idPrefix: "cohost-host-sending", roleSwitch: { nick: "Kasia 🎉", sending: true } }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-host-error" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              105. Host: przełącznik roli odrzucony (gracza nie ma w pokoju)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("host", "Ola", cohostRound, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{
+                idPrefix: "cohost-host-error",
+                myVote: { target: "Kasia 🎉" },
+                roleSwitch: { nick: "Zosia", error: roomErrorMessage("player_unknown") },
+              }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-guest-lobby" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">106. Gość: poczekalnia, znaczek „współhost”</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("guest", "Kasia 🎉", cohostFew)}
+              realtime={null}
+              preview={{ idPrefix: "cohost-guest-lobby" }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-guest-vote" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              107. Gość: głosowanie przed głosem, znaczek „współhost” w formularzu
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Kasia 🎉", cohostRound, ["Ola"])}
+              realtime={null}
+              preview={{ idPrefix: "cohost-guest-vote" }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-granted" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">108. Ogłoszenie: host nadał rolę (poczekalnia)</h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={lobby("cohost", "Bartek", cohostFew)}
+              realtime={null}
+              preview={{ idPrefix: "cohost-granted", roleNotice: true }}
+              client:load
+            />
+          </section>
+
+          <section id="cohost-revoked" class:list={["flex w-full flex-col gap-3", ROOM_FRAME]}>
+            <h2 class="text-muted-foreground text-sm font-medium">
+              109. Ogłoszenie: host odebrał rolę w głosowaniu (przyciski prowadzącego znikły)
+            </h2>
+            <RoomScreen
+              roomId={ROOM_ID}
+              initial={voting("guest", "Bartek", roundPlayers, ["Ola", "Bartek", "Zosia"])}
+              realtime={null}
+              preview={{ idPrefix: "cohost-revoked", myVote: { target: "Kasia 🎉" }, roleNotice: true }}
               client:load
             />
           </section>

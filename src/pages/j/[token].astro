@@ -13,15 +13,16 @@ import { createClient, getPublicSupabaseConfig } from "@/lib/supabase";
 // The host's link. A GET changes nothing, because Discord fetches the link for its preview, and the title and meta tags
 // carry no room data. Someone already in the room (its host, or a guest with the room's cookie) goes straight to it,
 // also once the game has started: a player who opens the link from Discord again gets back to the round. Anyone else
-// sees the join form in the lobby; during a game, a latecomer asks the host to let them in (S-08): the request form,
-// then a waiting screen that moves on to the room by itself, and after "Odrzuć" the form again with the nick asked with.
+// sees the join form in the lobby; during a game, a latecomer asks a leader (the host or a co-host, S-07) to let them
+// in (S-08): the request form, then a waiting screen that moves on to the room by itself, and after "Odrzuć" the form
+// again with the nick asked with.
 // The request's state comes from the room's cookie (join_request_state), never the question or anyone else's request.
 // Once the game is over ("Zakończ grę", "Nowa gra" or the sweep), the link only says so: the room never opens again.
 type Page =
   | { kind: "join"; linkToken: string }
   | { kind: "inside"; roomId: string }
   | { kind: "unknown" }
-  // A game in play: the request form; rejectedNick is the nick asked with before, once the host turned it away.
+  // A game in play: the request form; rejectedNick is the nick asked with before, once a leader turned it away.
   | { kind: "started"; linkToken: string; rejectedNick: string | null }
   | { kind: "waiting"; linkToken: string; roomId: string; nick: string }
   | { kind: "closed" }
@@ -92,7 +93,7 @@ const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
       {page.kind === "started" && page.rejectedNick === null && (
         <RoomCard
           title="Poproś o wejście"
-          description="Gra już trwa, więc host musi cię wpuścić. Wpisz nick i poproś o wejście."
+          description="Gra już trwa, więc prowadzący musi cię wpuścić. Wpisz nick i poproś o wejście."
         >
           <JoinForm
             linkToken={page.linkToken}
@@ -104,7 +105,7 @@ const realtime = page.kind === "waiting" ? getPublicSupabaseConfig() : null;
         </RoomCard>
       )}
       {page.kind === "started" && page.rejectedNick !== null && (
-        <RoomCard title="Host cię nie wpuścił." description="Możesz poprosić o wejście jeszcze raz.">
+        <RoomCard title="Prowadzący cię nie wpuścił." description="Możesz poprosić o wejście jeszcze raz.">
           <JoinForm
             linkToken={page.linkToken}
             serverError={serverError}

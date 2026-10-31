@@ -14,8 +14,8 @@ export const ROOM_NARROW = "mx-auto w-full max-w-lg";
 
 // The lobby in two columns across the whole frame.
 const LOBBY_COLUMN = "mx-auto w-full max-w-lg lg:max-w-6xl";
-// The host's vote (before and after their own vote) and every reveal: the pie next to the table, the host's buttons in
-// one line.
+// A leader's vote (the host's or a co-host's, before and after their own vote) and every reveal: the pie next to the
+// table, the leader's buttons in one line.
 const ROUND_COLUMN = "mx-auto w-full max-w-lg lg:max-w-3xl";
 
 // The end of the evening with the summary's chart, in two halves across the whole frame (endInHalves).
@@ -33,6 +33,6 @@ export function roomColumn(view: RoomView): string {
   if (view.status === "closed") return endInHalves(view) ? END_HALVES_COLUMN : ROOM_NARROW;
   if (view.round === null) return LOBBY_COLUMN;
   if (view.round.phase === "revealed") return ROUND_COLUMN;
-  if (view.round.phase === "voting" && view.role === "host") return ROUND_COLUMN;
+  if (view.round.phase === "voting" && view.leader) return ROUND_COLUMN;
   return ROOM_NARROW;
 }

@@ -21,6 +21,7 @@ import {
   roomLobby,
   seedStartGame,
   seedVote,
+  setCohost,
   skipRound,
   startGame,
   type Answer,
@@ -32,15 +33,18 @@ import {
 // context/archive/2026-10-13-first-live-round/research.md (D2: a vote is final; D3: no threshold for the reveal).
 // Every expected count is written out by hand from the scenario, never computed.
 //
-// S-03 adds the evening's moves (next_round, skip_round, end_game): only the room's own host makes them (PRD Access
-// Control), checked here; the evening's own rules are tests/db/game-rules.test.ts's. The same for S-08's "Wpuść" and
-// "Odrzuć" (admit_latecomer, reject_latecomer, from *_latecomer_admission.sql), whose own rules are
+// S-03 adds the evening's moves (next_round, skip_round, end_game): only the room's own leader makes them (PRD Access
+// Control; the host, and since S-07 a co-host too), checked here; the evening's own rules are
+// tests/db/game-rules.test.ts's. The same for S-08's "Wpuść" and "Odrzuć" (admit_latecomer, reject_latecomer, from
+// *_latecomer_admission.sql), whose own rules are
 // tests/db/latecomers.test.ts's, and for S-06's moves on the game's question list (open_question_list,
 // draw_list_question, remove_list_question, edit_list_question, add_own_question, from *_question_list_review.sql),
 // whose own rules are tests/db/question-list.test.ts's.
 //
-// A refusal is the function's answer { ok: false, reason }, never "some error"; a guest calling a host's function gets
-// 42501 naming the function (test-plan §6.2, G2).
+// A refusal is the function's answer { ok: false, reason }, never "some error". S-07 (*_co_host_role.sql) grants the
+// leader's moves to anon, so a co-host can make them with its token: someone with no token gets room_unknown and a
+// guest of the room without the role not_leader; giving the role (set_cohost) stays host A's own. The co-host's own
+// rules are tests/db/cohost.test.ts's.
 //
 // The round functions come from supabase/migrations/*_first_live_round.sql, the evening's from
 // *_full_game_evening.sql. Without them PostgREST answers each such call with PGRST202 (no such function): a suite that
@@ -227,30 +231,46 @@ describe("main round: Host, Ola, Bartek and Kuba", () => {
     expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "room_unknown" } });
   });
 
-  // Only the host starts, reveals, moves on, skips and ends: no grant to anon, so the function's name is checked, not
-  // only 42501 (G2).
+  // Only the leader starts, reveals, moves on, skips and ends: the host, or a co-host by its token (S-07,
+  // tests/db/cohost.test.ts). The moves are granted to anon since S-07, so the refusal is the function's own answer:
+  // someone with no token learns nothing about the room, and a player of the room without the co-host role gets
+  // not_leader. Round 1 is revealed, the round number is right and the candidate was never played, so the role is the
+  // only thing these can be refused for. end_game last, so a hole cannot close the room under the ones before it.
   it.each([
     { fn: "start_game", attempt: () => startGame(anon, room.id, OTHER_QUESTION_ID) },
     { fn: "reveal_round", attempt: () => revealRound(anon, room.id, 1) },
     { fn: "next_round", attempt: () => nextRound(anon, room.id, 1, [OTHER_QUESTION_ID]) },
     { fn: "skip_round", attempt: () => skipRound(anon, room.id, 1, [OTHER_QUESTION_ID]) },
     { fn: "end_game", attempt: () => endGame(anon, room.id) },
-  ])("a guest calling $fn is refused permission on the function", async ({ fn, attempt }) => {
+  ])("a guest with no token calling $fn gets room_unknown", async ({ attempt }) => {
     const answer = await attempt();
 
-    expect(answer.error?.code).toBe("42501");
-    expect(answer.error?.message).toContain(`function ${fn}`);
+    expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "room_unknown" } });
+  });
+
+  it.each([
+    { fn: "start_game", attempt: () => startGame(anon, room.id, OTHER_QUESTION_ID, kuba.playerToken) },
+    { fn: "reveal_round", attempt: () => revealRound(anon, room.id, 1, kuba.playerToken) },
+    { fn: "next_round", attempt: () => nextRound(anon, room.id, 1, [OTHER_QUESTION_ID], kuba.playerToken) },
+    { fn: "skip_round", attempt: () => skipRound(anon, room.id, 1, [OTHER_QUESTION_ID], kuba.playerToken) },
+    { fn: "end_game", attempt: () => endGame(anon, room.id, kuba.playerToken) },
+  ])("Kuba, a guest of the room with no co-host role, calling $fn gets not_leader", async ({ attempt }) => {
+    const answer = await attempt();
+
+    expect(answer).toMatchObject({ error: null, data: { ok: false, reason: "not_leader" } });
   });
 
   // S-03: the evening's moves are host A's own as well. Round 1 is revealed, the round number is right and the
   // candidate was never played, so the room is the only thing they can be refused for. S-08: so are "Wpuść" and
-  // "Odrzuć"; Ela is waiting, so a call that got through would act on her. end_game last, so a hole cannot close the
-  // room under the ones before it.
+  // "Odrzuć"; Ela is waiting, so a call that got through would act on her. S-07: giving the co-host role is host A's
+  // own too (PRD Access Control: only the host gives and takes it); Ola is a guest of the room, so a call that got
+  // through would make her a co-host. end_game last, so a hole cannot close the room under the ones before it.
   it.each([
     { fn: "next_round", attempt: () => nextRound(hostB.client, room.id, 1, [OTHER_QUESTION_ID]) },
     { fn: "skip_round", attempt: () => skipRound(hostB.client, room.id, 1, [OTHER_QUESTION_ID]) },
     { fn: "admit_latecomer", attempt: () => admitLatecomer(hostB.client, room.id, "Ela") },
     { fn: "reject_latecomer", attempt: () => rejectLatecomer(hostB.client, room.id, "Ela") },
+    { fn: "set_cohost", attempt: () => setCohost(hostB.client, room.id, "Ola", true) },
     { fn: "end_game", attempt: () => endGame(hostB.client, room.id) },
   ])("host B calling $fn on host A's game gets room_unknown", async ({ attempt }) => {
     const answer = await attempt();

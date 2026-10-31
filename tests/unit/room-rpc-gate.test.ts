@@ -19,6 +19,7 @@ import {
   revealRound,
   roomLink,
   roomLobby,
+  setCohost,
   skipRound,
   startGame,
 } from "@/lib/rooms/server";
@@ -59,15 +60,16 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: false },
   ],
-  // supabase/migrations/20261025122918_game_summary.sql:46
+  // supabase/migrations/20261027121442_co_host_role.sql:667
   room_lobby: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261026074427_question_play_data.sql:269
+  // supabase/migrations/20261027121442_co_host_role.sql:110
   start_game: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_question_id", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
   ],
   // supabase/migrations/20261020205751_round_number_required.sql:87-92
   cast_vote: [
@@ -76,10 +78,11 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_player_token", hasDefault: true },
     { name: "p_round", hasDefault: true },
   ],
-  // supabase/migrations/20261020205751_round_number_required.sql:238
+  // supabase/migrations/20261027121442_co_host_role.sql:365
   reveal_round: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: true },
+    { name: "p_player_token", hasDefault: true },
   ],
   // supabase/migrations/20261026074427_question_play_data.sql:505-510
   react_round: [
@@ -88,29 +91,42 @@ const SQL_SIGNATURES: Record<string, { name: string; hasDefault: boolean }[]> = 
     { name: "p_reaction", hasDefault: false },
     { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261026074427_question_play_data.sql:357
+  // supabase/migrations/20261027121442_co_host_role.sql:201-206
   next_round: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: false },
     { name: "p_candidates", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261026074427_question_play_data.sql:423
+  // supabase/migrations/20261027121442_co_host_role.sql:275-280
   skip_round: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_round", hasDefault: false },
     { name: "p_candidates", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261015122252_full_game_evening.sql:207
-  end_game: [{ name: "p_room_id", hasDefault: false }],
-  // supabase/migrations/20261022132240_latecomer_admission.sql:265
+  // supabase/migrations/20261027121442_co_host_role.sql:431
+  end_game: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
+  // supabase/migrations/20261027121442_co_host_role.sql:477
   admit_latecomer: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
   ],
-  // supabase/migrations/20261022132240_latecomer_admission.sql:333
+  // supabase/migrations/20261027121442_co_host_role.sql:548
   reject_latecomer: [
     { name: "p_room_id", hasDefault: false },
     { name: "p_nick", hasDefault: false },
+    { name: "p_player_token", hasDefault: true },
+  ],
+  // supabase/migrations/20261027121442_co_host_role.sql:595
+  set_cohost: [
+    { name: "p_room_id", hasDefault: false },
+    { name: "p_nick", hasDefault: false },
+    { name: "p_cohost", hasDefault: false },
   ],
   // supabase/migrations/20261024094002_question_list_review.sql:104
   open_question_list: [
@@ -246,10 +262,16 @@ const CASES: {
     expected: { p_room_id: ROOM_ID, p_player_token: null },
   },
   {
-    action: "Zacznij grę",
+    action: "Zacznij grę (host, bez tokenu gościa)",
     fn: "start_game",
-    call: (supabase) => startGame(supabase, ROOM_ID, QUESTION_ID),
-    expected: { p_room_id: ROOM_ID, p_question_id: QUESTION_ID },
+    call: (supabase) => startGame(supabase, ROOM_ID, QUESTION_ID, null),
+    expected: { p_room_id: ROOM_ID, p_question_id: QUESTION_ID, p_player_token: null },
+  },
+  {
+    action: "Zacznij grę (współhost, token gościa)",
+    fn: "start_game",
+    call: (supabase) => startGame(supabase, ROOM_ID, QUESTION_ID, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_question_id: QUESTION_ID, p_player_token: PLAYER_TOKEN },
   },
   {
     action: "Zagłosuj",
@@ -258,10 +280,16 @@ const CASES: {
     expected: { p_room_id: ROOM_ID, p_target: TARGET, p_player_token: PLAYER_TOKEN, p_round: ROUND },
   },
   {
-    action: "Odsłoń wynik",
+    action: "Odsłoń wynik (host, bez tokenu gościa)",
     fn: "reveal_round",
-    call: (supabase) => revealRound(supabase, ROOM_ID, ROUND),
-    expected: { p_room_id: ROOM_ID, p_round: ROUND },
+    call: (supabase) => revealRound(supabase, ROOM_ID, ROUND, null),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_player_token: null },
+  },
+  {
+    action: "Odsłoń wynik (współhost, token gościa)",
+    fn: "reveal_round",
+    call: (supabase) => revealRound(supabase, ROOM_ID, ROUND, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_player_token: PLAYER_TOKEN },
   },
   {
     action: "Kciuk",
@@ -276,34 +304,77 @@ const CASES: {
     expected: { p_room_id: ROOM_ID, p_round: ROUND, p_reaction: REACTION, p_player_token: null },
   },
   {
-    action: "Następne pytanie",
+    action: "Następne pytanie (host, bez tokenu gościa)",
     fn: "next_round",
-    call: (supabase) => nextRound(supabase, ROOM_ID, ROUND, CANDIDATES),
-    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES },
+    call: (supabase) => nextRound(supabase, ROOM_ID, ROUND, CANDIDATES, null),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES, p_player_token: null },
   },
   {
-    action: "Pomiń pytanie",
+    action: "Następne pytanie (współhost, token gościa)",
+    fn: "next_round",
+    call: (supabase) => nextRound(supabase, ROOM_ID, ROUND, CANDIDATES, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Pomiń pytanie (host, bez tokenu gościa)",
     fn: "skip_round",
-    call: (supabase) => skipRound(supabase, ROOM_ID, ROUND, CANDIDATES),
-    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES },
+    call: (supabase) => skipRound(supabase, ROOM_ID, ROUND, CANDIDATES, null),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES, p_player_token: null },
   },
   {
-    action: "Zakończ grę",
+    action: "Pomiń pytanie (współhost, token gościa)",
+    fn: "skip_round",
+    call: (supabase) => skipRound(supabase, ROOM_ID, ROUND, CANDIDATES, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_round: ROUND, p_candidates: CANDIDATES, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Zakończ grę (host, bez tokenu gościa)",
     fn: "end_game",
-    call: (supabase) => endGame(supabase, ROOM_ID),
-    expected: { p_room_id: ROOM_ID },
+    call: (supabase) => endGame(supabase, ROOM_ID, null),
+    expected: { p_room_id: ROOM_ID, p_player_token: null },
   },
   {
-    action: "Wpuść",
+    action: "Zakończ grę (współhost, token gościa)",
+    fn: "end_game",
+    call: (supabase) => endGame(supabase, ROOM_ID, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Wpuść (host, bez tokenu gościa)",
     fn: "admit_latecomer",
-    call: (supabase) => admitLatecomer(supabase, ROOM_ID, NICK),
-    expected: { p_room_id: ROOM_ID, p_nick: NICK },
+    call: (supabase) => admitLatecomer(supabase, ROOM_ID, NICK, null),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK, p_player_token: null },
   },
   {
-    action: "Odrzuć",
+    action: "Wpuść (współhost, token gościa)",
+    fn: "admit_latecomer",
+    call: (supabase) => admitLatecomer(supabase, ROOM_ID, NICK, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK, p_player_token: PLAYER_TOKEN },
+  },
+  {
+    action: "Odrzuć (host, bez tokenu gościa)",
     fn: "reject_latecomer",
-    call: (supabase) => rejectLatecomer(supabase, ROOM_ID, NICK),
-    expected: { p_room_id: ROOM_ID, p_nick: NICK },
+    call: (supabase) => rejectLatecomer(supabase, ROOM_ID, NICK, null),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK, p_player_token: null },
+  },
+  {
+    action: "Odrzuć (współhost, token gościa)",
+    fn: "reject_latecomer",
+    call: (supabase) => rejectLatecomer(supabase, ROOM_ID, NICK, PLAYER_TOKEN),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK, p_player_token: PLAYER_TOKEN },
+  },
+  // false, so neither the value a default would give nor the one most cases send.
+  {
+    action: "Odbierz rolę współhosta",
+    fn: "set_cohost",
+    call: (supabase) => setCohost(supabase, ROOM_ID, NICK, false),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK, p_cohost: false },
+  },
+  {
+    action: "Nadaj rolę współhosta",
+    fn: "set_cohost",
+    call: (supabase) => setCohost(supabase, ROOM_ID, NICK, true),
+    expected: { p_room_id: ROOM_ID, p_nick: NICK, p_cohost: true },
   },
   {
     action: "Przejrzyj pytania",

@@ -11,7 +11,7 @@ import { logEvent } from "@/lib/log";
 import { parseJoinRequestState } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
-// The latecomer's screen on /j/<code> while the request waits for the host (S-08): the nick asked with, and nothing of
+// The latecomer's screen on /j/<code> while the request waits for a leader, the host or a co-host (S-08, S-07): the nick asked with, and nothing of
 // the game, never the question (lessons.md). It looks again at its own request (GET /api/rooms/<id>/request) on a bell
 // on the room's channel and every LOBBY_POLL_MS while the tab is visible, through the room screen's limiter
 // (src/lib/live-sync/limiter.ts), and then: let in, to the room; turned away or no request any more, the link's page
@@ -213,7 +213,7 @@ export default function JoinWaiting({ roomId, linkToken, nick, realtime, preview
       <section className={cn("flex flex-col items-center gap-4 py-12 text-center", ROOM_NARROW)}>
         <DoorClosed aria-hidden="true" className="text-muted-foreground size-10" />
         <Title className="text-2xl font-semibold text-balance">Gra się skończyła.</Title>
-        <p className="text-muted-foreground">Skończyła się, zanim host cię wpuścił. Poproś go o nowy link.</p>
+        <p className="text-muted-foreground">Skończyła się, zanim prowadzący cię wpuścił. Poproś hosta o nowy link.</p>
       </section>
     );
   }
@@ -221,11 +221,11 @@ export default function JoinWaiting({ roomId, linkToken, nick, realtime, preview
   return (
     <section className={cn("flex flex-col items-center gap-4 py-12 text-center", ROOM_NARROW)}>
       <Hourglass aria-hidden="true" className="text-muted-foreground size-10" />
-      <Title className="text-2xl font-semibold text-balance">Czekasz, aż host cię wpuści</Title>
+      <Title className="text-2xl font-semibold text-balance">Czekasz, aż prowadzący cię wpuści</Title>
       <p>
         Prosisz o wejście jako <span className="font-semibold break-all">{nick}</span>.
       </p>
-      <p className="text-muted-foreground">Gdy host cię wpuści, ta strona sama przejdzie do gry.</p>
+      <p className="text-muted-foreground">Gdy prowadzący cię wpuści, ta strona sama przejdzie do gry.</p>
       <p aria-live="polite" className="text-muted-foreground text-xs">
         {refreshFailed ? "Nie udało się odświeżyć stanu gry" : ""}
       </p>

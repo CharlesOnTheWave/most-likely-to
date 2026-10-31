@@ -11,9 +11,11 @@ export const MIN_PLAYERS = 3;
 // lobby → playing (start_game) → closed ("Zakończ grę", "Nowa gra" or the sweep of abandoned games).
 export type RoomStatus = "lobby" | "playing" | "closed";
 
+// cohost: a guest the host gave the co-host role (S-07), seen by everyone; never the host, whose row never holds it.
 export interface LobbyPlayer {
   nick: string;
   host: boolean;
+  cohost: boolean;
 }
 
 // The round's keys as room_lobby names them (context/archive/2026-10-13-first-live-round/plan.md, Faza 1 #4;
@@ -87,14 +89,28 @@ export interface GameTotals {
   totals: RoundResult[];
 }
 
+// What a leader's moves need from the room as room_lobby names it (context/changes/co-host-role/plan.md, Faza 1 #1):
+// the categories the host picked and their 18+ ones, from which the Worker draws the next question
+// (src/lib/rounds/draw.ts), and two numbers of the game's question list, from which it counts the questions left
+// (questionsLeft): its entries not removed (list_entries) and its rows with a question id of the base (list_base_count,
+// removed and reworded entries included), both 0 with no list. Never the list itself.
+export interface LeaderDraw {
+  categories: string[];
+  adult_categories: string[];
+  list_entries: number;
+  list_base_count: number;
+}
+
 // What room_lobby returns: nicks in join order, no ids, hashes or link code; a round only while a game is in play.
-// requests: the nicks of the latecomers waiting for the host to let them in, in the order of asking; only the host sees
-// them, a guest always gets [] (and so does the host before the start and once the room is closed). question_list: the
-// game's question list for the host of a room that has one ("Przejrzyj pytania"), in every status of the room; null for
-// a guest and before the host opens it. The Worker keeps it: the browser gets only the host's questions in the lobby
-// (RoomView.questions). game_totals: for everyone in a closed room whose game had a revealed round; null in the lobby,
-// while the game is in play and for a closed room with no reveal. The Worker keeps it too: the browser gets only the
-// summary made of it (RoomView.summary).
+// requests: the nicks of the latecomers waiting for a leader (the host or a co-host) to let them in, in the order of
+// asking; only a leader sees them, anyone else always gets [] (and so does a leader before the start and once the room
+// is closed). question_list: the game's question list for the host of a room that has one ("Przejrzyj pytania"), in
+// every status of the room; null for a guest, a co-host included, and before the host opens it. The Worker keeps it:
+// the browser gets only the host's questions in the lobby (RoomView.questions). game_totals: for everyone in a closed
+// room whose game had a revealed round; null in the lobby, while the game is in play and for a closed room with no
+// reveal. The Worker keeps it too: the browser gets only the summary made of it (RoomView.summary). leader_draw: for a
+// leader, in every status; null for anyone else. The Worker keeps it as well: the browser gets only whether the person
+// leads (RoomView.leader).
 export interface LobbyState {
   status: RoomStatus;
   role: "host" | "guest";
@@ -104,6 +120,7 @@ export interface LobbyState {
   requests: string[];
   question_list: GameQuestionList | null;
   game_totals: GameTotals | null;
+  leader_draw: LeaderDraw | null;
 }
 
 // What the room screen gets: the round with its question's text, which the Worker adds from the question base, or the
@@ -134,14 +151,17 @@ export interface GameSummary {
   unvoted: string[];
 }
 
-// questionsLeft: for the host once the latest round is revealed or skipped, whether the game has a question not played
-// yet ("Następne pytanie" or "Pytań już nie ma. Możesz zakończyć grę."); null in every other state, for a guest, and
-// when the Worker could not tell. questions: the game's question list for its host in the lobby, the entries not
-// removed in the order of positions; null before the host opens it, for a guest and once the game has started. Never
-// question_list itself: its question ids would tell nothing the screen needs. summary: for everyone in a closed room
-// whose game had a revealed round, null otherwise; never game_totals itself, whose sums outside the summary the screen
-// does not show.
-export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals"> {
+// leader: whether the person on this screen leads the game (S-07): the host, or a guest with the co-host role (the
+// cohost of the player who is me). Never leader_draw itself, which only the Worker reads. The badges "host" and "ty"
+// come from players[].host and me, never from leader. questionsLeft: for a leader once the latest round is revealed or
+// skipped, whether the game has a question not played yet ("Następne pytanie" or "Pytań już nie ma. Możesz zakończyć
+// grę."); null in every other state and for anyone who does not lead. questions: the game's question list for its host
+// in the lobby, the entries not removed in the order of positions; null before the host opens it, for a guest (a
+// co-host included) and once the game has started. Never question_list itself: its question ids would tell nothing the
+// screen needs. summary: for everyone in a closed room whose game had a revealed round, null otherwise; never
+// game_totals itself, whose sums outside the summary the screen does not show.
+export interface RoomView extends Omit<LobbyState, "question_list" | "game_totals" | "leader_draw"> {
+  leader: boolean;
   round: RoundView | null;
   questionsLeft: boolean | null;
   questions: ListQuestion[] | null;
@@ -183,7 +203,8 @@ function parsePlayers(value: unknown): ParseResult<LobbyPlayer[]> {
     if (!isRecord(entry)) return fail("players");
     if (typeof entry.nick !== "string") return fail("players.nick");
     if (typeof entry.host !== "boolean") return fail("players.host");
-    players.push({ nick: entry.nick, host: entry.host });
+    if (typeof entry.cohost !== "boolean") return fail("players.cohost");
+    players.push({ nick: entry.nick, host: entry.host, cohost: entry.cohost });
   }
   return { ok: true, value: players };
 }
@@ -292,11 +313,32 @@ function parseGameTotals(value: unknown, status: RoomStatus): ParseResult<GameTo
   return { ok: true, value: { revealed: value.revealed, totals: totals.value } };
 }
 
-// What room_lobby and the Worker's view share: everything but the game's question list and the sums of its reveals,
-// which only the Worker reads. A round only while a game is in play, and always one then.
+// What a leader's moves need, or null (anyone who does not lead). Copies only the contract's keys, as the round does: a
+// key the database might add by mistake (the list's question ids) stays here.
+function parseLeaderDraw(value: unknown): ParseResult<LeaderDraw | null> {
+  if (value === null) return { ok: true, value: null };
+  if (!isRecord(value)) return fail("leader_draw");
+  const { categories, adult_categories: adultCategories, list_entries: listEntries } = value;
+  if (!isStringList(categories)) return fail("leader_draw.categories");
+  if (!isStringList(adultCategories)) return fail("leader_draw.adult_categories");
+  if (!isCount(listEntries)) return fail("leader_draw.list_entries");
+  if (!isCount(value.list_base_count)) return fail("leader_draw.list_base_count");
+  return {
+    ok: true,
+    value: {
+      categories: [...categories],
+      adult_categories: [...adultCategories],
+      list_entries: listEntries,
+      list_base_count: value.list_base_count,
+    },
+  };
+}
+
+// What room_lobby and the Worker's view share: everything but the game's question list, the sums of its reveals and
+// the leader's draw, which only the Worker reads. A round only while a game is in play, and always one then.
 function parseRoomState(
   value: Record<string, unknown>,
-): ParseResult<Omit<LobbyState, "question_list" | "game_totals">> {
+): ParseResult<Omit<LobbyState, "question_list" | "game_totals" | "leader_draw">> {
   const { status, role, me } = value;
   if (status !== "lobby" && status !== "playing" && status !== "closed") return fail("status");
   if (role !== "host" && role !== "guest") return fail("role");
@@ -318,9 +360,9 @@ function parseRoomState(
   return { ok: true, value: { status, role, me, players: players.value, round: round.value, requests } };
 }
 
-// room_lobby's answer (src/lib/rooms/server.ts). question_list and game_totals are always there, null included: a
-// database without them (before *_question_list_review.sql, *_game_summary.sql) is refused, not read as "no list" or
-// "no reveal".
+// room_lobby's answer (src/lib/rooms/server.ts). question_list, game_totals and leader_draw are always there, null
+// included: a database without them (before *_question_list_review.sql, *_game_summary.sql, *_co_host_role.sql) is
+// refused, not read as "no list", "no reveal" or "does not lead"; so is a player without cohost.
 export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
@@ -331,7 +373,18 @@ export function parseLobbyState(value: unknown): ParseResult<LobbyState> {
   if (value.game_totals === undefined) return fail("game_totals");
   const gameTotals = parseGameTotals(value.game_totals, state.value.status);
   if (!gameTotals.ok) return gameTotals;
-  return { ok: true, value: { ...state.value, question_list: questionList.value, game_totals: gameTotals.value } };
+  if (value.leader_draw === undefined) return fail("leader_draw");
+  const leaderDraw = parseLeaderDraw(value.leader_draw);
+  if (!leaderDraw.ok) return leaderDraw;
+  return {
+    ok: true,
+    value: {
+      ...state.value,
+      question_list: questionList.value,
+      game_totals: gameTotals.value,
+      leader_draw: leaderDraw.value,
+    },
+  };
 }
 
 // How a latecomer's own request stands (join_request_state, through GET /api/rooms/<id>/request), for the /j/<code>
@@ -390,14 +443,16 @@ function parseSummary(value: unknown, status: RoomStatus): ParseResult<GameSumma
   };
 }
 
-// The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state without question_list and
-// game_totals, plus the round's question, a text or null for a question the base does not have, questionsLeft, the
-// host's questions and the summary. summary is always there, null included, as questions is.
+// The Worker's answer to the room screen (GET /api/rooms/<id>/lobby): room_lobby's state without question_list,
+// game_totals and leader_draw, plus whether the person leads, the round's question, a text or null for a question the
+// base does not have, questionsLeft, the host's questions and the summary. leader is always there, a Worker deployed
+// before it is not read as "does not lead"; summary is always there, null included, as questions is.
 export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (!isRecord(value)) return fail("root");
   const state = parseRoomState(value);
   if (!state.ok) return state;
-  const { questionsLeft } = value;
+  const { leader, questionsLeft } = value;
+  if (typeof leader !== "boolean") return fail("leader");
   if (typeof questionsLeft !== "boolean" && questionsLeft !== null) return fail("questionsLeft");
   if (value.questions === undefined) return fail("questions");
   const questions = parseQuestions(value.questions, state.value);
@@ -409,7 +464,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
   if (round === null || round.phase === "skipped") {
     return {
       ok: true,
-      value: { ...state.value, round, questionsLeft, questions: questions.value, summary: summary.value },
+      value: { ...state.value, leader, round, questionsLeft, questions: questions.value, summary: summary.value },
     };
   }
 
@@ -420,6 +475,7 @@ export function parseRoomView(value: unknown): ParseResult<RoomView> {
     ok: true,
     value: {
       ...state.value,
+      leader,
       round: { ...round, question },
       questionsLeft,
       questions: questions.value,

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { parseJoinRequestState, parseLobbyState, parseRoomView, questionLength } from "@/lib/rooms/shared";
+import { roomView } from "@/lib/rooms/server";
+import {
+  parseJoinRequestState,
+  parseLobbyState,
+  parseRoomView,
+  questionLength,
+  type LobbyState,
+} from "@/lib/rooms/shared";
 
 // The room's state as room_lobby returns it, and as the room screen gets it from the Worker (with the question's
 // text). Every new state goes through one parser that names the field that did not pass (audit P6, L4): a database and
@@ -10,17 +17,28 @@ import { parseJoinRequestState, parseLobbyState, parseRoomView, questionLength }
 // context/archive/2026-10-22-latecomer-admission/plan.md, Faza 1 #1: requests and round.eligible;
 // context/archive/2026-10-24-question-list-review/plan.md, Faza 1 #1 and Faza 2 #1: question_list, round.question_text
 // and the view's questions; context/archive/2026-10-25-game-summary/plan.md, Faza 1 #1 and Faza 2 #1: game_totals and
-// the view's summary; tests/db/support/rounds.ts, the exact key sets), never from the parser.
+// the view's summary; context/changes/co-host-role/plan.md, Faza 1 #1 and Faza 2 #1: players[].cohost, leader_draw and
+// the view's leader; tests/db/support/rounds.ts, the exact key sets), never from the parser.
 
 const PLAYERS = [
-  { nick: "Ola", host: true },
-  { nick: "Bartek", host: false },
-  { nick: "Kuba", host: false },
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Kuba", host: false, cohost: false },
 ];
 
-// requests: the latecomers waiting, for the host only; a guest always gets []. question_list: the game's question
+// S-07: what a leader's moves need, for the host and a co-host only; null for anyone else. The room has no game's
+// question list, so both of its numbers are 0.
+const LEADER_DRAW = {
+  categories: ["na-co-dzien", "przyszlosc"],
+  adult_categories: ["przyszlosc"],
+  list_entries: 0,
+  list_base_count: 0,
+};
+
+// requests: the latecomers waiting, for a leader only; anyone else always gets []. question_list: the game's question
 // list, for the host of a room with one only; null for a guest and before the host opens it. game_totals: the sums of
-// a closed game's reveals, for everyone; null in every other status and for a closed room with no reveal.
+// a closed game's reveals, for everyone; null in every other status and for a closed room with no reveal. leader_draw:
+// for a leader, in every status.
 const LOBBY = {
   status: "lobby",
   role: "host",
@@ -30,6 +48,7 @@ const LOBBY = {
   requests: [],
   question_list: null,
   game_totals: null,
+  leader_draw: LEADER_DRAW,
 };
 const CLOSED = {
   status: "closed",
@@ -40,6 +59,7 @@ const CLOSED = {
   requests: [],
   question_list: null,
   game_totals: null,
+  leader_draw: null,
 };
 // question_text: null for a question of the base, which the round names by its id.
 const VOTING_ROUND = {
@@ -61,6 +81,7 @@ const VOTING = {
   requests: [],
   question_list: null,
   game_totals: null,
+  leader_draw: null,
 };
 // S-08: Kuba was let in after the round opened, so he is among the players but not among those who may vote in it;
 // the host sees two latecomers still waiting, in the order of asking.
@@ -74,7 +95,28 @@ const HOST_WITH_REQUESTS = {
   requests: ["Zosia", "Igor"],
   question_list: null,
   game_totals: null,
+  leader_draw: LEADER_DRAW,
 };
+// S-07: the host gave Bartek, a guest, the co-host role. Everyone sees it by his nick; he leads as the host does, so he
+// gets the latecomers waiting and what a leader's moves need, but never the game's question list. Kuba, a guest
+// without the role, sees the same players and nothing a leader gets.
+const COHOST_PLAYERS = [
+  { nick: "Ola", host: true, cohost: false },
+  { nick: "Bartek", host: false, cohost: true },
+  { nick: "Kuba", host: false, cohost: false },
+];
+const COHOST = {
+  status: "playing",
+  role: "guest",
+  me: "Bartek",
+  players: COHOST_PLAYERS,
+  round: VOTING_ROUND,
+  requests: ["Zosia"],
+  question_list: null,
+  game_totals: null,
+  leader_draw: LEADER_DRAW,
+};
+const BESIDE_COHOST = { ...VOTING, players: COHOST_PLAYERS };
 // Every eligible player in seat order, zeros included; one abstention among four ballots.
 const REVEALED_ROUND = {
   number: 1,
@@ -98,6 +140,7 @@ const REVEALED = {
   requests: [],
   question_list: null,
   game_totals: null,
+  leader_draw: LEADER_DRAW,
 };
 // S-03: the host skipped the last question of the pool, so the skipped round stays the latest one. Its votes are gone:
 // only its number and phase.
@@ -111,6 +154,7 @@ const SKIPPED = {
   requests: [],
   question_list: null,
   game_totals: null,
+  leader_draw: null,
 };
 // The round after a skip says so to every screen, including one that slept through the skip.
 const AFTER_SKIP_ROUND = { ...VOTING_ROUND, number: 3, after_skip: true };
@@ -131,9 +175,11 @@ const QUESTION_LIST = {
   ],
   base_count: 15,
 };
-const LOBBY_WITH_LIST = { ...LOBBY, question_list: QUESTION_LIST };
-// During the game the host still gets the list: the Worker counts the questions left from it.
-const REVEALED_WITH_LIST = { ...REVEALED, question_list: QUESTION_LIST };
+// The leader's draw with that list: its 3 entries not removed and its 15 rows with a question id of the base.
+const LIST_DRAW = { ...LEADER_DRAW, list_entries: 3, list_base_count: 15 };
+const LOBBY_WITH_LIST = { ...LOBBY, question_list: QUESTION_LIST, leader_draw: LIST_DRAW };
+// During the game the host still gets the list.
+const REVEALED_WITH_LIST = { ...REVEALED, question_list: QUESTION_LIST, leader_draw: LIST_DRAW };
 // A round of an own or reworded question of the list has no question id, only the host's text, for every player.
 const OWN_ROUND = { ...VOTING_ROUND, question_id: null, question_text: REWORDED };
 const OWN = { ...VOTING, round: OWN_ROUND };
@@ -151,10 +197,19 @@ const GAME_TOTALS = {
 };
 const CLOSED_AFTER_GAME = { ...CLOSED, game_totals: GAME_TOTALS };
 // The same for the host, who also sees it.
-const CLOSED_AFTER_GAME_HOST = { ...CLOSED_AFTER_GAME, role: "host", me: "Ola" };
+const CLOSED_AFTER_GAME_HOST = { ...CLOSED_AFTER_GAME, role: "host", me: "Ola", leader_draw: LEADER_DRAW };
 
 function withTotals(totals: unknown, state: Record<string, unknown> = CLOSED): Record<string, unknown> {
   return { ...state, game_totals: totals };
+}
+
+// The host's lobby with the leader's draw given, or with its fields given.
+function withDraw(draw: unknown): Record<string, unknown> {
+  return { ...LOBBY, leader_draw: draw };
+}
+
+function withDrawFields(fields: Record<string, unknown>): Record<string, unknown> {
+  return withDraw({ ...LEADER_DRAW, ...fields });
 }
 
 function without(record: Record<string, unknown>, key: string): Record<string, unknown> {
@@ -194,6 +249,9 @@ describe("parseLobbyState", () => {
       why: "a closed room whose every reveal had no votes",
       state: withTotals({ revealed: 1, totals: [{ nick: "Ola", votes: 0 }] }),
     },
+    { why: "a co-host's round, with the latecomers waiting and the leader's draw", state: COHOST },
+    { why: "a round of a guest without the role, beside a co-host", state: BESIDE_COHOST },
+    { why: "the leader's draw of a room with no 18+ question", state: withDrawFields({ adult_categories: [] }) },
   ])("accepts $why as it came", ({ state }) => {
     expect(parseLobbyState(state)).toEqual({ ok: true, value: state });
   });
@@ -210,10 +268,27 @@ describe("parseLobbyState", () => {
     expect(parseLobbyState({ ...LOBBY, status })).toEqual({ ok: false, field: "status" });
   });
 
-  it.each(["status", "role", "me", "players", "round", "requests", "question_list", "game_totals"])(
+  it.each(["status", "role", "me", "players", "round", "requests", "question_list", "game_totals", "leader_draw"])(
     "names the missing field %s",
     (field) => {
       expect(parseLobbyState(without(LOBBY, field))).toEqual({ ok: false, field });
+    },
+  );
+
+  // Likewise a database without the co-host role (before *_co_host_role.sql): its players have no cohost and its
+  // state no leader_draw, which is not read as "nobody leads" for the guest nor for the host.
+  it.each([{ state: COHOST }, { state: BESIDE_COHOST }, { state: SKIPPED }, { state: CLOSED_AFTER_GAME_HOST }])(
+    "names leader_draw when a $state.status room's state has none",
+    ({ state }) => {
+      expect(parseLobbyState(without(state, "leader_draw"))).toEqual({ ok: false, field: "leader_draw" });
+    },
+  );
+
+  it.each([{ state: LOBBY }, { state: COHOST }, { state: CLOSED }])(
+    "names players.cohost when a $state.status room's players have none",
+    ({ state }) => {
+      const players = state.players.map((player) => without(player, "cohost"));
+      expect(parseLobbyState({ ...state, players })).toEqual({ ok: false, field: "players.cohost" });
     },
   );
 
@@ -279,8 +354,26 @@ describe("parseLobbyState", () => {
     { field: "me", state: { ...LOBBY, me: 1 } },
     { field: "players", state: { ...LOBBY, players: {} } },
     { field: "players", state: { ...LOBBY, players: [null] } },
-    { field: "players.nick", state: { ...LOBBY, players: [{ nick: 1, host: true }] } },
-    { field: "players.host", state: { ...LOBBY, players: [{ nick: "Ola", host: "yes" }] } },
+    { field: "players.nick", state: { ...LOBBY, players: [{ nick: 1, host: true, cohost: false }] } },
+    { field: "players.host", state: { ...LOBBY, players: [{ nick: "Ola", host: "yes", cohost: false }] } },
+    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Ola", host: true, cohost: "no" }] } },
+    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Ola", host: true, cohost: null }] } },
+    { field: "players.cohost", state: { ...LOBBY, players: [{ nick: "Bartek", host: false, cohost: 1 }] } },
+    { field: "leader_draw", state: withDraw([]) },
+    { field: "leader_draw", state: withDraw("na-co-dzien") },
+    { field: "leader_draw", state: withDraw(true) },
+    { field: "leader_draw.categories", state: withDrawFields({ categories: undefined }) },
+    { field: "leader_draw.categories", state: withDrawFields({ categories: "na-co-dzien" }) },
+    { field: "leader_draw.categories", state: withDrawFields({ categories: [1] }) },
+    { field: "leader_draw.adult_categories", state: withDrawFields({ adult_categories: undefined }) },
+    { field: "leader_draw.adult_categories", state: withDrawFields({ adult_categories: null }) },
+    { field: "leader_draw.adult_categories", state: withDrawFields({ adult_categories: [null] }) },
+    { field: "leader_draw.list_entries", state: withDrawFields({ list_entries: undefined }) },
+    { field: "leader_draw.list_entries", state: withDrawFields({ list_entries: -1 }) },
+    { field: "leader_draw.list_entries", state: withDrawFields({ list_entries: "3" }) },
+    { field: "leader_draw.list_base_count", state: withDrawFields({ list_base_count: undefined }) },
+    { field: "leader_draw.list_base_count", state: withDrawFields({ list_base_count: 1.5 }) },
+    { field: "leader_draw.list_base_count", state: withDrawFields({ list_base_count: null }) },
     { field: "requests", state: { ...LOBBY, requests: null } },
     { field: "requests", state: { ...LOBBY, requests: "Zosia" } },
     { field: "requests", state: { ...LOBBY, requests: [1] } },
@@ -392,27 +485,29 @@ describe("parseLobbyState", () => {
 
   // Anonymity (test-plan #1): a key outside the contract, such as counts before the reveal, never reaches a screen,
   // even if the database sent one; nor does anything of the game's question list beyond its entries and base_count (a
-  // removed entry, the room's id).
+  // removed entry, the room's id), nor of the leader's draw beyond its categories and two numbers (the list's question
+  // ids).
   it("passes on no key outside the contract", () => {
-    const host = { ...VOTING, role: "host", me: "Ola" };
+    const host = { ...VOTING, role: "host", me: "Ola", leader_draw: LIST_DRAW };
     const leaky = {
       ...host,
       link_token: "planted",
       round: { ...VOTING_ROUND, tally: { Ola: 2 }, votes: 2, list_position: 1 },
-      players: [{ nick: "Ola", host: true, id: "planted" }],
+      players: [{ nick: "Ola", host: true, cohost: false, id: "planted" }],
       request_tokens: ["planted"],
       question_list: {
         ...QUESTION_LIST,
         removed: [{ position: 2, question_id: "na-co-dzien-002" }],
         entries: [{ ...QUESTION_LIST.entries[0], removed: false, room_id: "planted" }],
       },
+      leader_draw: { ...LIST_DRAW, question_ids: ["na-co-dzien-002"], room_id: "planted" },
     };
 
     expect(parseLobbyState(leaky)).toEqual({
       ok: true,
       value: {
         ...host,
-        players: [{ nick: "Ola", host: true }],
+        players: [{ nick: "Ola", host: true, cohost: false }],
         question_list: { entries: [QUESTION_LIST.entries[0]], base_count: 15 },
       },
     });
@@ -434,18 +529,20 @@ describe("parseLobbyState", () => {
   });
 });
 
-// The Worker's view keeps question_list and game_totals to itself and adds questionsLeft, questions and summary.
-// questionsLeft: for the host once the latest round is revealed or skipped, whether the game has a question not played
-// yet; null in every other state and for a guest. questions: the game's question list for its host in the lobby, as
-// text; null otherwise. summary: for everyone in a closed room whose game had a reveal, what the end of the evening
-// shows of the sums; null otherwise.
+// The Worker's view keeps question_list, game_totals and leader_draw to itself and adds leader, questionsLeft,
+// questions and summary. leader: whether the person leads, here true for the host (a co-host's view sets it itself).
+// questionsLeft: for a leader once the latest round is revealed or skipped, whether the game has a question not played
+// yet; null in every other state and for anyone who does not lead. questions: the game's question list for its host in
+// the lobby, as text; null otherwise. summary: for everyone in a closed room whose game had a reveal, what the end of
+// the evening shows of the sums; null otherwise.
 function view(
   state: Record<string, unknown>,
   questionsLeft: boolean | null = null,
   questions: unknown[] | null = null,
   summary: Record<string, unknown> | null = null,
 ): Record<string, unknown> {
-  return { ...without(without(state, "question_list"), "game_totals"), questionsLeft, questions, summary };
+  const kept = without(without(without(state, "question_list"), "game_totals"), "leader_draw");
+  return { ...kept, leader: state.role === "host", questionsLeft, questions, summary };
 }
 
 // QUESTION_LIST as the host's screen gets it: the host's own text of an entry, else its text from the base.
@@ -543,6 +640,46 @@ describe("parseRoomView", () => {
     expect(parseRoomView(state)).toEqual({ ok: false, field: "questionsLeft" });
   });
 
+  // S-07: a co-host's screen leads as the host's does, with the latecomers waiting and whether questions are left; a
+  // guest without the role sees the co-host by the nick, and leads nothing.
+  it.each([
+    {
+      why: "a co-host's round open for votes",
+      state: { ...view(withRound(COHOST, { ...VOTING_ROUND, question: QUESTION })), leader: true },
+    },
+    {
+      why: "a co-host's revealed round with questions left",
+      state: { ...view(withRound(COHOST, { ...REVEALED_ROUND, question: QUESTION }), true), leader: true },
+    },
+    {
+      why: "a co-host's skipped round with no question left",
+      state: { ...view(withRound(COHOST, SKIPPED_ROUND), false), leader: true },
+    },
+    {
+      why: "a guest's round beside a co-host",
+      state: view(withRound(BESIDE_COHOST, { ...VOTING_ROUND, question: QUESTION })),
+    },
+  ])("accepts $why as it came", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: true, value: state });
+  });
+
+  // A Worker deployed before S-07 sends no leader: the screen is not told that nobody leads.
+  it.each([
+    { why: "missing", state: without(view(LOBBY), "leader") },
+    { why: "null", state: { ...view(LOBBY), leader: null } },
+    { why: "a text", state: { ...view(LOBBY), leader: "host" } },
+    { why: "a number", state: { ...view(COHOST), leader: 1 } },
+  ])("names leader when it is $why", ({ state }) => {
+    expect(parseRoomView(state)).toEqual({ ok: false, field: "leader" });
+  });
+
+  it("names players.cohost when the view's players have none", () => {
+    const state = view(LOBBY);
+    const players = PLAYERS.map((player) => without(player, "cohost"));
+
+    expect(parseRoomView({ ...state, players })).toEqual({ ok: false, field: "players.cohost" });
+  });
+
   // The list is reviewed before the start only, and only by the host: anyone else's view, and the host's in a game in
   // play, carries none.
   it.each([
@@ -613,11 +750,12 @@ describe("parseRoomView", () => {
   });
 
   // The browser never gets question_list itself, nor anything of a question beyond its position, text and whether it
-  // is the host's own.
-  it("passes on no question_list and no key outside the contract", () => {
+  // is the host's own; nor the leader's draw, whose categories would name the 18+ ones the host included.
+  it("passes on no question_list, no leader_draw and no key outside the contract", () => {
     const leaky = {
       ...view(LOBBY_WITH_LIST, null, [{ ...QUESTIONS[1], question_id: "na-co-dzien-003", removed: false }]),
       question_list: QUESTION_LIST,
+      leader_draw: LIST_DRAW,
     };
 
     expect(parseRoomView(leaky)).toEqual({ ok: true, value: view(LOBBY_WITH_LIST, null, [QUESTIONS[1]]) });
@@ -640,6 +778,54 @@ describe("parseRoomView", () => {
 
   it("names the field the lobby parser names", () => {
     expect(parseRoomView(view({ ...LOBBY, status: "paused" }))).toEqual({ ok: false, field: "status" });
+  });
+});
+
+// The view as it goes to the browser (src/lib/rooms/server.ts, roomView): the room's page and GET /api/rooms/<id>/lobby
+// send it as it is, not through parseRoomView. S-07 (context/changes/co-host-role/plan.md, Faza 2 #2 and Critical
+// Implementation Details): leader is true for the host and for a guest with the co-host role, false for a guest
+// without it; leader_draw never reaches the browser, nor do question_list and game_totals. Written by hand from the
+// plan, never from roomView.
+const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
+const VIEW_KEYS = [
+  "status",
+  "role",
+  "me",
+  "players",
+  "round",
+  "requests",
+  "leader",
+  "questionsLeft",
+  "questions",
+  "summary",
+];
+
+// A fixture as room_lobby's answer the Worker has read.
+function lobbyState(state: Record<string, unknown>): LobbyState {
+  const parsed = parseLobbyState(state);
+  if (!parsed.ok) throw new Error(`the fixture does not pass the parser at ${parsed.field}`);
+  return parsed.value;
+}
+
+describe("roomView", () => {
+  it.each([
+    { why: "the host in the lobby", state: LOBBY, leader: true },
+    { why: "the host after a reveal", state: REVEALED, leader: true },
+    { why: "a guest with the co-host role", state: COHOST, leader: true },
+    { why: "a guest without the role, beside a co-host", state: BESIDE_COHOST, leader: false },
+    { why: "a guest in a room with no co-host", state: VOTING, leader: false },
+    { why: "a guest in a closed room", state: CLOSED, leader: false },
+  ])("gives $why leader: $leader", ({ state, leader }) => {
+    expect(roomView(lobbyState(state), ROOM_ID, null).leader).toBe(leader);
+  });
+
+  it.each([
+    { why: "the host with the game's question list", state: REVEALED_WITH_LIST },
+    { why: "the host in the lobby with the list", state: LOBBY_WITH_LIST },
+    { why: "a co-host", state: COHOST },
+    { why: "the host of a closed room with reveals", state: CLOSED_AFTER_GAME_HOST },
+  ])("gives $why the view's keys only, never leader_draw", ({ state }) => {
+    expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null)).sort()).toEqual([...VIEW_KEYS].sort());
   });
 });
 

@@ -20,7 +20,10 @@
 -- once the room closes); private.question_stats, private.round_reactions, private.stats_excluded_hosts, react_round,
 -- private.fold_reactions and private.counts_for_stats with *_question_play_data.sql (S-11,
 -- context/changes/question-reactions-play-data, plan Faza 1 #4: the thumbs on a reveal and the per-question counters,
--- reached only through the round functions and outside the publication). Each assertion about an object that may be
+-- reached only through the round functions and outside the publication); players.cohost, private.leader_refusal,
+-- set_cohost and the leader's moves with p_player_token, granted to anon too, with *_co_host_role.sql (S-07,
+-- context/changes/co-host-role, plan Faza 1 #3: a co-host is a guest who leads the game with its player token, and only
+-- set_cohost gives the role, never to the host's own row). Each assertion about an object that may be
 -- missing must be its own `not ok`, never an error that ends the file: nothing here names them statically. They are
 -- reached only through to_regclass, to_regprocedure, pgTAP functions that report a missing table (table_privs_are,
 -- columns_are), lives_ok, and the helpers below, which run a call or a count dynamically and hand the error back as
@@ -42,7 +45,7 @@
 
 begin;
 
-select plan(264);
+select plan(277);
 
 -- Helpers ------------------------------------------------------------------------------------------------------------
 
@@ -758,6 +761,17 @@ create function pg_temp.private_versions_of(p_name text) returns text language s
   where n.nspname = 'private' and p.proname = p_name
 $$;
 
+-- S-07: the SQLSTATE a statement run as the owner raises, or 'no error'. Either way nothing it did stays: a statement
+-- that succeeds is undone by the exception raised after it.
+create function pg_temp.owner_error(p_sql text) returns text language plpgsql as $$
+begin
+  execute p_sql;
+  raise exception 'statement ran' using errcode = 'P0001';
+exception when others then
+  return case when sqlstate = 'P0001' and sqlerrm = 'statement ran' then 'no error' else sqlstate end;
+end;
+$$;
+
 -- Positive control (green from day one) -------------------------------------------------------------------------------
 
 -- If this fails, the file reads the wrong database or the owner's view is broken: nothing below means anything.
@@ -867,26 +881,28 @@ select is(
 
 -- A security definer function runs as its owner: postgres, with an empty search_path, and only the role the game needs
 -- may call it. Positive control first: S-02's start_game passes the same check, so a red one below is the function's,
--- not the check's.
+-- not the check's. S-07 (*_co_host_role.sql): the leader's moves take p_player_token and are granted to anon too, since
+-- a co-host is a guest with no session; every check stays inside them.
 select is(
-  pg_temp.function_facts('public.start_game(uuid, text)'),
-  'security definer | owner postgres | search_path="" | execute: authenticated',
-  'positive control of the check: start_game runs as postgres with an empty search_path, for authenticated only'
+  pg_temp.function_facts('public.start_game(uuid, text, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'positive control of the check: start_game with p_player_token runs as postgres with an empty search_path, for anon '
+    || 'and authenticated'
 );
 select is(
-  pg_temp.function_facts('public.next_round(uuid, integer, text[])'),
-  'security definer | owner postgres | search_path="" | execute: authenticated',
-  'next_round runs as postgres with an empty search_path, for authenticated only'
+  pg_temp.function_facts('public.next_round(uuid, integer, text[], text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'next_round with p_player_token runs as postgres with an empty search_path, for anon and authenticated'
 );
 select is(
-  pg_temp.function_facts('public.skip_round(uuid, integer, text[])'),
-  'security definer | owner postgres | search_path="" | execute: authenticated',
-  'skip_round runs as postgres with an empty search_path, for authenticated only'
+  pg_temp.function_facts('public.skip_round(uuid, integer, text[], text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'skip_round with p_player_token runs as postgres with an empty search_path, for anon and authenticated'
 );
 select is(
-  pg_temp.function_facts('public.end_game(uuid)'),
-  'security definer | owner postgres | search_path="" | execute: authenticated',
-  'end_game runs as postgres with an empty search_path, for authenticated only'
+  pg_temp.function_facts('public.end_game(uuid, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'end_game with p_player_token runs as postgres with an empty search_path, for anon and authenticated'
 );
 select is(
   pg_temp.function_facts('public.cast_vote(uuid, text, text, integer)'),
@@ -894,9 +910,9 @@ select is(
   'cast_vote with p_round runs as postgres with an empty search_path, for anon and authenticated'
 );
 select is(
-  pg_temp.function_facts('public.reveal_round(uuid, integer)'),
-  'security definer | owner postgres | search_path="" | execute: authenticated',
-  'reveal_round with p_round runs as postgres with an empty search_path, for authenticated only'
+  pg_temp.function_facts('public.reveal_round(uuid, integer, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'reveal_round with p_round and p_player_token runs as postgres with an empty search_path, for anon and authenticated'
 );
 
 -- Two versions side by side would be a back door: the one without p_round would take a vote into a skipped round.
@@ -912,7 +928,7 @@ select is(
 );
 
 -- The same for the reveal (deferred-review-fixes, F2): the one without p_round would reveal a question the host's
--- screen has not shown.
+-- screen has not shown. S-07 adds p_player_token, in the same one version.
 select is(
   (
     select string_agg(p.proname || '(' || pg_catalog.pg_get_function_identity_arguments(p.oid) || ')', '; ')
@@ -920,8 +936,26 @@ select is(
     join pg_catalog.pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname = 'reveal_round'
   ),
-  'reveal_round(p_room_id uuid, p_round integer)',
-  'reveal_round exists in exactly one version, the one with p_round'
+  'reveal_round(p_room_id uuid, p_round integer, p_player_token text)',
+  'reveal_round exists in exactly one version, the one with p_round and p_player_token'
+);
+
+-- S-07: the version of a leader's move without p_player_token, beside the new one, would be a door the leader's check
+-- does not guard.
+select is(
+  pg_temp.versions_of('next_round'),
+  'next_round(p_room_id uuid, p_round integer, p_candidates text[], p_player_token text)',
+  'next_round exists in exactly one version, the one with p_player_token'
+);
+select is(
+  pg_temp.versions_of('skip_round'),
+  'skip_round(p_room_id uuid, p_round integer, p_candidates text[], p_player_token text)',
+  'skip_round exists in exactly one version, the one with p_player_token'
+);
+select is(
+  pg_temp.versions_of('end_game'),
+  'end_game(p_room_id uuid, p_player_token text)',
+  'end_game exists in exactly one version, the one with p_player_token'
 );
 
 -- Catalog: requests to join a game in play (S-08) -------------------------------------------------------------------
@@ -952,8 +986,9 @@ select is(
   'public.join_requests is not in supabase_realtime'
 );
 
--- The latecomer has no session: asking and its own request's state are public endpoints, with every check inside;
--- letting in and turning away are the signed-in host's.
+-- The latecomer has no session: asking and its own request's state are public endpoints, with every check inside.
+-- Letting in and turning away are the leader's: the signed-in host's, and since S-07 a co-host's by its player token,
+-- so they are public endpoints too.
 select is(
   pg_temp.function_facts('public.request_join(text, text, text)'),
   'security definer | owner postgres | search_path="" | execute: anon, authenticated',
@@ -965,14 +1000,14 @@ select is(
   'join_request_state runs as postgres with an empty search_path, for anon and authenticated'
 );
 select is(
-  pg_temp.function_facts('public.admit_latecomer(uuid, text)'),
-  'security definer | owner postgres | search_path="" | execute: authenticated',
-  'admit_latecomer runs as postgres with an empty search_path, for authenticated only'
+  pg_temp.function_facts('public.admit_latecomer(uuid, text, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'admit_latecomer with p_player_token runs as postgres with an empty search_path, for anon and authenticated'
 );
 select is(
-  pg_temp.function_facts('public.reject_latecomer(uuid, text)'),
-  'security definer | owner postgres | search_path="" | execute: authenticated',
-  'reject_latecomer runs as postgres with an empty search_path, for authenticated only'
+  pg_temp.function_facts('public.reject_latecomer(uuid, text, text)'),
+  'security definer | owner postgres | search_path="" | execute: anon, authenticated',
+  'reject_latecomer with p_player_token runs as postgres with an empty search_path, for anon and authenticated'
 );
 
 -- A second version beside any of these would be a door its checks do not guard.
@@ -988,13 +1023,13 @@ select is(
 );
 select is(
   pg_temp.versions_of('admit_latecomer'),
-  'admit_latecomer(p_room_id uuid, p_nick text)',
-  'admit_latecomer exists in exactly one version'
+  'admit_latecomer(p_room_id uuid, p_nick text, p_player_token text)',
+  'admit_latecomer exists in exactly one version, the one with p_player_token'
 );
 select is(
   pg_temp.versions_of('reject_latecomer'),
-  'reject_latecomer(p_room_id uuid, p_nick text)',
-  'reject_latecomer exists in exactly one version'
+  'reject_latecomer(p_room_id uuid, p_nick text, p_player_token text)',
+  'reject_latecomer exists in exactly one version, the one with p_player_token'
 );
 
 -- Catalog: the game's question list (S-06) ---------------------------------------------------------------------------
@@ -1028,7 +1063,7 @@ select is(
 );
 
 -- A second version beside any of these would be a door its checks do not guard. start_game and room_lobby, replaced by
--- the same migration, keep their one version.
+-- the same migration, keep their one version; start_game's is the one with p_player_token since S-07.
 select is(
   pg_temp.versions_of('open_question_list'),
   'open_question_list(p_room_id uuid, p_candidates text[])',
@@ -1056,8 +1091,8 @@ select is(
 );
 select is(
   pg_temp.versions_of('start_game'),
-  'start_game(p_room_id uuid, p_question_id text)',
-  'start_game still exists in exactly one version'
+  'start_game(p_room_id uuid, p_question_id text, p_player_token text)',
+  'start_game still exists in exactly one version, the one with p_player_token'
 );
 select is(
   pg_temp.versions_of('room_lobby'),
@@ -1177,6 +1212,69 @@ select is(
   pg_temp.private_versions_of('counts_for_stats'),
   'counts_for_stats(p_room_id uuid)',
   'private.counts_for_stats exists in exactly one version'
+);
+
+-- Catalog: the co-host (S-07) ----------------------------------------------------------------------------------------
+
+-- Oracle: PRD FR-003 and Access Control (only the host gives and takes the role, to a guest of the room) and
+-- context/changes/co-host-role/plan.md, Faza 1 #1 and #3. The role is a column of players that only set_cohost writes:
+-- no API role gets more on players than before, and the host's own row never holds the role.
+select is(
+  (
+    select c.data_type || ' | nullable ' || c.is_nullable || ' | default ' || coalesce(c.column_default, 'none')
+    from information_schema.columns c
+    where c.table_schema = 'public' and c.table_name = 'players' and c.column_name = 'cohost'
+  ),
+  'boolean | nullable NO | default false',
+  'public.players.cohost is a boolean, not null, false by default'
+);
+select table_privs_are(
+  'public', 'players', 'anon', array[]::name[], 'anon has no privilege on public.players'
+);
+select table_privs_are(
+  'public', 'players', 'authenticated', array['SELECT']::name[],
+  'authenticated only reads public.players: the co-host role changes only through set_cohost'
+);
+
+select isnt(pg_temp.open_room('cohost-check', array['Ola']), null, 'setup: a host opens a room and Ola joins');
+-- Positive control: the same update on a guest's row passes, so the refusal below is the check's, not the statement's.
+select is(
+  pg_temp.owner_error(format(
+    'update public.players set cohost = true where room_id = %L and user_id is null', pg_temp.room_of('cohost-check')
+  )),
+  'no error',
+  'positive control of the check: a guest''s row may hold the co-host role'
+);
+select is(
+  pg_temp.owner_error(format(
+    'update public.players set cohost = true where room_id = %L and user_id is not null',
+    pg_temp.room_of('cohost-check')
+  )),
+  '23514',
+  'the host''s own row never holds the co-host role: the check refuses it even to the owner'
+);
+
+-- Giving and taking the role is the signed-in host's. The leader's check runs only inside the definer functions, as
+-- their caller.
+select is(
+  pg_temp.function_facts('public.set_cohost(uuid, text, boolean)'),
+  'security definer | owner postgres | search_path="" | execute: authenticated',
+  'set_cohost runs as postgres with an empty search_path, for authenticated only'
+);
+select is(
+  pg_temp.function_facts('private.leader_refusal(uuid, uuid, text)'),
+  'security invoker | owner postgres | search_path="" | execute: nobody',
+  'private.leader_refusal runs as its caller with an empty search_path, and no API role may call it'
+);
+select is(
+  pg_temp.versions_of('set_cohost'),
+  'set_cohost(p_room_id uuid, p_nick text, p_cohost boolean)',
+  'set_cohost exists in exactly one version'
+);
+select is(
+  pg_temp.private_versions_of('leader_refusal'),
+  'leader_refusal(p_room_id uuid, p_host uuid, p_player_token text)',
+  'private.leader_refusal exists in exactly one version'
 );
 
 -- A round played to the reveal leaves only counts -------------------------------------------------------------------
