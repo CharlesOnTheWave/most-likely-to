@@ -1,7 +1,7 @@
 ---
 change_id: player-color-choice
 title: Wybór koloru przez gracza
-status: preparing
+status: implementing
 created: 2026-10-31
 updated: 2026-10-31
 archived_at: null

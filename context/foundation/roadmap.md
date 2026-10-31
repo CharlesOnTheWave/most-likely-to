@@ -60,7 +60,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
 | S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
 | S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | proposed    |
-| S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | proposed    |
+| S-18 | player-color-choice          | Gracz wybiera swój kolor z palety gry i ma go przez całą grę; dwóch graczy nie ma tego samego koloru                | S-01             | FR-025                                                    | in-progress |
 
 ## Streams
 
@@ -346,7 +346,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
   - Kiedy gracz wybiera kolor (przy wejściu z nickiem czy w poczekalni) i czy może go zmienić w trakcie gry? — Owner: Karol. Block: no (rozstrzygnąć w researchu).
   - Wygląd wyboru (paleta 20 kolorów `chart-colors.ts` na telefonie) — Owner: Karol, wybór na zrzutach. Block: no.
 - **Risk:** Kolor przestaje wynikać z miejsca przy stole (`seatColors`), więc trafia do bazy; zajęty kolor i równoczesne wybory dwóch graczy rozstrzyga baza. Kolor nie może zdradzić głosu ani zostać w danych o pytaniach. Słownik: usunięcie gracza (S-09) nie zmienia kolorów pozostałych.
-- **Status:** proposed
+- **Status:** in-progress
 
 ## Backlog Handoff
 
