@@ -440,7 +440,7 @@ Start, następne i pominięcie wołają `room_lobby` zamiast jednego odczytu `ro
 
 #### Manual
 
-- [ ] 2.3 Nowa trasa `cohost` i jeden ruch współhosta przeklikane raz na serwerze dev przez API (lessons.md, wpis 3)
+- [x] 2.3 Nowa trasa `cohost` i jeden ruch współhosta przeklikane raz na serwerze dev przez API (lessons.md, wpis 3) — 2026-10-31, po `db push`: `npm run smoke` na serwerze dev, wszystkie kroki PASS (w tym 4 kroki współhosta)
 
 ### Phase 3: Ekrany
 
@@ -459,10 +459,10 @@ Start, następne i pominięcie wołają `room_lobby` zamiast jednego odczytu `ro
 
 #### Automated
 
-- [ ] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie
-- [ ] 4.2 Smoke na produkcji zielony
+- [x] 4.1 `npx supabase migration list` pokazuje nową migrację lokalnie i zdalnie — 2026-10-31, `db push` przed scaleniem; Advisors: 0 błędów, nowe ostrzeżenia zamierzone (`deploy-plan.md`)
+- [x] 4.2 Smoke na produkcji zielony — 2026-10-31, po wdrożeniu `ffcc373` (Workers Builds success), wszystkie kroki PASS, w tym 4 kroki współhosta
 
 #### Manual
 
-- [ ] 4.3 Karol scala PR
+- [x] 4.3 Karol scala PR — PR #30, merge `ffcc373`, 2026-10-31
 - [ ] 4.4 Karol z ekipą: host nadaje rolę, wychodzi, współhost odsłania, przechodzi dalej, wpuszcza spóźnionego i kończy grę; host odbiera rolę innemu współhostowi
