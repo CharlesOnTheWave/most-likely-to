@@ -1,5 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
-import { roomView } from "@/lib/rooms/server";
+import { leaderSelection, roomView } from "@/lib/rooms/server";
 import {
   parseJoinRequestState,
   parseLobbyState,
@@ -826,6 +827,39 @@ describe("roomView", () => {
     { why: "the host of a closed room with reveals", state: CLOSED_AFTER_GAME_HOST },
   ])("gives $why the view's keys only, never leader_draw", ({ state }) => {
     expect(Object.keys(roomView(lobbyState(state), ROOM_ID, null)).sort()).toEqual([...VIEW_KEYS].sort());
+  });
+});
+
+// A client that has only rpc(): room_lobby answers with the given state, as the database would.
+function lobbyClient(state: unknown): SupabaseClient {
+  const client = { rpc: () => Promise.resolve({ data: state, error: null, status: 200 }) };
+  return client as unknown as SupabaseClient;
+}
+
+// The Worker's own gate before start, next and skip (S-07; review of S-07, F2): the room's state decides whether the
+// caller leads, before the move goes to the database, which checks the role again under the room's lock. The oracle:
+// plan.md Faza 2 #2 (null leader_draw for a player of the room → not_leader, no room → the 404 of OUTSIDE_ROOM) and the
+// leader's draw from the room's categories (FR-005).
+describe("leaderSelection", () => {
+  it.each([
+    { why: "the host", state: LOBBY },
+    { why: "a guest with the co-host role", state: COHOST },
+  ])("gives $why the room's categories for the draw", async ({ state }) => {
+    expect(await leaderSelection(lobbyClient(state), ROOM_ID, null)).toEqual({
+      ok: true,
+      selection: { categories: ["na-co-dzien", "przyszlosc"], adultCategories: ["przyszlosc"] },
+    });
+  });
+
+  it.each([
+    { why: "a guest without the role, beside a co-host", state: BESIDE_COHOST },
+    { why: "a guest in a room with no co-host", state: VOTING },
+  ])("refuses $why with not_leader", async ({ state }) => {
+    expect(await leaderSelection(lobbyClient(state), ROOM_ID, "token")).toEqual({ ok: false, reason: "not_leader" });
+  });
+
+  it("refuses someone outside the room with room_unknown", async () => {
+    expect(await leaderSelection(lobbyClient(null), ROOM_ID, null)).toEqual({ ok: false, reason: "room_unknown" });
   });
 });
 

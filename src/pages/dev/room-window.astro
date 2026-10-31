@@ -13,8 +13,9 @@ import { gameSummary } from "@/lib/rooms/summary";
 // One room screen in the real page's frame (the wide header and <main> of /r/[id]), for screenshots of the whole
 // window and for checking the leader's bar at the window's bottom edge: /dev/room-window?state=reveal-host; without a
 // query, the list of states. The header is the host's (signed in, "Wyloguj") on the host's screens and a guest's on
-// everyone else's, a co-host's too (S-07: a guest has no account). Sample data as on /dev/room-states: no database, no Realtime, no polling, and the game's
-// buttons only answer "ok" (RoomScreen's preview). Local only; a production build answers an empty 404.
+// everyone else's, a co-host's too (S-07: a guest has no account). Sample data as on /dev/room-states: no database, no
+// Realtime, no polling, and the game's buttons only answer "ok" (RoomScreen's preview). Local only; a production build
+// answers an empty 404.
 const isDev = import.meta.env.DEV;
 if (!isDev) {
   Astro.response.status = 404;

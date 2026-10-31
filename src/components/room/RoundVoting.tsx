@@ -57,6 +57,8 @@ interface Props {
   onEnd: () => Promise<ActionOutcome>;
   // The host gives a guest the co-host role or takes it back (CohostButton), sent as the other moves.
   onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
+  // How many refreshed states the screen has had (useRoomState), for CohostButton.
+  refreshes: number;
   preview?: VotingPreview;
   hostPreview?: HostActionsPreview;
 }
@@ -117,6 +119,7 @@ export default function RoundVoting({
   onSkip,
   onEnd,
   onCohost,
+  refreshes,
   preview,
   hostPreview,
 }: Props) {
@@ -224,7 +227,13 @@ export default function RoundVoting({
                 />
               </span>
               {switchShown && (
-                <CohostButton player={player} hintId={cohostHintId} onCohost={onCohost} preview={preview?.roleSwitch} />
+                <CohostButton
+                  player={player}
+                  hintId={cohostHintId}
+                  onCohost={onCohost}
+                  refreshes={refreshes}
+                  preview={preview?.roleSwitch}
+                />
               )}
             </li>
           );

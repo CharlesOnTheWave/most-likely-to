@@ -3,7 +3,7 @@ project: "Most Likely To"
 version: 1
 status: draft
 created: 2026-09-26
-updated: 2026-10-27
+updated: 2026-10-31
 prd_version: 1
 main_goal: learn
 top_blocker: skills
@@ -59,6 +59,7 @@ Ekipa znajomych umawia się na Discordzie na „Kto z nas najprawdopodobniej…�
 | S-14 | remembered-nick              | Ten sam telefon podpowiada ostatni nick przy wejściu do pokoju i przy nowej grze                                    | S-01             | FR-024, Access Control (gość)                             | done        |
 | S-15 | game-summary                 | Na końcu gry wszyscy widzą podsumowanie wieczoru z wyróżnieniami, bez punktów i rankingu                            | S-03             | FR-022                                                    | done        |
 | S-16 | room-emotes                  | Gracz jednym dotknięciem wysyła emotkę, którą na chwilę widzi cały pokój                                            | S-02             | FR-023                                                    | done        |
+| S-17 | question-pool-in-db          | Prowadzący otwiera tylko pytania z kategorii wybranych przez hosta, także gdy woła bazę z pominięciem ekranu        | S-07             | FR-005                                                    | proposed    |
 
 ## Streams
 
@@ -319,6 +320,19 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 - **Risk:** To pierwsza treść od graczy, która idzie do całego pokoju na żywo, a kanał na żywo dziś niesie tylko dzwonek, który może nadać każdy znający jego nazwę; emotka nie może dać się podszyć pod gracza ani zalać pokoju, nie może zdradzić głosu (np. emotka „na kogoś” w trakcie głosowania) i nie zostawia śladu w bazie ani logach poza tym, czego gra potrzebuje. Gify i tekst zostają w Parked (PRD §Non-Goals: czat poza aplikacją).
 - **Status:** done
 
+### S-17: Pula pytań w bazie
+
+- **Outcome:** Prowadzący (host albo współhost) może otworzyć tylko pytanie z kategorii wybranych przez hosta, a pytanie 18+ tylko z kategorii, w których host je włączył, także gdy woła funkcję bazy sam, z tokenem z ciasteczka, z pominięciem ekranu gry.
+- **Change ID:** question-pool-in-db
+- **PRD refs:** FR-005
+- **Prerequisites:** S-07
+- **Parallel with:** każdy element (nic od niego nie zależy)
+- **Blockers:** —
+- **Unknowns:**
+  - Jak baza ma znać kategorie i 18+ pytań bazy startowej, które dziś są tylko w kodzie Workera (`src/data/questions.ts`)? — Owner: Karol. Block: no (rozstrzygnąć w researchu).
+- **Risk:** Znana dziura F1 z przeglądu planu S-07 (`context/changes/co-host-role/reviews/plan-review.md`), przypięta testem `test.fails` „znana dziura F1 → S-17” w `tests/db/cohost.test.ts`: pulę sprawdza dziś tylko Worker (`poolFrom`, `src/lib/rounds/draw.ts`), a `start_game`, `next_round` i `skip_round` sprawdzają tylko format id, więc współhost, który zna technikę, może otworzyć pytanie 18+ spoza wyboru hosta. Wymaga złośliwego i technicznego gracza w pokoju; naprawa zmienia trzy ruchy prowadzącego i zaczerwienia `test.fails`.
+- **Status:** proposed
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                    | Suggested issue title                                                  | Ready for `/10x-plan` | Notes                                                                      |
@@ -341,6 +355,7 @@ Stan kodu na 2026-09-26 (automatyczny przegląd, potwierdzony przez właściciel
 | S-14       | remembered-nick              | Zapamiętany nick w przeglądarce                                        | yes                   | Run `/10x-plan remembered-nick`; S-01 gotowe                               |
 | S-15       | game-summary                 | Podsumowanie wieczoru na ekranie końca gry                             | yes                   | Run `/10x-plan game-summary`; S-03 gotowe                                  |
 | S-16       | room-emotes                  | Emotki do pokoju (bez gifów i tekstu)                                  | yes                   | Run `/10x-plan room-emotes`; S-02 gotowe                                   |
+| S-17       | question-pool-in-db          | Pula pytań (kategorie, 18+) sprawdzana w bazie                         | yes                   | Run `/10x-plan question-pool-in-db`; S-07 gotowe; zamyka znaną dziurę F1   |
 
 ## Open Roadmap Questions
 

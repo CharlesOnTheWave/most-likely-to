@@ -49,7 +49,7 @@ import {
 // (confirm_close closes it should the end have failed); Vitest runs the suites in order, each suite's beforeAll right
 // before its tests.
 
-const KNOWN_HOLE_F1 = "znana dziura F1 → pula w bazie: ";
+const KNOWN_HOLE_F1 = "znana dziura F1 → S-17: ";
 
 const anon = anonClient();
 const [Q1, Q2, Q3, Q4] = EVENING_QUESTION_IDS;
