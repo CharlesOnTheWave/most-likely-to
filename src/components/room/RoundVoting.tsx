@@ -17,7 +17,7 @@ import {
 import { endGameAction, HostActions, type HostActionsPreview } from "@/components/room/HostActions";
 import type { ActionOutcome } from "@/components/room/room-actions";
 import { RoundQuestion } from "@/components/room/RoundQuestion";
-import { seatColors } from "@/lib/rooms/chart";
+import { playerColors } from "@/lib/rooms/chart";
 import type { LobbyPlayer, RoomView, RoundView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -140,7 +140,7 @@ export default function RoundVoting({
   const canVote = eligible.has(view.me);
   // Whom the form offers: the eligible players, in seat order (the players' order).
   const candidates = view.players.filter((player) => eligible.has(player.nick));
-  const colors = seatColors(view.players);
+  const colors = playerColors(view.players);
   const choiceErrorId = `${idPrefix}vote-choice-error`;
   const votedOf = `${String(round.voted.length)} z ${String(round.eligible.length)}`;
   const cohostHintId = `${idPrefix}cohost-hint`;
@@ -190,8 +190,8 @@ export default function RoundVoting({
   );
 
   // Every player, a latecomer too: one let in during this question has a grey "od następnego pytania" and never the
-  // vote's badge. Each with the dot of the player's colour for the whole game, from the place at the table
-  // (seatColors), as in the lobby and the reveal; the form's list has none.
+  // vote's badge. Each with the dot of the player's stored colour (playerColors), as in the lobby and the reveal; the
+  // form's list has none.
   const players = (
     <section aria-labelledby={`${idPrefix}players-heading`} className="flex flex-col gap-3">
       <h2 id={`${idPrefix}players-heading`} className="text-sm font-medium">

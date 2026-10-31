@@ -16,7 +16,7 @@ import {
 } from "@/components/room/CohostButton";
 import QuestionList, { type QuestionListActions, type QuestionListPreview } from "@/components/room/QuestionList";
 import type { ActionOutcome } from "@/components/room/room-actions";
-import { seatColors } from "@/lib/rooms/chart";
+import { playerColors } from "@/lib/rooms/chart";
 import { MIN_PLAYERS, type RoomView } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
@@ -79,7 +79,7 @@ export default function RoomLobby({
   // The host, or a guest with the co-host role (S-07): "Zacznij grę".
   const leads = view.leader;
   const canStart = view.players.length >= MIN_PLAYERS;
-  const colors = seatColors(view.players);
+  const colors = playerColors(view.players);
   const startHintId = `${idPrefix}start-hint`;
   const questionsShown = isHost && questionsOpen && view.questions !== null;
   // The host's co-host switches and their hint, once a guest is in the room.
@@ -234,8 +234,8 @@ export default function RoomLobby({
                 className={cn("flex items-center gap-x-3 px-3", isHost ? COHOST_ROW : "justify-between py-2.5")}
               >
                 <span className={cn("flex min-w-0 items-center gap-x-2", isHost && "mr-auto")}>
-                  {/* The player's colour for the whole game, from the place at the table (seatColors), as on the
-                      reveal's pie. Outside the nick's span, so a long nick wraps next to its dot. */}
+                  {/* The player's stored colour (playerColors), as on the reveal's pie. Outside the nick's span,
+                      so a long nick wraps next to its dot. */}
                   <span
                     aria-hidden="true"
                     className={cn("size-2.5 shrink-0 rounded-full", color !== undefined && SLICE_DOTS[color])}
