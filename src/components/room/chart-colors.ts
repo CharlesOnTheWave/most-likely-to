@@ -1,4 +1,4 @@
-// One colour per player for the whole game, from the place at the table (seatColors in src/lib/rooms/chart.ts; the
+// One colour per player, the player's stored colour (players.color through playerColors in src/lib/rooms/chart.ts; the
 // colours are --chart-1 … --chart-20 in src/styles/global.css), never from the place in a result: the player's slice
 // on the reveal's pie (RoundReveal) and on the end of the evening's (GameSummary), and the dot next to the nick on the
 // lists of players ("Gracze"), in the reveal's table and in the summary's legend. FILLS colour the slices, DOTS the

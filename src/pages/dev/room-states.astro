@@ -49,41 +49,43 @@ const requestAgainCard = {
 const ROOM_ID = "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c";
 const LINK_TOKEN = "Xq3vL9tR2mWb7KpZ0aYc_e";
 const LINK_URL = `https://most-likely-to.charlesonthewave.workers.dev/j/${LINK_TOKEN}`;
-const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true, cohost: false }];
+// color: each player's stored colour (S-18), here the first free one on the way in, so the host 0 and then each guest
+// the next one, as before the players picked their own.
+const hostAlone: LobbyPlayer[] = [{ nick: "Ola", host: true, cohost: false, color: 0 }];
 const twoPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
 ];
 const fewPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
-  { nick: "Kasia 🎉", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
+  { nick: "Kasia 🎉", host: false, cohost: false, color: 2 },
 ];
 // Eight players, with a nick of exactly 20 characters (nickLength) and one with an emoji.
 const eightPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
-  { nick: "Najdłuższy nick 20zn", host: false, cohost: false },
-  { nick: "Kasia 🎉", host: false, cohost: false },
-  { nick: "Zosia", host: false, cohost: false },
-  { nick: "Kuba", host: false, cohost: false },
-  { nick: "Marta", host: false, cohost: false },
-  { nick: "Igor", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
+  { nick: "Najdłuższy nick 20zn", host: false, cohost: false, color: 2 },
+  { nick: "Kasia 🎉", host: false, cohost: false, color: 3 },
+  { nick: "Zosia", host: false, cohost: false, color: 4 },
+  { nick: "Kuba", host: false, cohost: false, color: 5 },
+  { nick: "Marta", host: false, cohost: false, color: 6 },
+  { nick: "Igor", host: false, cohost: false, color: 7 },
 ];
 const guestView: LobbyPlayer[] = [
-  { nick: "Bartek", host: true, cohost: false },
-  { nick: "Ola", host: false, cohost: false },
-  { nick: "Kasia 🎉", host: false, cohost: false },
-  { nick: "Zosia", host: false, cohost: false },
+  { nick: "Bartek", host: true, cohost: false, color: 0 },
+  { nick: "Ola", host: false, cohost: false, color: 1 },
+  { nick: "Kasia 🎉", host: false, cohost: false, color: 2 },
+  { nick: "Zosia", host: false, cohost: false, color: 3 },
 ];
 
 // The round: five players in seat order, the host first (Ola); the guest's screens are Bartek's.
 const roundPlayers: LobbyPlayer[] = [
-  { nick: "Ola", host: true, cohost: false },
-  { nick: "Bartek", host: false, cohost: false },
-  { nick: "Kasia 🎉", host: false, cohost: false },
-  { nick: "Zosia", host: false, cohost: false },
-  { nick: "Kuba", host: false, cohost: false },
+  { nick: "Ola", host: true, cohost: false, color: 0 },
+  { nick: "Bartek", host: false, cohost: false, color: 1 },
+  { nick: "Kasia 🎉", host: false, cohost: false, color: 2 },
+  { nick: "Zosia", host: false, cohost: false, color: 3 },
+  { nick: "Kuba", host: false, cohost: false, color: 4 },
 ];
 // Twenty players (the most a room is planned for): five nicks of 20 characters, the widest letters, emoji.
 const twentyPlayers: LobbyPlayer[] = [
@@ -107,7 +109,7 @@ const twentyPlayers: LobbyPlayer[] = [
   "Łukasz 🎮",
   "Natalia",
   "Krzysztof",
-].map((nick, index) => ({ nick, host: index === 0, cohost: false }));
+].map((nick, index) => ({ nick, host: index === 0, cohost: false, color: index }));
 
 // S-07: a guest the host made a co-host, on every screen's list.
 function withCohost(players: LobbyPlayer[], nick: string): LobbyPlayer[] {
