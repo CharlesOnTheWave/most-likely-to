@@ -152,7 +152,8 @@ export interface GameSummary {
 }
 
 // leader: whether the person on this screen leads the game (S-07): the host, or a guest with the co-host role (the
-// cohost of the player who is me). Never leader_draw itself, which only the Worker reads. The badges "host" and "ty"
+// cohost of the player who is me). Never leader_draw itself: the Worker never sends it to a screen (a leader may still
+// read it from room_lobby, granted to anon; it holds no question's text). The badges "host" and "ty"
 // come from players[].host and me, never from leader. questionsLeft: for a leader once the latest round is revealed or
 // skipped, whether the game has a question not played yet ("Następne pytanie" or "Pytań już nie ma. Możesz zakończyć
 // grę."); null in every other state and for anyone who does not lead. questions: the game's question list for its host

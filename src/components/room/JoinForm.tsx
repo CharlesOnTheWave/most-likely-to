@@ -17,8 +17,8 @@ interface Preview {
   pending?: boolean;
 }
 
-// "join": a room in the lobby, the guest is in at once. "request": a game in play, the form asks the host to let the
-// latecomer in (S-08); "request-again": the same after the host turned the request away.
+// "join": a room in the lobby, the guest is in at once. "request": a game in play, the form asks a leader (the host or
+// a co-host) to let the latecomer in (S-08, S-07); "request-again": the same after a leader turned the request away.
 export type JoinFormVariant = "join" | "request" | "request-again";
 
 interface Props {
@@ -43,7 +43,7 @@ const TEXTS: Record<JoinFormVariant, { submit: string; pending: string; hint: st
   request: {
     submit: "Poproś o wejście",
     pending: "Wysyłanie prośby…",
-    hint: `Ten nick zobaczy host, a gdy cię wpuści, także inni gracze. Najwyżej ${NICK_MAX_LENGTH} znaków.`,
+    hint: `Ten nick zobaczy prowadzący, a gdy cię wpuści, także inni gracze. Najwyżej ${NICK_MAX_LENGTH} znaków.`,
   },
   "request-again": {
     submit: "Poproś jeszcze raz",

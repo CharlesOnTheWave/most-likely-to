@@ -45,6 +45,8 @@ interface Props {
   questionActions: QuestionListActions;
   // The host gives a guest the co-host role or takes it back (CohostButton), sent the same way.
   onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
+  // How many refreshed states the screen has had (useRoomState), for CohostButton.
+  refreshes: number;
   preview?: LobbyPreview;
 }
 
@@ -62,6 +64,7 @@ export default function RoomLobby({
   onStart,
   questionActions,
   onCohost,
+  refreshes,
   preview,
 }: Props) {
   const [copied, setCopied] = useState(preview?.copied ?? false);
@@ -250,6 +253,7 @@ export default function RoomLobby({
                     player={player}
                     hintId={cohostHintId}
                     onCohost={onCohost}
+                    refreshes={refreshes}
                     preview={preview?.roleSwitch}
                   />
                 )}

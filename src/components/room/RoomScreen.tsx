@@ -257,6 +257,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         onStart={start}
         questionActions={questionActions}
         onCohost={setCohost}
+        refreshes={refreshes}
         preview={preview}
       />
     );
@@ -289,6 +290,7 @@ function RoomContent({ roomId, initial, linkUrl, realtime, preview }: Props) {
         onSkip={skip}
         onEnd={end}
         onCohost={setCohost}
+        refreshes={refreshes}
         preview={preview}
         hostPreview={preview?.host}
       />

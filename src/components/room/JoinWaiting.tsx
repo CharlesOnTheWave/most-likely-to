@@ -11,10 +11,11 @@ import { logEvent } from "@/lib/log";
 import { parseJoinRequestState } from "@/lib/rooms/shared";
 import { cn } from "@/lib/utils";
 
-// The latecomer's screen on /j/<code> while the request waits for a leader, the host or a co-host (S-08, S-07): the nick asked with, and nothing of
-// the game, never the question (lessons.md). It looks again at its own request (GET /api/rooms/<id>/request) on a bell
-// on the room's channel and every LOBBY_POLL_MS while the tab is visible, through the room screen's limiter
-// (src/lib/live-sync/limiter.ts), and then: let in, to the room; turned away or no request any more, the link's page
+// The latecomer's screen on /j/<code> while the request waits for a leader, the host or a co-host (S-08, S-07): the
+// nick asked with, and nothing of the game, never the question (lessons.md). It looks again at its own request (GET
+// /api/rooms/<id>/request) on a bell on the room's channel and every LOBBY_POLL_MS while the tab is visible, through
+// the room screen's limiter (src/lib/live-sync/limiter.ts), and then: let in, to the room; turned away or no request
+// any more, the link's page
 // again, which shows the form; the room closed, "Gra się skończyła." and nothing more to wait for. Its own small effect
 // on purpose: the room screen's useRoomState stays as it runs in production.
 

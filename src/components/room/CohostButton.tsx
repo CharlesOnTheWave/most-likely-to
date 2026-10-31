@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Plus } from "lucide-react";
 import { ServerError } from "@/components/auth/ServerError";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,8 @@ interface Props {
   hintId: string;
   // The host gives the role (true) or takes it back (false): POST …/cohost (src/components/room/RoomScreen.tsx).
   onCohost: (nick: string, cohost: boolean) => Promise<ActionOutcome>;
+  // How many refreshed states the screen has had (useRoomState), changed or not.
+  refreshes: number;
   preview?: RoleSwitchPreview;
 }
 
@@ -52,15 +54,28 @@ const SWITCH_BUSY = "aria-disabled:cursor-default aria-disabled:opacity-50";
 // see. Its name says the nick, aria-pressed whether the guest has the role. Only the host sees it, never on the host's
 // own row; any guest can get the role, a latecomer let in too. A press waits until the refreshed state shows the value
 // asked for (the spinner in place of the icon, as in JoinRequests); a refusal shows its code's text under the row.
-export function CohostButton({ player, hintId, onCohost, preview }: Props) {
+export function CohostButton({ player, hintId, onCohost, refreshes, preview }: Props) {
   const { nick, cohost } = player;
   const own = preview?.nick === nick ? preview : undefined;
   // The value asked for, from the press until the refreshed list shows it or the refusal comes back; null when free.
   const [asked, setAsked] = useState<boolean | null>(own?.sending ? !cohost : null);
   const [error, setError] = useState<string | null>(own?.error ?? null);
+  // The count of refreshed states when the press was accepted; null while no accepted press waits.
+  const [acceptedAt, setAcceptedAt] = useState<number | null>(null);
+  // The latest count, for the press's continuation, which runs with the count of the render it started in.
+  const refreshesRef = useRef(refreshes);
+  useEffect(() => {
+    refreshesRef.current = refreshes;
+  }, [refreshes]);
   // Adjusting state while rendering (react.dev, "You Might Not Need an Effect"): the refreshed list has the value asked
-  // for, so the switch is free again, in its new look.
-  if (asked !== null && asked === cohost) setAsked(null);
+  // for, so the switch is free again, in its new look. A state refreshed after the accepted press frees it too, even
+  // with the other value: the host's other screen changed the role back before this one saw the press (review of S-07,
+  // F1; as RequestRow in JoinRequests). Known limit, as there: a fetch already on its way before the press landed may
+  // show the old value for a moment, until the next refresh.
+  if (asked !== null && (asked === cohost || (acceptedAt !== null && refreshes > acceptedAt))) {
+    setAsked(null);
+    setAcceptedAt(null);
+  }
   const busy = asked !== null;
 
   async function toggle() {
@@ -69,10 +84,12 @@ export function CohostButton({ player, hintId, onCohost, preview }: Props) {
     setAsked(next);
     setError(null);
     const outcome = await onCohost(nick, next);
-    if (!outcome.ok) {
-      setAsked(null);
-      setError(outcome.message);
+    if (outcome.ok) {
+      setAcceptedAt(refreshesRef.current);
+      return;
     }
+    setAsked(null);
+    setError(outcome.message);
   }
 
   let icon = <Plus className="size-3.5" />;
